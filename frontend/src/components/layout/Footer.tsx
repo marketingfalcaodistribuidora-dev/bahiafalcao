@@ -14,7 +14,13 @@ export function Footer() {
     <footer className="dk border-t-[3px] border-ouro bg-preto pt-14 pb-[88px] text-suave sm:pb-7">
       <div className="wrap grid gap-9 sm:grid-cols-2 sm:gap-10 lg:grid-cols-[1.4fr_1fr_1fr]">
         <div className="sm:col-span-2 lg:col-span-1">
-          <Image src={images.logo.src} width={49} height={56} alt={site.name} className="mb-4 h-14 w-auto" />
+          <Image
+            src={images.logoHorizontal.src}
+            width={199}
+            height={56}
+            alt={site.name}
+            className="mb-5 h-12 w-auto sm:h-14"
+          />
           <p className="max-w-[320px] text-[15px] leading-6">
             Autopeças e ferramentas para caminhões, carretas e veículos pesados. Atendimento a partir de Feira de
             Santana, Bahia.

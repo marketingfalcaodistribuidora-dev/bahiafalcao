@@ -26,12 +26,12 @@ export function Header() {
       <div className="wrap flex h-16 items-center justify-between gap-3 sm:h-[72px] sm:gap-6">
         <Link href="/" className="shrink-0" aria-label={`${site.name}: voltar ao início`}>
           <Image
-            src={images.logo.src}
-            width={42}
+            src={images.logoHorizontal.src}
+            width={171}
             height={48}
             alt={site.name}
             priority
-            className="h-11 w-auto sm:h-12"
+            className="h-10 w-auto sm:h-12"
           />
         </Link>
 

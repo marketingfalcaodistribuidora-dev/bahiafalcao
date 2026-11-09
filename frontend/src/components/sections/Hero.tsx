@@ -59,7 +59,7 @@ export function Hero() {
           <Image
             src={images.simbolo.src}
             width={540}
-            height={366}
+            height={353}
             alt=""
             sizes="540px"
             className="h-auto w-full max-w-[540px]"

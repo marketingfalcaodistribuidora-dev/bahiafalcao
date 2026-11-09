@@ -66,6 +66,7 @@ export const whatsappMessages = {
   linhaPesada: "Olá! Gostaria de consultar autopeças para linha pesada com a equipe da Falcão Distribuidora.",
   carretas: "Olá! Gostaria de consultar peças para carretas com a equipe da Falcão Distribuidora.",
   ferramentas: "Olá! Gostaria de consultar ferramentas com a equipe da Falcão Distribuidora.",
+  peca: "Olá! Gostaria de consultar a disponibilidade de uma peça com a equipe da Falcão Distribuidora.",
 } as const;
 
 export const navLinks = [
