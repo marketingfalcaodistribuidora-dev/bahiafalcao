@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { fullAddress, phoneHref, phoneInternational, site, whatsappLink, whatsappMessages } from "@/lib/site";
+import {
+  fullAddress,
+  mapsEmbedUrl,
+  phoneHref,
+  phoneInternational,
+  site,
+  whatsappLink,
+  whatsappMessages,
+} from "@/lib/site";
 
 describe("whatsappLink", () => {
   it("abre conversa com o número da empresa e a mensagem codificada na URL", () => {
@@ -44,6 +52,15 @@ describe("metadados para o Google", () => {
 describe("endereço", () => {
   it("monta o endereço completo idêntico ao Perfil da Empresa no Google", () => {
     expect(fullAddress).toBe("Rua Venceslau Guimarães, 31 - Sim, Feira de Santana - BA, CEP 44085-520");
+  });
+
+  it("gera o mapa incorporado do Google Maps para a mesma busca do link de rota", () => {
+    const embed = new URL(mapsEmbedUrl);
+    const route = new URL(site.mapsUrl);
+
+    expect(embed.origin + embed.pathname).toBe("https://www.google.com/maps");
+    expect(embed.searchParams.get("output")).toBe("embed");
+    expect(embed.searchParams.get("q")).toBe(route.searchParams.get("query"));
   });
 
   it("aponta o Google Maps para o nome da empresa e o endereço", () => {

@@ -94,4 +94,11 @@ export const phoneInternational = phoneDigits
     : `+55${phoneDigits}`
   : "";
 
+/** Mapa incorporado do Google Maps (sem chave de API), com a mesma busca do link de rota. */
+export const mapsEmbedUrl = `https://www.google.com/maps?${new URLSearchParams({
+  q: new URL(site.mapsUrl).searchParams.get("query") ?? "",
+  output: "embed",
+  hl: "pt-BR",
+})}`;
+
 export const fullAddress = `${site.address.street}, ${site.address.city} - ${site.address.state}, CEP ${site.address.postalCode}`;

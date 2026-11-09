@@ -22,6 +22,16 @@ describe("Contact", () => {
     expect(screen.getByRole("link", { name: "0800 703 8260" })).toHaveAttribute("href", "tel:08007038260");
   });
 
+  it("mostra o mapa do Google Maps com carregamento adiado", () => {
+    render(<Contact />);
+
+    const map = screen.getByTitle("Mapa da Falcão Distribuidora no Google Maps");
+
+    expect(map.tagName).toBe("IFRAME");
+    expect(map).toHaveAttribute("src", expect.stringContaining("https://www.google.com/maps?"));
+    expect(map).toHaveAttribute("loading", "lazy");
+  });
+
   it("abre a rota no Google Maps em nova aba", () => {
     render(<Contact />);
 

@@ -1,7 +1,7 @@
 import type { ComponentType, ReactNode, SVGProps } from "react";
 import { SectionTag } from "@/components/ui/SectionTag";
 import { ArrowRight, ClockIcon, InstagramIcon, PhoneIcon, PinIcon, WhatsAppIcon } from "@/components/ui/icons";
-import { phoneHref, site, whatsappLink, whatsappMessages } from "@/lib/site";
+import { mapsEmbedUrl, phoneHref, site, whatsappLink, whatsappMessages } from "@/lib/site";
 
 type Row = { label: string; Icon: ComponentType<SVGProps<SVGSVGElement>>; content: ReactNode };
 
@@ -97,6 +97,16 @@ export function Contact() {
             <br />
             {address.city} — {address.state} · CEP {address.postalCode}
           </p>
+          <div className="relative mt-7 aspect-[4/3] overflow-hidden rounded-[14px] border border-chumbo bg-grafite sm:aspect-[16/11]">
+            <iframe
+              src={mapsEmbedUrl}
+              title={`Mapa da ${site.name} no Google Maps`}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
+              className="absolute inset-0 size-full border-0"
+            />
+          </div>
           <a
             className="btn btn-ouro mt-7 w-full whitespace-normal sm:w-auto"
             href={site.mapsUrl}
