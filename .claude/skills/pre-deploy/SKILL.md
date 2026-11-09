@@ -18,7 +18,9 @@ Execute cada bloco e marque ✅, ⚠️ ou ❌. Não publique nada por conta pr�
 - [ ] Endereço idêntico ao Perfil da Empresa no Google.
 
 ## 3. Ambiente
-- [ ] `NEXT_PUBLIC_SITE_URL` definido na hospedagem com o domínio definitivo (https, sem barra no final).
+- [ ] Hospedagem: **Vercel**, projeto com *Root Directory* = `frontend`.
+- [ ] `NEXT_PUBLIC_SITE_URL` definido na Vercel (ambiente Production) com o domínio próprio (https, sem barra no final). Sem ele, o site usa o domínio `*.vercel.app` de produção (ver `frontend/src/lib/env.ts`).
+- [ ] Previews da Vercel saem com `noindex` e `robots.txt` bloqueado (automático via `NEXT_PUBLIC_VERCEL_ENV`).
 - [ ] `GOOGLE_SITE_VERIFICATION` definido, se for usar o Search Console por meta tag.
 - [ ] Nenhum segredo em `NEXT_PUBLIC_*`.
 

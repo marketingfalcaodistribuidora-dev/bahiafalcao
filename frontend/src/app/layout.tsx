@@ -56,11 +56,11 @@ export const metadata: Metadata = {
     description: site.description,
   },
   robots: {
-    index: true,
-    follow: true,
+    index: site.indexable,
+    follow: site.indexable,
     googleBot: {
-      index: true,
-      follow: true,
+      index: site.indexable,
+      follow: site.indexable,
       "max-image-preview": "large",
       "max-snippet": -1,
       "max-video-preview": -1,

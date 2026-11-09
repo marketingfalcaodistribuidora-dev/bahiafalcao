@@ -1,3 +1,5 @@
+import { isIndexable, resolveSiteUrl, runtimeEnv } from "@/lib/env";
+
 /**
  * Dados da empresa num único lugar.
  * Tudo o que aparece no site, nos metadados e nos dados estruturados (SEO) sai daqui.
@@ -5,8 +7,10 @@
  */
 export const site = {
   name: "Falcão Distribuidora",
-  /** Domínio definitivo. Defina NEXT_PUBLIC_SITE_URL no ambiente de produção. */
-  url: (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.falcaodistribuidora.com.br").replace(/\/$/, ""),
+  /** NEXT_PUBLIC_SITE_URL (domínio próprio) > domínio de produção da Vercel > localhost. Ver lib/env.ts. */
+  url: resolveSiteUrl(runtimeEnv),
+  /** false nas URLs de preview da Vercel (não indexar). */
+  indexable: isIndexable(runtimeEnv),
   /** Até 60 caracteres, palavra-chave primeiro (coberto por teste). */
   title: "Autopeças para Linha Pesada em Feira de Santana | Falcão",
   /** Entre 120 e 160 caracteres (coberto por teste). */
