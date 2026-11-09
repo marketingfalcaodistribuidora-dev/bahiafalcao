@@ -6,17 +6,26 @@ import { isIndexable, resolveSiteUrl, runtimeEnv } from "@/lib/env";
  * Campos vazios simplesmente não aparecem na página.
  */
 export const site = {
-  name: "Falcão Distribuidora",
+  /** Nome completo, como na logo. Contém as formas curtas "Bahia Falcão" e "Falcão Distribuidora". */
+  name: "Bahia Falcão Distribuidora",
+  /** Marca curta (título da página, manifest). */
+  shortName: "Bahia Falcão",
+  /** Outras formas como os clientes procuram a empresa (schema.org alternateName). */
+  alternateNames: ["Falcão Distribuidora", "Bahia Falcão", "Falcão Distribuidora Bahia"],
   /** NEXT_PUBLIC_SITE_URL (domínio próprio) > domínio de produção da Vercel > localhost. Ver lib/env.ts. */
   url: resolveSiteUrl(runtimeEnv),
   /** false nas URLs de preview da Vercel (não indexar). */
   indexable: isIndexable(runtimeEnv),
   /** Até 60 caracteres, palavra-chave primeiro (coberto por teste). */
-  title: "Autopeças para Linha Pesada em Feira de Santana | Falcão",
-  /** Entre 120 e 160 caracteres (coberto por teste). */
+  title: "Autopeças Linha Pesada em Feira de Santana | Bahia Falcão",
+  /** Entre 120 e 160 caracteres, com o nome completo (coberto por teste). */
   description:
-    "Autopeças e ferramentas para caminhões e carretas em Feira de Santana, BA. Mais de 7 mil itens e atendimento especializado desde 2006. Fale no WhatsApp.",
+    "Bahia Falcão Distribuidora: autopeças e ferramentas para caminhões e carretas em Feira de Santana, BA. Mais de 7 mil itens desde 2006. Fale no WhatsApp.",
   keywords: [
+    "Bahia Falcão Distribuidora",
+    "Bahia Falcão",
+    "Falcão Distribuidora",
+    "Falcão Distribuidora Feira de Santana",
     "autopeças linha pesada",
     "autopeças Feira de Santana",
     "peças para caminhão Feira de Santana",
@@ -24,7 +33,6 @@ export const site = {
     "distribuidora de autopeças Bahia",
     "ferramentas para caminhão",
     "peças para veículos pesados",
-    "Falcão Distribuidora",
   ],
 
   foundingYear: "2006",

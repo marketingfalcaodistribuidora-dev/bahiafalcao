@@ -26,7 +26,7 @@ const photos = [
   },
   {
     image: images.bahiaFalcao,
-    alt: "Fachada da Bahia Falcão, distribuidora de ferramentas do mesmo grupo da Falcão Distribuidora",
+    alt: "Fachada da Bahia Falcão Distribuidora de Ferramentas, do mesmo grupo",
     caption: "Bahia Falcão · Ferramentas",
     box: "h-60 sm:h-[340px] lg:col-span-6 lg:h-[400px]",
     sizes: "(min-width: 1200px) 545px, (min-width: 1024px) 50vw, 100vw",
@@ -40,8 +40,9 @@ export function Structure() {
         <SectionTag number="04">Nossa estrutura</SectionTag>
         <h2 id="titulo-estrutura">Uma estrutura preparada para atender você.</h2>
         <p className="mt-5 max-w-[560px] text-lg leading-7 text-chumbo">
-          Fachada, galpão e ambiente de atendimento em Feira de Santana, para você conhecer de perto onde a Falcão
-          trabalha. Do mesmo grupo, a Bahia Falcão é dedicada à distribuição de ferramentas.
+          Fachada, galpão e ambiente de atendimento em Feira de Santana, para você conhecer de perto onde a Bahia Falcão
+          trabalha. Do mesmo grupo, a Bahia Falcão Distribuidora de Ferramentas é dedicada à distribuição de
+          ferramentas.
         </p>
 
         <div className="mt-9 grid gap-3.5 sm:mt-14 sm:gap-5 lg:grid-cols-12">

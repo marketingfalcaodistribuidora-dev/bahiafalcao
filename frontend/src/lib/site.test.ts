@@ -38,14 +38,30 @@ describe("metadados para o Google", () => {
     expect(site.title.length).toBeLessThanOrEqual(60);
   });
 
-  it("começa o título pela palavra-chave principal e cita a cidade", () => {
-    expect(site.title).toMatch(/^Autopeças para Linha Pesada/);
+  it("começa o título pela palavra-chave principal, cita a cidade e termina com a marca", () => {
+    expect(site.title).toMatch(/^Autopeças/);
+    expect(site.title).toContain("Linha Pesada");
     expect(site.title).toContain("Feira de Santana");
+    expect(site.title).toMatch(/Bahia Falcão$/);
   });
 
   it("tem descrição entre 120 e 160 caracteres", () => {
     expect(site.description.length).toBeGreaterThanOrEqual(120);
     expect(site.description.length).toBeLessThanOrEqual(160);
+  });
+
+  it("cita o nome completo da empresa na descrição", () => {
+    expect(site.description).toContain("Bahia Falcão Distribuidora");
+  });
+});
+
+describe("nomes da marca", () => {
+  it("usa o nome completo da logo como nome principal", () => {
+    expect(site.name).toBe("Bahia Falcão Distribuidora");
+  });
+
+  it("registra as formas como os clientes procuram a empresa", () => {
+    expect(site.alternateNames).toEqual(["Falcão Distribuidora", "Bahia Falcão", "Falcão Distribuidora Bahia"]);
   });
 });
 

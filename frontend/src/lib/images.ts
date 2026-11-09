@@ -2,9 +2,11 @@
 export const images = {
   /** Logo vertical (símbolo acima do nome): imagem de prévia e dados estruturados. */
   logo: { src: "/images/falcao-distribuidora-logo.png", width: 690, height: 786 },
-  /** Logo horizontal com fundo transparente: cabeçalho e rodapé. */
+  /** Logo horizontal "Falcão Distribuidora" com fundo transparente: cabeçalho e rodapé. */
   logoHorizontal: { src: "/images/falcao-distribuidora-logo-horizontal.png", width: 1188, height: 334 },
-  /** Símbolo do falcão em alta resolução, fundo transparente (extraído da logo oficial). */
+  /** Símbolo do falcão em vetor (SVG oficial, fundo transparente): hero. */
+  simboloSvg: { src: "/images/falcao-distribuidora-simbolo.svg", width: 412, height: 271 },
+  /** Símbolo do falcão em PNG, fundo transparente: geração dos ícones (favicon e Apple). */
   simbolo: { src: "/images/falcao-distribuidora-simbolo.png", width: 1013, height: 663 },
   fachada: { src: "/images/fachada-falcao-distribuidora-feira-de-santana.webp", width: 680, height: 382 },
   galpao: { src: "/images/galpao-falcao-distribuidora-feira-de-santana.webp", width: 677, height: 510 },

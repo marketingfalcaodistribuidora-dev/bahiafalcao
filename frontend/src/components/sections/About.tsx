@@ -11,8 +11,9 @@ export function About() {
           <SectionTag number="01">A empresa</SectionTag>
           <h2 id="titulo-empresa">Uma parceria que movimenta o transporte.</h2>
           <p className="mt-6 max-w-[540px] text-[17px] leading-[27px] text-chumbo sm:text-lg sm:leading-[29px]">
-            Desde {site.foundingYear}, a {site.name} atua no mercado de autopeças. Começamos em Feira de Santana e
-            ampliamos o foco para o setor pesado, o de caminhões, carretas e de quem depende deles para trabalhar.
+            Desde {site.foundingYear}, a <strong className="font-semibold text-preto">{site.name}</strong>, também
+            conhecida como Falcão Distribuidora, atua no mercado de autopeças. Começamos em Feira de Santana e ampliamos
+            o foco para o setor pesado, o de caminhões, carretas e de quem depende deles para trabalhar.
           </p>
           <p className="mt-6 max-w-[540px] text-[17px] leading-[27px] text-chumbo sm:text-lg sm:leading-[29px]">
             Hoje reunimos um catálogo com mais de {site.catalogItems} itens e uma equipe com experiência no segmento,

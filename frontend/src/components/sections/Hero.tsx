@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { SectionTag } from "@/components/ui/SectionTag";
 import { ArrowRight, WhatsAppIcon } from "@/components/ui/icons";
 import { images } from "@/lib/images";
 import { site, whatsappLink, whatsappMessages } from "@/lib/site";
@@ -24,9 +23,6 @@ export function Hero() {
     <section id="inicio" aria-labelledby="titulo-principal" className="dk relative overflow-hidden bg-preto text-off">
       <div className="wrap grid items-center gap-8 pt-12 pb-10 sm:pt-[72px] sm:pb-14 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:pt-[88px] lg:pb-20">
         <div>
-          <SectionTag gold className="animate-up">
-            Feira de Santana · Bahia
-          </SectionTag>
           <h1 id="titulo-principal">
             <span className="block animate-rise text-[clamp(46px,7vw,100px)] leading-[.92] [animation-delay:.08s]">
               Peças para linha pesada.
@@ -57,11 +53,11 @@ export function Hero() {
         </div>
         <div className="hidden animate-up justify-end [animation-delay:.18s] lg:flex">
           <Image
-            src={images.simbolo.src}
-            width={540}
-            height={353}
+            src={images.simboloSvg.src}
+            width={images.simboloSvg.width}
+            height={images.simboloSvg.height}
             alt=""
-            sizes="540px"
+            unoptimized
             className="h-auto w-full max-w-[540px]"
           />
         </div>

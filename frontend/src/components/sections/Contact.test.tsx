@@ -25,7 +25,7 @@ describe("Contact", () => {
   it("mostra o mapa do Google Maps com carregamento adiado", () => {
     render(<Contact />);
 
-    const map = screen.getByTitle("Mapa da Falcão Distribuidora no Google Maps");
+    const map = screen.getByTitle("Mapa da Bahia Falcão Distribuidora no Google Maps");
 
     expect(map.tagName).toBe("IFRAME");
     expect(map).toHaveAttribute("src", expect.stringContaining("https://www.google.com/maps?"));

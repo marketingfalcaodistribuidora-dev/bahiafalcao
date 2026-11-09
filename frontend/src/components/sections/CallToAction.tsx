@@ -7,7 +7,7 @@ export function CallToAction() {
     <section
       id="chamada"
       aria-labelledby="titulo-chamada"
-      className="dk bg-grafite py-16 text-off sm:py-[84px] lg:py-[104px]"
+      className="dk bg-preto py-16 text-off sm:py-[84px] lg:py-[104px]"
     >
       <div className="wrap grid items-end gap-14 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
         <div>
