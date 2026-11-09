@@ -1,0 +1,29 @@
+# Dependências
+node_modules/
+
+# Testes
+coverage/
+
+# Builds
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# Variáveis de ambiente (segredos nunca vão para o Git)
+.env
+.env.local
+.env.*.local
+.env.production
+!.env.example
+
+# Claude Code: preferências pessoais
+.claude/settings.local.json
+
+# Diversos
+.vercel
+npm-debug.log*
+.DS_Store
+Thumbs.db

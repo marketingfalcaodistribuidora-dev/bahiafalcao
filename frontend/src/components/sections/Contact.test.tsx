@@ -1,0 +1,33 @@
+import { render, screen, within } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { Contact } from "@/components/sections/Contact";
+
+describe("Contact", () => {
+  it("exibe endereço, telefone, WhatsApp, Instagram e horário", () => {
+    render(<Contact />);
+
+    const info = screen.getByText("Endereço").closest("dl");
+    if (!info) throw new Error("Lista de contatos não encontrada");
+
+    expect(
+      within(info)
+        .getAllByRole("term")
+        .map((t) => t.textContent),
+    ).toEqual(["Endereço", "Telefone", "WhatsApp", "Instagram", "Horário"]);
+  });
+
+  it("permite ligar para o 0800 com um toque", () => {
+    render(<Contact />);
+
+    expect(screen.getByRole("link", { name: "0800 703 8260" })).toHaveAttribute("href", "tel:08007038260");
+  });
+
+  it("abre a rota no Google Maps em nova aba", () => {
+    render(<Contact />);
+
+    const maps = screen.getByRole("link", { name: /abrir rota no google maps/i });
+
+    expect(maps).toHaveAttribute("href", expect.stringContaining("https://www.google.com/maps/search/"));
+    expect(maps).toHaveAttribute("target", "_blank");
+  });
+});

@@ -1,0 +1,19 @@
+import type { MetadataRoute } from "next";
+import { site } from "@/lib/site";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: site.name,
+    short_name: "Falcão",
+    description: site.description,
+    start_url: "/",
+    display: "standalone",
+    background_color: "#0b0b0c",
+    theme_color: "#0b0b0c",
+    lang: "pt-BR",
+    icons: [
+      { src: "/icon", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/apple-icon", sizes: "180x180", type: "image/png" },
+    ],
+  };
+}

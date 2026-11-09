@@ -1,0 +1,244 @@
+@import "tailwindcss";
+
+/* Tokens do design (Claude Design — Falcão Distribuidora) */
+@theme {
+  --color-preto: #0b0b0c;
+  --color-grafite: #1c1c1e;
+  --color-chumbo: #3a3a3e;
+  --color-claro: #e4e4e6;
+  --color-off: #f5f4f0;
+  --color-ouro: #f8c000;
+  --color-ouro-h: #d9a400;
+  --color-ouro-t: #8a6400;
+  --color-wpp: #25d366;
+  --color-wpp-h: #1fb855;
+  --color-suave: #b5b5bb;
+  --color-texto-2: #55555b;
+  --color-apagado: #8e8e94;
+  --color-linha: rgb(11 11 12 / 0.14);
+
+  /* Breakpoints do design: celular até 700px, tablet até 1024px, menu completo a partir de 901px */
+  --breakpoint-nav: 56.3125rem;
+
+  --animate-up: up 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  /* Só movimento, sem opacidade: o texto principal já nasce visível (não atrasa o LCP). */
+  --animate-rise: rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  @keyframes rise {
+    from {
+      transform: translateY(16px);
+    }
+    to {
+      transform: none;
+    }
+  }
+  @keyframes up {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+/* Fontes carregadas via next/font (src/app/layout.tsx) */
+@theme inline {
+  --font-titulo: var(--font-barlow-condensed), "Arial Narrow", Arial, sans-serif;
+  --font-texto: var(--font-barlow), Arial, sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background: #fff;
+    color: var(--color-preto);
+    font-family: var(--font-texto);
+    font-size: 16px;
+    line-height: 24px;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-titulo);
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  h2 {
+    font-size: clamp(34px, 4.6vw, 60px);
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+  }
+  section[id] {
+    scroll-margin-top: 84px;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-ouro-t);
+    outline-offset: 3px;
+  }
+  .dk :focus-visible {
+    outline-color: var(--color-ouro);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+}
+
+/* Peças recorrentes do design */
+@layer components {
+  .wrap {
+    width: 100%;
+    max-width: 1200px;
+    margin-inline: auto;
+    padding-inline: 16px;
+  }
+  @media (min-width: 701px) {
+    .wrap {
+      padding-inline: 24px;
+    }
+  }
+  @media (min-width: 1025px) {
+    .wrap {
+      padding-inline: 48px;
+    }
+  }
+
+  .sec {
+    padding-block: 64px;
+  }
+  @media (min-width: 701px) {
+    .sec {
+      padding-block: 84px;
+    }
+  }
+  @media (min-width: 1025px) {
+    .sec {
+      padding-block: 112px;
+    }
+  }
+
+  /* Etiqueta de seção */
+  .tab {
+    display: flex;
+    width: fit-content;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 22px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    background: var(--color-preto);
+    color: var(--color-ouro);
+    font-family: var(--font-titulo);
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 18px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .tab-ouro {
+    background: var(--color-ouro);
+    color: var(--color-preto);
+  }
+
+  /* Botões */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 56px;
+    padding: 0 28px;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    font-family: var(--font-titulo);
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      background-color 200ms,
+      color 200ms,
+      border-color 200ms;
+  }
+  .btn svg {
+    width: 20px;
+    height: 20px;
+    flex: none;
+    transition: transform 200ms;
+  }
+  .btn:hover .seta {
+    transform: translateX(4px);
+  }
+  .btn-sm {
+    min-height: 44px;
+    padding: 0 18px;
+    font-size: 15px;
+  }
+  .btn-ouro {
+    background: var(--color-ouro);
+    color: var(--color-preto);
+  }
+  .btn-ouro:hover {
+    background: var(--color-ouro-h);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--color-off);
+    border-color: rgb(245 244 240 / 0.5);
+  }
+  .btn-ghost:hover {
+    border-color: var(--color-off);
+    background: rgb(245 244 240 / 0.08);
+  }
+  .btn-wpp {
+    background: var(--color-wpp);
+    color: var(--color-preto);
+  }
+  .btn-wpp:hover {
+    background: var(--color-wpp-h);
+  }
+
+  /* Legenda sobre foto */
+  .cap {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    padding: 8px 14px;
+    border-radius: 0 12px 0 0;
+    background: var(--color-preto);
+    color: var(--color-ouro);
+    font-family: var(--font-titulo);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* Número vazado dos segmentos */
+  .num {
+    font-family: var(--font-titulo);
+    font-weight: 700;
+    line-height: 0.9;
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--color-ouro);
+  }
+}
