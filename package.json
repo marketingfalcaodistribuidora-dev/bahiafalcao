@@ -9,6 +9,7 @@
     "node": ">=22"
   },
   "scripts": {
+    "prepare": "node -e \"try{require('child_process').execSync('git config core.hooksPath .githooks',{stdio:'ignore'})}catch{}\"",
     "dev": "npm run dev -w frontend",
     "build": "npm run build -w frontend",
     "start": "npm run start -w frontend",

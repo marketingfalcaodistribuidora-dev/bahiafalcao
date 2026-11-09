@@ -1,0 +1,40 @@
+# Portão de qualidade: roda em máquina limpa a cada push e pull request.
+# Na Vercel, configure "Deployment Checks" para exigir este check antes de publicar em produção.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualidade:
+    name: Qualidade (formatação, lint, tipos, testes, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instalar dependências (lockfile exato)
+        run: npm ci
+
+      - name: Verificação completa
+        run: npm run check
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Simular build da Vercel (produção)
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          NEXT_PUBLIC_VERCEL_ENV: production
+          NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL: bahiafalcao.vercel.app
