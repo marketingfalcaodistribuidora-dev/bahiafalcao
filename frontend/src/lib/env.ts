@@ -9,6 +9,8 @@ export type SiteEnv = {
 export const OFFICIAL_SITE_URL = "https://www.bahiafalcao.com.br";
 /** Mesmo domínio sem www: redireciona para o oficial. */
 export const APEX_HOST = new URL(OFFICIAL_SITE_URL).hostname.replace(/^www\./, "");
+/** Domínio antigo da empresa: redireciona para o oficial. */
+export const LEGACY_HOSTS = ["falcaodistribuidora.com", "www.falcaodistribuidora.com"];
 
 /**
  * URL pública do site: domínio definido manualmente > domínio oficial (produção na Vercel)

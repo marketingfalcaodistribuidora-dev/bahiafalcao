@@ -30,16 +30,16 @@ describe("buildJsonLd", () => {
 
     expect(business.telephone).toBe("+55 800 703 8260");
     expect(business.sameAs).toEqual(["https://instagram.com/falcaodistribuidora.br"]);
-    expect(business.openingHours).toEqual(["Mo-Sa 08:00-12:00", "Mo-Sa 14:00-18:00"]);
+    expect(business.openingHours).toEqual(["Mo-Sa 08:00-12:00", "Mo-Fr 14:00-18:00"]);
   });
 
   it("descreve o horário no formato estruturado que o Google usa para 'aberto agora'", () => {
     const business = findNode("AutoPartsStore");
-    const dias = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const segASex = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
     expect(business.openingHoursSpecification).toEqual([
-      { "@type": "OpeningHoursSpecification", dayOfWeek: dias, opens: "08:00", closes: "12:00" },
-      { "@type": "OpeningHoursSpecification", dayOfWeek: dias, opens: "14:00", closes: "18:00" },
+      { "@type": "OpeningHoursSpecification", dayOfWeek: [...segASex, "Saturday"], opens: "08:00", closes: "12:00" },
+      { "@type": "OpeningHoursSpecification", dayOfWeek: segASex, opens: "14:00", closes: "18:00" },
     ]);
   });
 

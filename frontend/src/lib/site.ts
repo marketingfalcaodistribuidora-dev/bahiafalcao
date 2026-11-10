@@ -66,13 +66,13 @@ export const site = {
     /** Link curto do Perfil da Empresa no Google (Google Maps). */
     googleBusinessUrl: "https://maps.app.goo.gl/Kc1BUprfi7kq2YGp7",
     /** Texto exibido na página. Ex.: "Seg. a sex., 8h às 18h · Sáb., 8h às 12h" */
-    hoursText: "Seg. a sáb., 8h às 12h e 14h às 18h",
+    hoursText: "Seg. a sex., 8h às 12h e 14h às 18h · Sáb., 8h às 12h",
     /** Formato schema.org para o Google. Ex.: ["Mo-Fr 08:00-18:00", "Sa 08:00-12:00"] */
-    openingHours: ["Mo-Sa 08:00-12:00", "Mo-Sa 14:00-18:00"] as string[],
+    openingHours: ["Mo-Sa 08:00-12:00", "Mo-Fr 14:00-18:00"] as string[],
     /** Mesmo horário, no formato estruturado preferido pelo Google ("aberto agora"). */
     openingHoursSpec: [
       { days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], opens: "08:00", closes: "12:00" },
-      { days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], opens: "14:00", closes: "18:00" },
+      { days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], opens: "14:00", closes: "18:00" },
     ],
   },
 };

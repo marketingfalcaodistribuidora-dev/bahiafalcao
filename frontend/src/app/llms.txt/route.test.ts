@@ -16,7 +16,7 @@ describe("/llms.txt", () => {
     expect(text).toContain("Rua Venceslau Guimarães, 31 - Sim, Feira de Santana - BA, CEP 44085-520");
     expect(text).toContain("0800 703 8260");
     expect(text).toContain("https://wa.me/557536228260");
-    expect(text).toContain("Seg. a sáb., 8h às 12h e 14h às 18h");
+    expect(text).toContain("Seg. a sex., 8h às 12h e 14h às 18h · Sáb., 8h às 12h");
     expect(text).toContain("Área atendida: toda a Bahia (sede em Feira de Santana)");
   });
 });

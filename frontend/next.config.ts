@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import { APEX_HOST, OFFICIAL_SITE_URL } from "./src/lib/env";
+import { APEX_HOST, LEGACY_HOSTS, OFFICIAL_SITE_URL } from "./src/lib/env";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
@@ -16,6 +16,13 @@ const nextConfig: NextConfig = {
         destination: `${OFFICIAL_SITE_URL}/:path*`,
         permanent: true,
       },
+      // falcaodistribuidora.com (domínio antigo) -> domínio oficial
+      ...LEGACY_HOSTS.map((host) => ({
+        source: "/:path*",
+        has: [{ type: "host" as const, value: host }],
+        destination: `${OFFICIAL_SITE_URL}/:path*`,
+        permanent: true,
+      })),
     ];
   },
   async headers() {

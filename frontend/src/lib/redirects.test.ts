@@ -12,4 +12,18 @@ describe("redirecionamentos de domínio", () => {
       permanent: true,
     });
   });
+
+  it.each(["falcaodistribuidora.com", "www.falcaodistribuidora.com"])(
+    "leva o domínio antigo %s para o domínio oficial, de forma permanente e mantendo o caminho",
+    async (host) => {
+      const redirects = (await nextConfig.redirects?.()) ?? [];
+
+      expect(redirects).toContainEqual({
+        source: "/:path*",
+        has: [{ type: "host", value: host }],
+        destination: "https://www.bahiafalcao.com.br/:path*",
+        permanent: true,
+      });
+    },
+  );
 });
