@@ -9,6 +9,7 @@ export default function robots(): MetadataRoute.Robots {
 
   return {
     rules: { userAgent: "*", allow: "/" },
+    // llms.txt (resumo para buscadores com IA) fica em /llms.txt
     sitemap: `${site.url}/sitemap.xml`,
     host: site.url,
   };

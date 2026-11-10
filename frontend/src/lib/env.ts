@@ -5,11 +5,18 @@ export type SiteEnv = {
   NEXT_PUBLIC_VERCEL_ENV?: string;
 };
 
+/** Domínio oficial do site (versão canônica, com www). */
+export const OFFICIAL_SITE_URL = "https://www.bahiafalcao.com.br";
+/** Mesmo domínio sem www: redireciona para o oficial. */
+export const APEX_HOST = new URL(OFFICIAL_SITE_URL).hostname.replace(/^www\./, "");
+
 /**
- * URL pública do site: domínio definido manualmente > domínio de produção da Vercel > localhost.
+ * URL pública do site: domínio definido manualmente > domínio oficial (produção na Vercel)
+ * > domínio de produção da Vercel (previews) > localhost.
  */
 export function resolveSiteUrl(env: SiteEnv): string {
   if (env.NEXT_PUBLIC_SITE_URL) return env.NEXT_PUBLIC_SITE_URL.replace(/\/+$/, "");
+  if (env.NEXT_PUBLIC_VERCEL_ENV === "production") return OFFICIAL_SITE_URL;
   if (env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL) return `https://${env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL}`;
   return "http://localhost:3000";
 }

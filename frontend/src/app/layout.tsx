@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   creator: site.name,
   publisher: site.name,
   category: "Autopeças",
-  alternates: { canonical: "/" },
+  alternates: { canonical: "/", languages: { "pt-BR": "/" } },
   openGraph: {
     type: "website",
     locale: "pt_BR",

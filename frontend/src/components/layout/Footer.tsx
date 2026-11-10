@@ -22,8 +22,8 @@ export function Footer() {
             className="mb-5 h-12 w-auto sm:h-14"
           />
           <p className="max-w-[320px] text-[15px] leading-6">
-            Autopeças e ferramentas para caminhões, carretas e veículos pesados. Atendimento a partir de Feira de
-            Santana, Bahia.
+            Autopeças e ferramentas para caminhões, carretas e veículos pesados. Sede em Feira de Santana, com
+            distribuição para toda a Bahia.
           </p>
         </div>
 

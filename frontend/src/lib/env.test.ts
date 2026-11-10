@@ -23,6 +23,15 @@ describe("resolveSiteUrl", () => {
     expect(url).toBe("https://www.falcao.com.br");
   });
 
+  it("em produção na Vercel, usa o domínio oficial e não o endereço .vercel.app", () => {
+    const url = resolveSiteUrl({
+      NEXT_PUBLIC_VERCEL_ENV: "production",
+      NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL: "frontend-one-steel-76.vercel.app",
+    });
+
+    expect(url).toBe("https://www.bahiafalcao.com.br");
+  });
+
   it("usa localhost no desenvolvimento, sem nenhuma variável", () => {
     const url = resolveSiteUrl({});
 

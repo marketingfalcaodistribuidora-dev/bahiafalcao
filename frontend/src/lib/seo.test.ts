@@ -33,6 +33,73 @@ describe("buildJsonLd", () => {
     expect(business.openingHours).toEqual(["Mo-Sa 08:00-12:00", "Mo-Sa 14:00-18:00"]);
   });
 
+  it("descreve o horário no formato estruturado que o Google usa para 'aberto agora'", () => {
+    const business = findNode("AutoPartsStore");
+    const dias = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+    expect(business.openingHoursSpecification).toEqual([
+      { "@type": "OpeningHoursSpecification", dayOfWeek: dias, opens: "08:00", closes: "12:00" },
+      { "@type": "OpeningHoursSpecification", dayOfWeek: dias, opens: "14:00", closes: "18:00" },
+    ]);
+  });
+
+  it("usa a logo quadrada oficial, no tamanho mínimo exigido pelo Google", () => {
+    const business = findNode("AutoPartsStore");
+
+    expect(business.logo).toEqual({
+      "@type": "ImageObject",
+      url: "http://localhost:3000/images/bahia-falcao-distribuidora-logo.png",
+      width: 512,
+      height: 512,
+    });
+  });
+
+  it("lista os segmentos atendidos como catálogo de produtos", () => {
+    const business = findNode("AutoPartsStore");
+    const catalog = business.hasOfferCatalog as { name: string; itemListElement: { itemOffered: { name: string } }[] };
+
+    expect(catalog.name).toBe("Autopeças e ferramentas para linha pesada");
+    expect(catalog.itemListElement.map((o) => o.itemOffered.name)).toEqual([
+      "Autopeças para linha pesada",
+      "Peças para carretas",
+      "Ferramentas",
+    ]);
+  });
+
+  it("declara a sede em Feira de Santana e o atendimento em toda a Bahia", () => {
+    const business = findNode("AutoPartsStore");
+
+    expect(business.areaServed).toEqual([
+      {
+        "@type": "State",
+        name: "Bahia",
+        containedInPlace: { "@type": "Country", name: "Brasil" },
+      },
+      {
+        "@type": "City",
+        name: "Feira de Santana",
+        containedInPlace: { "@type": "State", name: "Bahia" },
+      },
+    ]);
+    expect((business.address as { addressLocality: string }).addressLocality).toBe("Feira de Santana");
+  });
+
+  it("informa moeda e idioma do atendimento", () => {
+    const business = findNode("AutoPartsStore");
+
+    expect(business.currenciesAccepted).toBe("BRL");
+    expect(business.availableLanguage).toBe("pt-BR");
+  });
+
+  it("descreve a página inicial ligada à empresa e ao site", () => {
+    const page = findNode("WebPage");
+
+    expect(page.name).toBe("Autopeças Linha Pesada | Bahia Falcão");
+    expect(page.inLanguage).toBe("pt-BR");
+    expect(page.isPartOf).toEqual({ "@id": "http://localhost:3000/#website" });
+    expect(page.about).toEqual({ "@id": "http://localhost:3000/#empresa" });
+  });
+
   it("informa ao Google os nomes alternativos da empresa", () => {
     const business = findNode("AutoPartsStore");
 

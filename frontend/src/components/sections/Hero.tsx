@@ -7,7 +7,7 @@ const facts = [
   { value: site.foundingYear, label: "Atuação no mercado de autopeças", big: true },
   { value: `${site.catalogItems}+`, label: "Itens no catálogo", big: true },
   { value: "Linha pesada", label: "Caminhões e carretas", big: false },
-  { value: "Feira de Santana", label: "Sede e estoque na Bahia", big: false },
+  { value: "Feira de Santana", label: "Sede · distribuição para toda a Bahia", big: false },
 ];
 
 // Bordas e recuos de cada item: 2 colunas no celular e tablet, 4 no desktop.
@@ -33,7 +33,8 @@ export function Hero() {
           </h1>
           <p className="mt-[22px] mb-7 max-w-[560px] animate-rise text-[17px] leading-[27px] text-suave [animation-delay:.28s] sm:mt-7 sm:mb-9 sm:text-[19px] sm:leading-[30px]">
             Na {site.name}, você encontra autopeças e ferramentas para o segmento de linha pesada, com atendimento
-            especializado e compromisso com quem mantém o transporte em movimento.
+            especializado e compromisso com quem mantém o transporte em movimento. Com sede em Feira de Santana,
+            distribuímos para toda a Bahia.
           </p>
           <div className="flex animate-up flex-wrap gap-3.5 [animation-delay:.38s]">
             <a

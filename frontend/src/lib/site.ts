@@ -17,10 +17,10 @@ export const site = {
   /** false nas URLs de preview da Vercel (não indexar). */
   indexable: isIndexable(runtimeEnv),
   /** Até 60 caracteres, palavra-chave primeiro (coberto por teste). */
-  title: "Autopeças Linha Pesada em Feira de Santana | Bahia Falcão",
+  title: "Autopeças Linha Pesada | Bahia Falcão",
   /** Entre 120 e 160 caracteres, com o nome completo (coberto por teste). */
   description:
-    "Bahia Falcão Distribuidora: autopeças e ferramentas para caminhões e carretas em Feira de Santana, BA. Mais de 7 mil itens desde 2006. Fale no WhatsApp.",
+    "Bahia Falcão Distribuidora: autopeças e ferramentas para linha pesada, com sede em Feira de Santana e distribuição para toda a Bahia. Fale no WhatsApp.",
   keywords: [
     "Bahia Falcão Distribuidora",
     "Bahia Falcão",
@@ -37,6 +37,8 @@ export const site = {
 
   foundingYear: "2006",
   catalogItems: "7 mil",
+  /** Segmentos atendidos (mesmos títulos da seção Segmentos). */
+  segments: ["Autopeças para linha pesada", "Peças para carretas", "Ferramentas"],
 
   address: {
     /** Mesmo endereço do Perfil da Empresa no Google (consistência de NAP para SEO local). */
@@ -63,6 +65,11 @@ export const site = {
     hoursText: "Seg. a sáb., 8h às 12h e 14h às 18h",
     /** Formato schema.org para o Google. Ex.: ["Mo-Fr 08:00-18:00", "Sa 08:00-12:00"] */
     openingHours: ["Mo-Sa 08:00-12:00", "Mo-Sa 14:00-18:00"] as string[],
+    /** Mesmo horário, no formato estruturado preferido pelo Google ("aberto agora"). */
+    openingHoursSpec: [
+      { days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], opens: "08:00", closes: "12:00" },
+      { days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], opens: "14:00", closes: "18:00" },
+    ],
   },
 };
 

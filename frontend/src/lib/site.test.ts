@@ -38,11 +38,9 @@ describe("metadados para o Google", () => {
     expect(site.title.length).toBeLessThanOrEqual(60);
   });
 
-  it("começa o título pela palavra-chave principal, cita a cidade e termina com a marca", () => {
-    expect(site.title).toMatch(/^Autopeças/);
-    expect(site.title).toContain("Linha Pesada");
-    expect(site.title).toContain("Feira de Santana");
-    expect(site.title).toMatch(/Bahia Falcão$/);
+  it("começa o título pela palavra-chave principal e termina com a marca, sem citar a cidade", () => {
+    expect(site.title).toBe("Autopeças Linha Pesada | Bahia Falcão");
+    expect(site.title).not.toContain("Feira de Santana");
   });
 
   it("tem descrição entre 120 e 160 caracteres", () => {
@@ -52,6 +50,11 @@ describe("metadados para o Google", () => {
 
   it("cita o nome completo da empresa na descrição", () => {
     expect(site.description).toContain("Bahia Falcão Distribuidora");
+  });
+
+  it("informa na descrição a sede em Feira de Santana e a distribuição para toda a Bahia", () => {
+    expect(site.description).toContain("sede em Feira de Santana");
+    expect(site.description).toContain("distribuição para toda a Bahia");
   });
 });
 
