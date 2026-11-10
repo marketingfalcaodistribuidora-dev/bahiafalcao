@@ -29,11 +29,7 @@ export function buildJsonLd() {
       width: images.logoQuadrada.width,
       height: images.logoQuadrada.height,
     },
-    image: [
-      `${site.url}${images.fachada.src}`,
-      `${site.url}${images.galpao.src}`,
-      `${site.url}${images.atendimento.src}`,
-    ],
+    image: [`${site.url}${images.fachada.src}`, `${site.url}${images.bahiaFalcao.src}`],
     foundingDate: site.foundingYear,
     address: {
       "@type": "PostalAddress",

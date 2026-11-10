@@ -10,7 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
       images: [
         `${site.url}/images/fachada-falcao-distribuidora-feira-de-santana.webp`,
-        `${site.url}/images/galpao-falcao-distribuidora-feira-de-santana.webp`,
+        `${site.url}/images/bahia-falcao-distribuidora-de-ferramentas.webp`,
       ],
     },
   ];
