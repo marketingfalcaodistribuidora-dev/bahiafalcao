@@ -44,6 +44,13 @@ export const CloseIcon = (p: IconProps) => (
   </Stroke>
 );
 
+export const GlobeIcon = (p: IconProps) => (
+  <Stroke strokeWidth={1.75} {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" />
+  </Stroke>
+);
+
 export const PinIcon = (p: IconProps) => (
   <Stroke strokeWidth={1.75} {...p}>
     <path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z" />
@@ -100,6 +107,14 @@ export const LinkIcon = (p: IconProps) => (
     <circle cx="16" cy="15" r="4" />
   </Stroke>
 );
+
+export function TikTokIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden focusable={false} {...props}>
+      <path d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48Z" />
+    </svg>
+  );
+}
 
 export function WhatsAppIcon(props: IconProps) {
   return (

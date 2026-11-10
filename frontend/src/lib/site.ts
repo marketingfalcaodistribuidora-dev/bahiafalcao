@@ -61,6 +61,10 @@ export const site = {
     phone: "0800 703 8260",
     /** Sem @. Ex.: "falcaodistribuidora" */
     instagram: "falcaodistribuidora.br",
+    /** Sem @. */
+    tiktok: "falcaodistribuidora.br",
+    /** Link curto do Perfil da Empresa no Google (Google Maps). */
+    googleBusinessUrl: "https://maps.app.goo.gl/Kc1BUprfi7kq2YGp7",
     /** Texto exibido na página. Ex.: "Seg. a sex., 8h às 18h · Sáb., 8h às 12h" */
     hoursText: "Seg. a sáb., 8h às 12h e 14h às 18h",
     /** Formato schema.org para o Google. Ex.: ["Mo-Fr 08:00-18:00", "Sa 08:00-12:00"] */
@@ -82,6 +86,7 @@ export const whatsappMessages = {
   carretas: "Olá! Gostaria de consultar peças para carretas com a equipe da Falcão Distribuidora.",
   ferramentas: "Olá! Gostaria de consultar ferramentas com a equipe da Falcão Distribuidora.",
   peca: "Olá! Gostaria de consultar a disponibilidade de uma peça com a equipe da Falcão Distribuidora.",
+  instagram: "Olá! Vim pelo Instagram e gostaria de falar com a equipe da Bahia Falcão Distribuidora.",
 } as const;
 
 export const navLinks = [

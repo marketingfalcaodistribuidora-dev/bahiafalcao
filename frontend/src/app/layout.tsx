@@ -1,8 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow, Barlow_Condensed } from "next/font/google";
-import { FloatingActions } from "@/components/layout/FloatingActions";
-import { Footer } from "@/components/layout/Footer";
-import { Header } from "@/components/layout/Header";
 import { buildJsonLd, jsonLdScript } from "@/lib/seo";
 import { site } from "@/lib/site";
 import "./globals.css";
@@ -83,10 +80,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         >
           Pular para o conteúdo
         </a>
-        <Header />
         {children}
-        <Footer />
-        <FloatingActions />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(buildJsonLd()) }} />
       </body>
     </html>

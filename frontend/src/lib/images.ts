@@ -2,6 +2,8 @@
 export const images = {
   /** Logo quadrada oficial (Bahia Falcão Distribuidora): dados estruturados do Google. */
   logoQuadrada: { src: "/images/bahia-falcao-distribuidora-logo.png", width: 512, height: 512 },
+  /** Logo "Falcão Distribuidora" sem fundo nem moldura: página de links (/links). */
+  logoLinks: { src: "/images/falcao-distribuidora-logo-links.png", width: 564, height: 642 },
   /** Logo vertical (símbolo acima do nome). */
   logo: { src: "/images/falcao-distribuidora-logo.png", width: 690, height: 786 },
   /** Logo horizontal "Falcão Distribuidora" com fundo transparente: cabeçalho e rodapé. */
