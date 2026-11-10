@@ -63,7 +63,19 @@ export function Contact() {
           },
         ]
       : []),
-    ...(contact.hoursText ? [{ label: "Horário", Icon: ClockIcon, content: contact.hoursText }] : []),
+    ...(contact.hoursLines.length
+      ? [
+          {
+            label: "Horário",
+            Icon: ClockIcon,
+            content: contact.hoursLines.map((line) => (
+              <span key={line} className="block">
+                {line}
+              </span>
+            )),
+          },
+        ]
+      : []),
   ];
 
   return (

@@ -41,7 +41,16 @@ export function Footer() {
         <div>
           <h2 className={heading}>Contato</h2>
           <ul className="text-[15px] leading-7">
-            {contact.hoursText && <li>Horário: {contact.hoursText}</li>}
+            {contact.hoursLines.length > 0 && (
+              <li>
+                Horário:
+                {contact.hoursLines.map((line) => (
+                  <span key={line} className="block">
+                    {line}
+                  </span>
+                ))}
+              </li>
+            )}
             <li>
               WhatsApp:{" "}
               <a className={link} href={whatsappLink(whatsappMessages.contato)} target="_blank" rel="noopener">

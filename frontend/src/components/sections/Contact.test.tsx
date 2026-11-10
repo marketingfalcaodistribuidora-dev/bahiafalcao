@@ -16,6 +16,13 @@ describe("Contact", () => {
     ).toEqual(["Endereço", "Telefone", "WhatsApp", "Instagram", "Horário"]);
   });
 
+  it("mostra o horário de sábado em linha separada", () => {
+    render(<Contact />);
+
+    expect(screen.getByText("Seg. a sex., 8h às 12h e 14h às 18h")).toBeInTheDocument();
+    expect(screen.getByText("Sáb., 8h às 12h")).toBeInTheDocument();
+  });
+
   it("permite ligar para o 0800 com um toque", () => {
     render(<Contact />);
 
