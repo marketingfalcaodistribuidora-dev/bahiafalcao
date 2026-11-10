@@ -54,16 +54,24 @@ describe("buildJsonLd", () => {
     });
   });
 
-  it("lista os segmentos atendidos como catálogo de produtos", () => {
+  it("lista os segmentos como subcatálogos (categorias), não como produtos com preço", () => {
     const business = findNode("AutoPartsStore");
-    const catalog = business.hasOfferCatalog as { name: string; itemListElement: { itemOffered: { name: string } }[] };
 
-    expect(catalog.name).toBe("Autopeças e ferramentas para linha pesada");
-    expect(catalog.itemListElement.map((o) => o.itemOffered.name)).toEqual([
-      "Autopeças para linha pesada",
-      "Peças para carretas",
-      "Ferramentas",
-    ]);
+    expect(business.hasOfferCatalog).toEqual({
+      "@type": "OfferCatalog",
+      name: "Autopeças e ferramentas para linha pesada",
+      itemListElement: [
+        { "@type": "OfferCatalog", name: "Autopeças para linha pesada" },
+        { "@type": "OfferCatalog", name: "Peças para carretas" },
+        { "@type": "OfferCatalog", name: "Ferramentas" },
+      ],
+    });
+  });
+
+  it("não declara nenhum Product, que exigiria preço, avaliações ou nota (erro no Search Console)", () => {
+    const json = JSON.stringify(buildJsonLd());
+
+    expect(json).not.toContain('"@type":"Product"');
   });
 
   it("declara a sede em Feira de Santana e o atendimento em toda a Bahia", () => {

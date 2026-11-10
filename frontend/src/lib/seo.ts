@@ -49,10 +49,8 @@ export function buildJsonLd() {
     hasOfferCatalog: {
       "@type": "OfferCatalog",
       name: "Autopeças e ferramentas para linha pesada",
-      itemListElement: site.segments.map((name) => ({
-        "@type": "Offer",
-        itemOffered: { "@type": "Product", name },
-      })),
+      // Segmentos são categorias (subcatálogos), não produtos: Product exigiria preço/avaliações.
+      itemListElement: site.segments.map((name) => ({ "@type": "OfferCatalog", name })),
     },
     currenciesAccepted: "BRL",
     availableLanguage: "pt-BR",
