@@ -1,5 +1,7 @@
 import { isIndexable, resolveSiteUrl, runtimeEnv } from "@/lib/env";
 
+const hoursLines = ["Seg. a sex., 8h às 12h e 14h às 18h", "Sáb., 8h às 12h"];
+
 /**
  * Dados da empresa num único lugar.
  * Tudo o que aparece no site, nos metadados e nos dados estruturados (SEO) sai daqui.
@@ -65,8 +67,10 @@ export const site = {
     tiktok: "falcaodistribuidora.br",
     /** Link curto do Perfil da Empresa no Google (Google Maps). */
     googleBusinessUrl: "https://maps.app.goo.gl/Kc1BUprfi7kq2YGp7",
-    /** Texto exibido na página. Ex.: "Seg. a sex., 8h às 18h · Sáb., 8h às 12h" */
-    hoursText: "Seg. a sex., 8h às 12h e 14h às 18h · Sáb., 8h às 12h",
+    /** Horário exibido na página, uma linha por período. */
+    hoursLines: hoursLines as string[],
+    /** Mesmo horário em uma linha só (llms.txt). */
+    hoursText: hoursLines.join(" · "),
     /** Formato schema.org para o Google. Ex.: ["Mo-Fr 08:00-18:00", "Sa 08:00-12:00"] */
     openingHours: ["Mo-Sa 08:00-12:00", "Mo-Fr 14:00-18:00"] as string[],
     /** Mesmo horário, no formato estruturado preferido pelo Google ("aberto agora"). */
