@@ -31,8 +31,8 @@ O objetivo desta etapa é ter a **base de dados e o serviço do catálogo**, que
 - **Variação:** cada item vendável dentro de um produto (por exemplo, as 23 medidas do Anel Elástico Externo). Cada variação tem um **código interno**.
 - **Código interno:** o código em vermelho no PDF. É de **uso exclusivo da equipe** e **nunca** aparece ao público.
 - **Referência:** código de terceiros que identifica a peça: original da montadora, similar ou do fabricante (os que vêm rotulados "Ref.", "Original", "Cód. original", "Similar" no PDF). É **público**.
-- **Aplicação:** onde a peça serve: montadora, modelo, ano, posição (dianteira/traseira, eixo) e lado (direito/esquerdo).
-- **Especificação:** dado técnico em forma de atributo e valor (rosca M16, haste 250 mm, 24 V, material).
+- **Aplicação:** onde a peça serve (montadora, modelo, ano, posição, lado), em **texto livre com formatação simples** (negrito, listas, subtítulos). As **montadoras** citadas também ficam marcadas no produto, para o filtro do site.
+- **Especificação:** dados técnicos (rosca M16, haste 250 mm, 24 V, material), em **texto livre com formatação simples**.
 - **Marca:** fabricante da peça (Eckisil, IABV, Master…), montadora (Mercedes-Benz, Volvo…) ou implemento (Randon, Guerra…), com sua logo.
 - **Categoria:** as categorias do sumário do PDF (41) mais Lançamentos, organizadas em **grupos**.
 
@@ -71,9 +71,9 @@ Como **cliente**, quero buscar pelo nome, por uma referência ou por uma marca, 
 ### H4: Ver o detalhe de um produto (site público)
 Como **cliente**, quero ver todas as informações de um produto, para confirmar que é a peça certa antes de chamar no WhatsApp.
 
-- **CA4.1:** Dado o endereço público de um produto, quando o abro, então recebo nome legível, nome como no catálogo, categoria e grupo, fotos, marcas/logos, variações (descrição e referências de cada uma), aplicações (montadora, modelo, ano, posição, lado), especificações técnicas, observações, embalagem e selo "Novo", quando houver.
+- **CA4.1:** Dado o endereço público de um produto, quando o abro, então recebo nome legível, categorias (com a principal) e grupo, fotos, marcas/logos, variações (descrição e referências de cada uma), aplicação e especificações técnicas (texto formatado), observações, embalagem e selo "Novo", quando houver.
 - **CA4.2:** Dado qualquer resposta pública, então ela **nunca** contém código interno, valor do imposto, status de revisão, página do PDF, texto original do PDF nem pendências.
-- **CA4.5:** Dado a variação "ANEL ELAST EXTERNO 10 IMP (6,5)", quando a vejo no site, então ela aparece como importada, com nome sem "IMP (6,5)", e o valor 6,5 não aparece em lugar nenhum.
+- **CA4.5:** Dado a variação "ANEL ELAST EXTERNO 10 IMP (6,5)", quando a vejo no site, então o produto aparece na categoria **Importados**, com nome sem "IMP (6,5)", e o valor 6,5 não aparece em lugar nenhum.
 - **CA4.3:** Dado um produto, quando o abro, então recebo os dados para a mensagem do WhatsApp: **nome** do produto e, se escolhida, a **variação** e a **referência** dela. Nunca o código interno.
 - **CA4.4:** Dado um endereço de produto inexistente ou despublicado, quando o abro, então recebo "não encontrado". Se o produto foi apenas renomeado, recebo o novo endereço para redirecionamento permanente (ver H6).
 
@@ -103,16 +103,17 @@ Como **equipe de cadastro**, quero que o modelo de dados já permita criar, edit
 
 - **CA7.1:** Dado um produto, então ele tem situação (rascunho, publicado, inativo), data de criação, data de última alteração e origem (importado do PDF ou criado no cadastro).
 - **CA7.2:** Dado qualquer categoria nova (fora das 41), quando cadastrada, então os produtos dela ganham as mesmas capacidades de busca, filtro e SEO, sem mudança na estrutura.
-- **CA7.3:** Dado especificações de produtos de categorias diferentes (parafuso, cuíca, lâmpada), então todas cabem na mesma estrutura de atributo e valor, e cada categoria pode ter uma lista de atributos sugeridos.
+- **CA7.3:** Dado produtos de categorias diferentes (parafuso, cuíca, lâmpada), então aplicação e especificações cabem no mesmo formato (texto formatado), e cada categoria pode ter um **modelo de texto** de especificações que já vem preenchido ao cadastrar. *(Ajustado em 2026-11-11: texto livre em vez de atributo e valor.)*
 
 ## 5. Regras de negócio
 
 - **R1, o PDF é a referência principal:** em caso de divergência entre fontes, vale o PDF, até a equipe alterar pelo cadastro. O nome como está no catálogo é sempre guardado.
 - **R2, sigilo dos dados internos:** o código interno, o **valor do imposto** e os dados de controle da importação **nunca** saem em respostas públicas, nem em dados para buscadores.
-- **R3, nome legível:** cada produto e variação tem um nome legível (abreviações do PDF por extenso, como "ARR" → "Arruela", "PF SX" → "Parafuso sextavado", "LD/LE" → "lado direito/esquerdo"). O site exibe o nome por extenso, e o nome do catálogo continua guardado e pesquisável (decisão E6).
+- **R3, nome legível:** cada produto e variação tem um nome legível (abreviações do PDF por extenso, como "ARR" → "Arruela", "PF SX" → "Parafuso sextavado", "LD/LE" → "lado direito/esquerdo"). O site exibe o nome por extenso, e o nome do catálogo continua guardado e pesquisável (decisão E6). O nome do catálogo existe só nos produtos importados do PDF, para a busca; ele não é exibido nem editado no painel (spec 003).
 - **R4, categorias:** as categorias são as do sumário do PDF (pág. 2) mais Lançamentos. Na importação, a página do PDF define a categoria, pelo título impresso ou, sem título, pela posição no sumário.
+- **R8, textos com formatação simples:** aplicação, especificações e observações aceitam **negrito** (`**texto**`), listas (linhas com `- `) e subtítulos (`## `). O site exibe o texto já formatado; nenhum outro tipo de código é aceito.
 - **R7, referência ligada a uma marca:** toda referência guarda **de qual marca ela é** (montadora como Mercedes-Benz e Volvo, ou fabricante como SILC, Master e Fras-le) e o **tipo** (original, similar, equivalente). Essas marcas entram no filtro de marcas, e a busca acha o produto pela marca ou pelo código dela.
-- **R6, importados e imposto:** quando o nome no PDF traz "IMP (x,xx)", a variação fica marcada como **importada** (informação pública) e o valor entre parênteses é guardado como **valor do imposto** (informação interna). "IMP (x,xx)" sai do nome exibido ao público.
+- **R6, importados e imposto:** quando o nome no PDF traz "IMP (x,xx)", o produto entra na **categoria Importados** (informação pública; não há marcação separada de "importado") e o valor entre parênteses é guardado como **valor do imposto** da variação (informação interna). *(Ajustado em 2026-11-11 a pedido do responsável: importado é uma categoria.)* "IMP (x,xx)" sai do nome exibido ao público.
 - **R5, lançamentos:** produtos das páginas "LANÇAMENTO" recebem o selo "Novo" **e** ficam na sua categoria de peça, e aparecem no filtro "Novidades" (decisão E4).
 
 ## 6. Requisitos não funcionais

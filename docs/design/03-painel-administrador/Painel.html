@@ -1,0 +1,967 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Painel Falcão (protótipo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: barra lateral escura fixa + área de trabalho clara; telas por hash (#inicio, #produtos...) */
+:root{
+  --lateral:#0b0b0c; --lateral-2:#1c1c1e; --lateral-txt:#c9c9ce; --lateral-linha:#2a2a2e;
+  --fundo:#f6f5f1; --superficie:#ffffff; --superficie-2:#f1f0eb; --linha:#e3e1da; --linha-forte:#cfccc3;
+  --texto:#16161a; --texto-2:#53535a; --texto-3:#6c6c73;
+  --ouro:#f8c000; --ouro-h:#e0ad00; --ouro-txt:#7a5900; --ouro-fundo:#fff6d6;
+  --ok:#1f7a4d; --ok-fundo:#e3f4ea; --alerta:#9a5b00; --alerta-fundo:#fdf0d9; --erro:#b42318; --erro-fundo:#fdeceb; --info:#2d5bba; --info-fundo:#e8eefb;
+  --sombra:0 1px 2px rgb(20 20 25 / .06), 0 8px 24px rgb(20 20 25 / .06);
+  --f-titulo:'Barlow Condensed','Arial Narrow',Arial,sans-serif; --f-texto:Barlow,Arial,sans-serif; --f-codigo:'IBM Plex Mono',Consolas,monospace;
+  --raio:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --fundo:#111113; --superficie:#1a1a1d; --superficie-2:#222226; --linha:#2e2e33; --linha-forte:#3c3c42;
+  --texto:#ededef; --texto-2:#b0b0b7; --texto-3:#8e8e96; --ouro-txt:#f8c000; --ouro-fundo:#3a2f07;
+  --ok:#5cc58e; --ok-fundo:#14301f; --alerta:#f0b14a; --alerta-fundo:#3a2a0e; --erro:#ff7b6e; --erro-fundo:#3b1714; --info:#8fb0ff; --info-fundo:#1a2440;
+  --sombra:0 1px 2px rgb(0 0 0 / .4); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --fundo:#111113; --superficie:#1a1a1d; --superficie-2:#222226; --linha:#2e2e33; --linha-forte:#3c3c42;
+  --texto:#ededef; --texto-2:#b0b0b7; --texto-3:#8e8e96; --ouro-txt:#f8c000; --ouro-fundo:#3a2f07;
+  --ok:#5cc58e; --ok-fundo:#14301f; --alerta:#f0b14a; --alerta-fundo:#3a2a0e; --erro:#ff7b6e; --erro-fundo:#3b1714; --info:#8fb0ff; --info-fundo:#1a2440;
+  --sombra:0 1px 2px rgb(0 0 0 / .4); color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--fundo);color:var(--texto);font:400 15px/1.5 var(--f-texto);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--f-titulo);font-weight:700;margin:0;text-wrap:balance;letter-spacing:.005em}
+h1{font-size:30px;line-height:1.1} h2{font-size:22px;line-height:1.15} h3{font-size:17px;font-weight:600}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--ouro);outline-offset:2px;border-radius:6px}
+.cod{font-family:var(--f-codigo);font-size:13px;letter-spacing:.02em;font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.ic{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* Estrutura */
+.app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100%}
+.lateral{background:var(--lateral);color:var(--lateral-txt);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;padding:20px 14px}
+.marca{display:flex;align-items:center;gap:10px;padding:4px 10px 22px;color:#fff;text-decoration:none}
+.marca b{font-family:var(--f-titulo);font-size:24px;color:var(--ouro);letter-spacing:.02em}
+.marca span{font-size:12px;color:var(--lateral-txt);border-left:1px solid var(--lateral-linha);padding-left:10px;line-height:1.2}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;text-decoration:none;font-weight:500;color:var(--lateral-txt)}
+.nav a:hover{background:var(--lateral-2);color:#fff}
+.nav a.on{background:var(--lateral-2);color:#fff;box-shadow:inset 3px 0 0 var(--ouro)}
+.nav a .n{margin-left:auto;font-size:12px;font-weight:600;background:var(--ouro);color:#0b0b0c;border-radius:20px;padding:1px 8px;font-variant-numeric:tabular-nums}
+.nav .sec{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#77777e;padding:18px 12px 6px}
+.lateral .rodape{margin-top:auto;border-top:1px solid var(--lateral-linha);padding:14px 10px 0;font-size:13px}
+.lateral .rodape b{color:#fff;display:block;font-weight:600}
+.lateral select{width:100%;margin-top:8px;background:var(--lateral-2);border:1px solid var(--lateral-linha);border-radius:8px;padding:7px 8px;color:#fff}
+.topo{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--fundo) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--linha);display:flex;align-items:center;gap:16px;padding:12px max(24px,env(safe-area-inset-right,0px)) 12px 28px}
+.busca-g{flex:1;max-width:560px;display:flex;align-items:center;gap:10px;background:var(--superficie);border:1px solid var(--linha);border-radius:10px;padding:0 12px;height:42px}
+.busca-g input{border:0;outline:0;background:transparent;flex:1;min-width:0}
+.busca-g kbd{font:500 11px var(--f-codigo);color:var(--texto-3);border:1px solid var(--linha);border-radius:5px;padding:1px 6px}
+.btn.menu-mob{display:none}
+main{padding:28px 32px 96px;max-width:1280px;width:100%}
+.cab{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.cab p{margin:4px 0 0;color:var(--texto-2)}
+.demo{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--alerta);background:var(--alerta-fundo);border-radius:20px;padding:2px 10px;font-weight:600}
+
+/* Componentes */
+.btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:9px;border:1px solid var(--linha-forte);background:var(--superficie);font-weight:600;cursor:pointer;white-space:nowrap;text-decoration:none}
+.btn:hover{border-color:var(--texto-2)}
+.btn.p{background:var(--ouro);border-color:var(--ouro);color:#0b0b0c}.btn.p:hover{background:var(--ouro-h)}
+.btn.esc{background:var(--texto);border-color:var(--texto);color:var(--fundo)}
+.btn.f{border-color:transparent;background:transparent}.btn.f:hover{background:var(--superficie-2)}
+.btn.pq{height:32px;padding:0 10px;font-size:13px;border-radius:7px}
+.cartao{background:var(--superficie);border:1px solid var(--linha);border-radius:var(--raio)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border-radius:20px;padding:2px 10px;white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.pub{color:var(--ok);background:var(--ok-fundo)} .ras{color:var(--texto-2);background:var(--superficie-2)} .ina{color:var(--erro);background:var(--erro-fundo)}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border-radius:6px;padding:2px 8px;background:var(--superficie-2);color:var(--texto-2)}
+.tag.a{background:var(--alerta-fundo);color:var(--alerta)} .tag.e{background:var(--erro-fundo);color:var(--erro)} .tag.i{background:var(--info-fundo);color:var(--info)} .tag.o{background:var(--ouro-fundo);color:var(--ouro-txt)}
+.campo{display:flex;flex-direction:column;gap:6px}
+.campo label{font-size:13px;font-weight:600;color:var(--texto-2)}
+.ajuda{font-size:12px;line-height:1.45;color:var(--texto-3)}
+.inp{height:42px;border:1px solid var(--linha-forte);border-radius:9px;background:var(--superficie);padding:0 12px;width:100%}
+textarea.inp{height:auto;padding:10px 12px;min-height:84px;resize:vertical}
+.inp:focus{outline:0;border-color:var(--texto);box-shadow:0 0 0 3px var(--ouro-fundo)}
+.inp[readonly]{background:var(--superficie-2);color:var(--texto-2)}
+.trava{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--ouro-txt);background:var(--ouro-fundo);border-radius:5px;padding:1px 6px;text-transform:uppercase;letter-spacing:.06em}
+.local{display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:4px 10px;font-size:13px;font-weight:600;background:var(--lateral);color:#fff}
+.local .ic{color:var(--ouro)}
+.local.g{font-size:15px;padding:7px 12px}
+.copiar{border:1px solid var(--linha);background:var(--superficie);border-radius:7px;height:28px;padding:0 8px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--texto-2)}
+.copiar:hover{border-color:var(--texto-2);color:var(--texto)}
+.foto{width:48px;height:48px;border-radius:8px;background:var(--superficie-2);border:1px solid var(--linha);object-fit:contain;padding:3px;flex:none}
+.sem-foto{display:grid;place-items:center;color:var(--texto-3);font-size:10px;text-align:center;line-height:1.1}
+.grade2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--texto);color:var(--fundo);border-radius:10px;padding:10px 16px;font-weight:600;box-shadow:var(--sombra);z-index:30}
+
+/* Início */
+.atencao{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:24px}
+.att{padding:16px;text-decoration:none;display:flex;flex-direction:column;gap:6px;border-left:4px solid var(--linha-forte);transition:transform .15s}
+.att:hover{transform:translateY(-2px);box-shadow:var(--sombra)}
+.att b{font:700 32px/1 var(--f-titulo);font-variant-numeric:tabular-nums}
+.att span{color:var(--texto-2);font-size:13px}
+.att.a{border-left-color:var(--alerta)} .att.e{border-left-color:var(--erro)} .att.o{border-left-color:var(--ok)} .att.i{border-left-color:var(--info)}
+.progresso{height:10px;background:var(--superficie-2);border-radius:10px;overflow:hidden}
+.progresso i{display:block;height:100%;background:var(--ouro);border-radius:10px}
+.lista-hist{list-style:none;margin:0;padding:0}
+.lista-hist li{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--linha);font-size:14px}
+.lista-hist li:first-child{border-top:0}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--lateral);color:var(--ouro);display:grid;place-items:center;font:700 13px var(--f-titulo);flex:none}
+
+/* Produtos */
+.filtros{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.chip{height:34px;padding:0 12px;border-radius:20px;border:1px solid var(--linha-forte);background:var(--superficie);cursor:pointer;font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+.chip.on{background:var(--texto);color:var(--fundo);border-color:var(--texto)}
+.chip em{font-style:normal;color:var(--texto-3);font-variant-numeric:tabular-nums}.chip.on em{color:var(--ouro)}
+.tabela-c{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--texto-3);font-weight:600;padding:10px 14px;border-bottom:1px solid var(--linha);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--linha);vertical-align:middle}
+tr.cl{cursor:pointer} tr.cl:hover td{background:var(--superficie-2)}
+.nm{font-weight:600;line-height:1.25}
+.sub{font-size:13px;color:var(--texto-2)}
+.alertas{display:flex;gap:4px;flex-wrap:wrap}
+.pag{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;color:var(--texto-2);font-size:13px}
+
+/* Produto */
+.prod-cab{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.prod-cab .foto{width:88px;height:88px}
+.abas{display:flex;gap:4px;border-bottom:1px solid var(--linha);margin:22px 0 20px;overflow-x:auto}
+.abas button{border:0;background:none;padding:10px 14px;font-weight:600;color:var(--texto-2);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+.abas button.on{color:var(--texto);border-bottom-color:var(--ouro)}
+.abas button em{font-style:normal;font-size:12px;color:var(--texto-3);margin-left:4px}
+.form{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
+.bloco{padding:20px;display:flex;flex-direction:column;gap:16px}
+.bloco h3{display:flex;align-items:center;gap:8px}
+.linha2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.var-t td{padding:12px 10px}
+.refs{display:flex;flex-wrap:wrap;gap:6px}
+.ref{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--linha);border-radius:7px;padding:2px 8px;font-size:12px;background:var(--superficie)}
+.ref b{font-weight:600}
+.barra-salvar{position:fixed;left:248px;right:0;bottom:0;background:var(--superficie);border-top:1px solid var(--linha);display:flex;align-items:center;gap:12px;padding:12px max(32px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) 32px;z-index:6;box-shadow:0 -6px 20px rgb(0 0 0 / .05)}
+.barra-salvar .mud{display:flex;align-items:center;gap:8px;color:var(--alerta);font-weight:600}
+.card-pdf img{width:100%;border-radius:8px;border:1px solid var(--linha);background:#fff}
+.lista-sel{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+
+.editor .ed-topo{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.ed-barra{display:flex;gap:2px;border:1px solid var(--linha);border-radius:8px;padding:2px}
+.ed-barra .btn.on{background:var(--superficie-2)}
+.editor textarea.inp{min-height:140px;font-size:14px;line-height:1.6}
+.ed-prev{border:1px solid var(--linha);border-radius:9px;padding:12px 14px;background:var(--superficie-2);font-size:14px;line-height:1.6}
+.ed-prev p{margin:0 0 6px}.ed-prev ul{margin:0 0 6px;padding-left:20px}.ed-prev h4{margin:6px 0;font:700 15px var(--f-titulo)}.valor{display:flex;align-items:center;border:1px solid var(--linha-forte);border-radius:9px;background:var(--superficie);height:36px;padding-left:8px;width:120px}
+.valor span{font-size:12px;color:var(--texto-3)}
+.valor .inp{border:0;height:34px;padding:0 8px;box-shadow:none;text-align:right}
+.orc-total{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 16px}
+.orc-total .vt{display:flex;align-items:baseline;gap:12px}
+.orc-total .vt span{font-size:13px;color:var(--texto-2)}
+.orc-total .vt b{font:700 26px var(--f-titulo);font-variant-numeric:tabular-nums}
+.btn.perigo{color:var(--erro);border-color:var(--erro-fundo)}.btn.perigo:hover{background:var(--erro-fundo);border-color:var(--erro)}
+.btn.f.perigo{border-color:transparent;color:var(--texto-3)}.btn.f.perigo:hover{color:var(--erro);background:var(--erro-fundo)}
+.btn.perigo-forte{background:var(--erro);border-color:var(--erro);color:#fff}.btn.perigo-forte:hover{filter:brightness(.92)}
+.orc-res{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px;border:1px solid var(--linha);border-radius:9px}
+/* Revisão */
+.rev{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:20px;align-items:start}
+.rev .original{position:sticky;top:84px;padding:16px}
+.rev .original img{width:100%;max-height:70vh;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--linha)}
+.pend{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px dashed var(--alerta);border-radius:9px;background:var(--alerta-fundo)}
+.pend q{font-style:normal;quotes:none;color:var(--texto);font-size:14px}
+.pend .acoes{display:flex;flex-wrap:wrap;gap:6px}
+.atalho{font:500 11px var(--f-codigo);border:1px solid var(--linha-forte);border-radius:5px;padding:0 5px;color:var(--texto-3);margin-left:4px}
+
+/* Categorias (simplificado) */
+.grupos{display:flex;flex-direction:column;background:var(--superficie);border:1px solid var(--linha);border-radius:var(--raio);overflow:hidden;max-width:960px}
+.grupos .grp-card{border:0;border-radius:0;background:transparent}
+.grupos .grp-card+.grp-card{border-top:1px solid var(--linha-forte)}
+.grp-card header{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:10px 16px;background:var(--superficie-2);border-bottom:1px solid var(--linha)}
+.grp-card header h2{font-size:17px;text-transform:uppercase;letter-spacing:.06em}
+.grp-card ul{list-style:none;margin:0;padding:0}
+.grp-card li{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:8px 12px 8px 8px;border-top:1px solid var(--linha)}
+.grp-card li:first-child{border-top:0}
+.grp-card .ordem{display:flex;gap:0}.grp-card .ordem .btn{width:28px;padding:0;justify-content:center;color:var(--texto-2)}
+.grp-card .ordem .btn[disabled]{opacity:.25;cursor:default}
+.nome-cat{font-weight:600;font-size:14px}
+.modal-fundo{position:fixed;inset:0;background:rgb(11 11 12 / .55);z-index:40;display:grid;place-items:center;padding:16px}
+.modal{width:min(520px,100%);max-height:calc(100vh - 32px);overflow:auto;padding:20px;display:flex;flex-direction:column;gap:16px;box-shadow:0 24px 60px rgb(0 0 0 / .3)}
+/* Categorias */
+.cats{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start}
+.grupo{padding:6px 0}
+.grupo>header{display:flex;align-items:center;gap:10px;padding:10px 16px;font-weight:600}
+.grupo>header .pega,.cat .pega{color:var(--texto-3);cursor:grab}
+.cat{display:flex;align-items:center;gap:10px;padding:8px 16px 8px 40px;border-top:1px solid var(--linha);cursor:pointer;font-size:14px}
+.cat:hover{background:var(--superficie-2)} .cat.on{background:var(--ouro-fundo)}
+.cat em{margin-left:auto;font-style:normal;color:var(--texto-3);font-size:13px;font-variant-numeric:tabular-nums}
+
+/* Marcas */
+.marcas{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px}
+.mc{padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;font-size:13px;cursor:pointer}.mc:hover{border-color:var(--linha-forte)}.mc .tag{font-size:11px;padding:1px 6px}.mc .sub{font-size:12px}
+.mc .lg{height:34px;display:grid;place-items:center;width:100%}
+.mc .lg img{max-height:34px;max-width:96px;object-fit:contain}
+.mc .lg .iniciais{font:700 18px var(--f-titulo);color:var(--texto-3)}
+
+/* Consulta */
+.consulta{max-width:820px}
+.consulta .grande{height:56px;font-size:18px;border-radius:12px}
+.res{padding:16px;display:grid;grid-template-columns:72px minmax(0,1fr);gap:14px}
+.res .foto{width:72px;height:72px}
+.res table td{padding:7px 8px} .res table th{padding:6px 8px}
+
+/* Usuários e perfis */
+.perfis{display:grid;grid-template-columns:260px minmax(0,1fr);gap:20px;align-items:start}
+.perf{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-top:1px solid var(--linha);cursor:pointer}
+.perf:first-child{border-top:0}.perf.on{background:var(--ouro-fundo)}
+.perms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 20px}
+.perm{display:flex;align-items:flex-start;gap:10px;padding:8px 0;cursor:pointer}
+.perm input{width:18px;height:18px;accent-color:#0b0b0c;margin-top:2px}
+.perm small{display:block;color:var(--texto-3)}
+
+/* Entrar */
+.entrar{min-height:100%;display:grid;grid-template-columns:1fr 1fr}
+.entrar .lado{background:var(--lateral);color:#e9e9ec;padding:48px;display:flex;flex-direction:column;justify-content:space-between}
+.entrar .lado h1{font-size:44px;color:#fff;max-width:420px}
+.entrar .lado h1 span{color:var(--ouro)}
+.entrar form{align-self:center;justify-self:center;width:min(380px,100% - 32px);display:flex;flex-direction:column;gap:16px;padding:32px 0}
+
+@media (max-width:1100px){.form,.cats,.rev{grid-template-columns:1fr}.rev .original{position:static}}
+@media (max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  body{overflow-x:hidden}
+  .busca-g{min-width:0}
+  .btn.menu-mob{display:inline-flex}
+  .lateral{position:fixed;inset:0 auto 0 0;width:264px;z-index:20;transform:translateX(-100%);transition:transform .2s;padding-top:calc(20px + env(safe-area-inset-top,0px))}
+  .lateral.aberta{transform:none;box-shadow:0 0 0 100vmax rgb(0 0 0 / .4)}
+  .topo{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  main{padding:20px max(16px,env(safe-area-inset-right,0px)) 110px max(16px,env(safe-area-inset-left,0px))}
+  .barra-salvar{left:0;padding-left:16px;padding-right:16px}
+  .grade2,.linha2,.perfis,.perms,.entrar{grid-template-columns:1fr}
+  .entrar .lado{padding:28px 20px}.entrar .lado h1{font-size:32px}
+  .ocultar-mob{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-inicio" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-produtos" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4zM3 7v10l9 4 9-4V7M12 11v10"/></symbol>
+  <symbol id="i-revisao" viewBox="0 0 24 24"><path d="M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></symbol>
+  <symbol id="i-categorias" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+  <symbol id="i-marcas" viewBox="0 0 24 24"><path d="M20.6 13.4L13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+  <symbol id="i-consulta" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
+  <symbol id="i-usuarios" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M17 11a3 3 0 1 0 0-6M22 21a5 5 0 0 0-4-4.9"/></symbol>
+  <symbol id="i-copiar" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+  <symbol id="i-cadeado" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-mais" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-pega" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></symbol>
+  <symbol id="i-seta" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></symbol>
+  <symbol id="i-cima" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></symbol>
+  <symbol id="i-baixo" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-orcamento" viewBox="0 0 24 24"><path d="M9 4h6l1 2h3v15H5V6h3z"/><path d="M9 11h6M9 15h4"/></symbol>
+  <symbol id="i-lixo" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+  <symbol id="i-pino" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></symbol>
+  <symbol id="i-olho" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+</svg>
+
+<div id="raiz"></div>
+<script>
+  // Protótipo: ?tema=claro ou ?tema=escuro força o tema (o padrão segue o computador)
+  (function () { var t = new URLSearchParams(location.search).get("tema"); if (t) document.documentElement.dataset.theme = t === "escuro" ? "dark" : "light"; })();
+</script>
+<script src="dados.js"></script>
+<script>
+(() => {
+  // ---------- Dados da amostra (reais, do catálogo extraído) ----------
+  const A = window.AMOSTRA || [], T = window.TOTAIS || {};
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const fmt = n => Number(n || 0).toLocaleString("pt-BR");
+  const titulo = s => String(s || "").toLowerCase().replace(/(^|\s)(\S)/, (m, a, b) => a + b.toUpperCase());
+  const ABREV = [[/\bARR\b/g, "arruela"], [/\bALUM\b/g, "alumínio"], [/\bELAST\b/g, "elástico"], [/\bPF\b/g, "parafuso"], [/\bSX\b/g, "sextavado"], [/\bAUTOM?\b/g, "automática"], [/\bTRAS\.?\b/g, "traseira"], [/\bDIANT\.?\b/g, "dianteira"], [/\bLD\b/g, "lado direito"], [/\bLE\b/g, "lado esquerdo"], [/\bEST\b/g, "estrias"], [/\bCJ\b/g, "conjunto"], [/\bREP\b/g, "reparo"], [/\bMB\b/g, "Mercedes-Benz"], [/\bIMP\b\s*\(?\d+,\d+\)?/g, ""]];
+  const porExtenso = s => titulo(ABREV.reduce((t, [r, v]) => t.replace(r, v), String(s || "").toUpperCase()).replace(/\s+/g, " ").trim()).replace(/mercedes-benz/i, "Mercedes-Benz");
+  const situacoes = ["pub", "pub", "pub", "ras", "pub", "pub", "ina", "pub"];
+  A.forEach((p, i) => {
+    p.situacao = p.revisar === "pendente" ? "ras" : situacoes[i % situacoes.length];
+    p.nomeExt = porExtenso(p.nome || (p.variantes[0] || {}).nome_completo || "");
+    p.importado = p.variantes.some(v => /\bIMP\b/.test(v.nome_completo || ""));
+    // Categorias do produto: a principal primeiro; "Importados" é uma categoria como as outras
+    const outras = (p.tambem_em || []).map(t => (t.match(/\(([^)]+)\)/) || [])[1]).filter(Boolean).map(titulo);
+    p.cats = [...new Set([titulo(p.secao), ...outras, ...(p.importado ? ["Importados"] : [])])];
+    p.semFoto = !p.foto;
+    p.foraGoogle = p.revisar === "pendente" || (!p.foto && !p.referencias.length);
+    p.pendencias = p.revisar === "pendente" ? [(p.detalhes || "").slice(0, 120) || "Trecho do card sem classificação"].filter(Boolean) : [];
+  });
+  const PERMS = [
+    ["ver", "Ver produtos", "Abrir listas e fichas de produto"],
+    ["editar", "Criar e editar produtos", "Variações, referências, aplicações, fotos"],
+    ["publicar", "Publicar e desativar", "Controla o que aparece no site"],
+    ["codigo", "Ver código interno", "Dado interno, nunca vai ao site", true],
+    ["imposto", "Ver valor do imposto", "Dado interno dos importados", true],
+    ["categorias", "Categorias e grupos", "Criar, ordenar e mover"],
+    ["marcas", "Marcas e logos", "Criar, editar e juntar marcas"],
+    ["local", "Ver localização", "Onde cada produto está guardado"],
+    ["editarLocal", "Editar localização", "Mudar onde o produto fica guardado"],
+    ["consulta", "Consulta rápida", "Achar produto para o WhatsApp"],
+    ["orcamento", "Criar orçamentos", "Montar listas de produtos para cotação"],
+    ["orcTodos", "Ver orçamentos de todos", "Sem esta permissão, vê só os próprios"],
+    ["historico", "Histórico de alterações", "Quem mudou o quê"],
+    ["usuarios", "Usuários e perfis", "Acessos da equipe"]
+  ];
+  const PERFIS = [
+    { id: "adm", nome: "Administrador", fixo: true, pessoas: 1, perms: PERMS.map(p => p[0]) },
+    { id: "cad", nome: "Cadastro", pessoas: 2, perms: ["ver", "editar", "publicar", "codigo", "local", "editarLocal", "categorias", "marcas", "consulta", "orcamento", "orcTodos", "historico"] },
+    { id: "com", nome: "Comercial", pessoas: 4, perms: ["ver", "codigo", "local", "consulta", "orcamento"] },
+    { id: "ext", nome: "Representante externo", pessoas: 0, perms: ["ver", "local", "consulta"] }
+  ];
+  const USUARIOS = [["Responsável", "responsavel@bahiafalcao.com.br", "adm", "Ativo"], ["Ana (cadastro)", "ana@bahiafalcao.com.br", "cad", "Ativo"], ["Bruno (cadastro)", "bruno@bahiafalcao.com.br", "cad", "Ativo"], ["Carla (balcão)", "carla@bahiafalcao.com.br", "com", "Ativo"], ["Diego (vendas)", "diego@bahiafalcao.com.br", "com", "Bloqueado"]];
+  const GRUPOS = [
+    ["Freios", ["Cuícas, catracas e acessórios", "Reparo freio", "Sapata e lona freio", "Mola freio e rebite lona"]],
+    ["Suspensão", ["Bolsas e amortecedores cabine", "Molas convencionais e parabólicas", "Balanças, suportes e pinos", "Pino e bucha mola", "Grampos", "Itens IABV"]],
+    ["Rodas e cubos", ["Sistema de roda", "Anel pista, buchas e eixos", "Anel elástico, rolete e trava", "Retentores e diafragmas"]],
+    ["Ar e pneumática", ["Válvulas", "Mangueiras Valman", "Mangueiras e conexões", "Uniões, conectores e cotovelos", "Abraçadeiras", "Terminais, anéis O-ring e bujões"]],
+    ["Direção e filtros", ["Sistema de direção", "Filtros"]],
+    ["Carreta e implementos", ["Quinta roda e coxim", "Implementos rodoviários", "Suportes e paralamas", "Tampas, registros e cordas"]],
+    ["Cabine e elétrica", ["Cabine", "Acessórios cabine", "Elétricos e iluminações", "Acessórios"]],
+    ["Fixação", ["Parafusos e porcas", "Parafusos, porcas e tuchos", "Pino elástico e prisioneiro"]],
+    ["Oficina", ["Ferramentas", "Maquinários", "Acessórios para borracheiro", "Equipamento de solda", "Químicos", "Marcenaria"]],
+    ["Linha leve e importados", ["Linha leve", "Importados"]]
+  ];
+  const HIST = [["AN", "Ana", "corrigiu o nome de", A[1]], ["BR", "Bruno", "publicou", A[2]], ["AN", "Ana", "adicionou a referência SILC SC-03.158 em", A[4]], ["RE", "Responsável", "criou o perfil", { nomeExt: "Representante externo" }], ["BR", "Bruno", "completou as informações de", A[5]]];
+
+  // ---------- Estado ----------
+  const st = { textos: {}, prev: {}, orcF: {}, orcAtual: 123, orcBusca: "", perfil: "adm", filtro: "todos", busca: "", produto: A[0]?.id, aba: "geral", revIdx: 0, revFeitos: 312, cat: "Cuícas, catracas e acessórios", perfilSel: "cad", sujo: false, consulta: "945 420 03 38", menu: false, usuariosAba: "usuarios" };
+  const pode = p => PERFIS.find(x => x.id === st.perfil).perms.includes(p);
+  const raiz = document.getElementById("raiz");
+  const icone = (n, extra = "") => `<svg class="ic" ${extra} aria-hidden="true"><use href="#i-${n}"/></svg>`;
+  const fotoEl = (p, cls = "foto") => p.foto ? `<img class="${cls}" src="${esc(p.foto)}" alt="${esc(p.nomeExt)}" loading="lazy">` : `<span class="${cls} sem-foto">sem<br>foto</span>`;
+  const situ = s => ({ pub: '<span class="pill pub">Publicado</span>', ras: '<span class="pill ras">Rascunho</span>', ina: '<span class="pill ina">Desativado</span>' }[s]);
+  // Localização física (dado interno, por variação). No protótipo, gerada a partir do código só para exemplo.
+  // Texto livre, escrito como a equipe fala. No protótipo, exemplos gerados a partir do código.
+  const local = c => { const n = [...String(c)].reduce((s, d) => (Math.imul(s, 31) + d.charCodeAt(0)) >>> 0, 7); if (n % 9 === 0) return ""; return n % 7 === 0 ? "Depósito, fundo à esquerda" : `Corredor ${1 + n % 14}, prateleira ${"ABCDEF"[(n >>> 4) % 6]}${1 + (n >>> 8) % 8}${n % 3 === 0 ? ", gaveta de cima" : ""}`; };
+  const localEl = (c, grande) => { if (!pode("local")) return ""; const l = local(c); return l ? `<span class="local ${grande ? "g" : ""}">${icone("pino", 'style="width:15px;height:15px"')}${esc(l)}</span>` : '<span class="tag a">Sem localização</span>'; };
+  const codigoEl = c => pode("codigo") ? `<span class="cod">${esc(c)}</span>` : `<span class="sub" title="Seu perfil não vê códigos internos">${icone("cadeado", 'style="width:14px;height:14px;vertical-align:-2px"')} oculto</span>`;
+  const copiarBtn = c => pode("codigo") ? `<button class="copiar" data-copiar="${esc(c)}" aria-label="Copiar código ${esc(c)}">${icone("copiar", 'style="width:14px;height:14px"')}Copiar</button>` : "";
+  const alertasEl = p => [p.revisar === "pendente" ? '<span class="tag a">Nome a confirmar</span>' : "", p.pendencias.length ? '<span class="tag a">Pendência</span>' : "", p.semFoto ? '<span class="tag e">Sem foto</span>' : "", p.secao === "LANÇAMENTOS" ? '<span class="tag o">Novo</span>' : ""].join("");
+  function toast(msg) { const t = document.createElement("div"); t.className = "toast"; t.textContent = msg; document.body.append(t); setTimeout(() => t.remove(), 2200); }
+
+  // ---------- Telas ----------
+  const NAV = [["inicio", "Início", "inicio"], ["produtos", "Produtos", "produtos", "ver"], ["categorias", "Categorias", "categorias", "categorias"], ["marcas", "Marcas", "marcas", "marcas"], ["consulta", "Consulta rápida", "consulta", "consulta"], ["orcamentos", "Orçamentos", "orcamento", "orcamento"], ["usuarios", "Usuários e perfis", "usuarios", "usuarios"]];
+
+  function casca(tela, conteudo) {
+    const perfil = PERFIS.find(x => x.id === st.perfil);
+    const nav = NAV.filter(n => !n[3] || pode(n[3])).map(n => `<a href="#${n[0]}" class="${tela === n[0] || (tela === "produto" && n[0] === "produtos") || (tela === "orcamento" && n[0] === "orcamentos") ? "on" : ""}">${icone(n[2])}${n[1]}${n[4] ? `<span class="n">${fmt(n[4])}</span>` : ""}</a>`).join("");
+    return `<div class="app">
+      <aside class="lateral ${st.menu ? "aberta" : ""}" aria-label="Menu do painel">
+        <a class="marca" href="#inicio"><b>Falcão</b><span>Painel do<br>catálogo</span></a>
+        <nav class="nav">${nav}</nav>
+        <div class="rodape"><b>Responsável</b>${esc(perfil.nome)}
+          <label class="sr" for="ver-como">Ver o painel como outro perfil</label>
+          <select id="ver-como">${PERFIS.map(p => `<option value="${p.id}" ${p.id === st.perfil ? "selected" : ""}>Simular perfil: ${esc(p.nome)}</option>`).join("")}</select>
+          <a href="#entrar" style="display:inline-block;margin-top:10px;color:var(--lateral-txt)">Sair</a>
+        </div>
+      </aside>
+      <div style="min-width:0">
+        <div class="topo">
+          <button class="btn f menu-mob" id="abrir-menu" aria-label="Abrir menu">${icone("menu")}</button>
+          <label class="busca-g">${icone("consulta")}<span class="sr">Buscar no catálogo</span><input id="busca-global" placeholder="Buscar produto, referência ou código interno" value="${esc(st.busca)}"><kbd class="ocultar-mob">Ctrl K</kbd></label>
+          <span class="demo ocultar-mob">Protótipo · códigos e valores fictícios</span>
+        </div>
+        <main id="conteudo">${conteudo}</main>
+      </div>
+    </div>`;
+  }
+
+  function telaInicio() {
+    const rev = T.revisar || 0, pct = rev ? Math.round(st.revFeitos / rev * 100) : 0;
+    const att = [["a", fmt(T.revisar), "nomes a confirmar", "revisar"], ["e", fmt(T.semFoto), "produtos sem foto", "semfoto"], ["i", fmt(T.semRef), "sem referência", "semref"], ["o", fmt(T.produtos), "produtos no catálogo", "todos"]];
+    return `<div class="cab"><div><h1>${new Date().getHours() < 12 ? "Bom dia!" : new Date().getHours() < 18 ? "Boa tarde!" : "Boa noite!"}</h1><p>Isto é o que precisa de atenção no catálogo hoje.</p></div>
+      ${pode("editar") ? `<a class="btn p" href="#produto">${icone("mais")}Novo produto</a>` : ""}</div>
+      <section class="atencao" aria-label="Itens que precisam de atenção">${att.map(a => `<a class="cartao att ${a[0]}" href="#produtos" data-ir-filtro="${a[3]}"><b>${a[1]}</b><span>${a[2]}</span></a>`).join("")}</section>
+      <div style="max-width:760px">
+        <section class="cartao bloco"><h2>Últimas alterações</h2>
+          <ul class="lista-hist">${HIST.map((h, i) => `<li><span class="avatar">${h[0]}</span><span><b>${h[1]}</b> ${h[2]} <b>${esc(h[3].nomeExt)}</b><br><span class="sub">há ${[8, 25, 42, 60, 95][i]} minutos</span></span></li>`).join("")}</ul>
+        </section>
+      </div>`;
+  }
+
+  function filtrados() {
+    const q = st.busca.trim().toLowerCase().replace(/[.\-\s]/g, "");
+    return A.filter(p => {
+      const f = st.filtro;
+      if (f === "revisar" && p.revisar !== "pendente") return false;
+      if (f === "semfoto" && !p.semFoto) return false;
+      if (f === "semref" && p.referencias.length) return false;
+      if (f === "rascunho" && p.situacao !== "ras") return false;
+      if (f === "google" && !p.foraGoogle) return false;
+      if (f === "importado" && !p.cats.includes("Importados")) return false;
+      if (st.fCat && !p.cats.includes(st.fCat)) return false;
+      if (st.fMarca && !p.marcas.includes(st.fMarca)) return false;
+      if (st.fMont && !p.aplicacoes.includes(st.fMont)) return false;
+      if (!q) return true;
+      const alvo = [p.nomeExt, p.nome, ...p.referencias, ...p.marcas, ...p.variantes.map(v => v.nome_completo), ...(pode("codigo") ? p.codigos : [])].join(" ").toLowerCase().replace(/[.\-\s]/g, "");
+      return alvo.includes(q);
+    });
+  }
+
+  function telaProdutos() {
+    const lista = filtrados();
+    const F = [["todos", "Todos", A.length], ["revisar", "Nome a confirmar", A.filter(p => p.revisar === "pendente").length], ["semfoto", "Sem foto", A.filter(p => p.semFoto).length], ["rascunho", "Rascunhos", A.filter(p => p.situacao === "ras").length], ["importado", "Importados", A.filter(p => p.cats.includes("Importados")).length]];
+    return `<div class="cab"><div><h1>Produtos</h1><p>${fmt(T.produtos)} produtos no catálogo · mostrando a amostra de ${A.length}</p></div>
+      ${pode("editar") ? `<a class="btn p" href="#produto">${icone("mais")}Novo produto</a>` : ""}</div>
+      <div class="filtros" role="group" aria-label="Filtros rápidos">${F.map(f => `<button class="chip ${st.filtro === f[0] ? "on" : ""}" data-filtro="${f[0]}">${f[1]} <em>${f[2]}</em></button>`).join("")}
+        ${[["fCat", "Categoria", [...new Set(A.flatMap(p => p.cats))].sort()], ["fMarca", "Marca", [...new Set(A.flatMap(p => p.marcas))].sort()], ["fMont", "Montadora", [...new Set(A.flatMap(p => p.aplicacoes))].sort()]].map(([k, rot, ops]) => `<label class="sr" for="${k}">${rot}</label><select id="${k}" data-fsel="${k}" class="chip ${st[k] ? "on" : ""}" style="padding-right:8px;max-width:190px"><option value="">${rot}: todas</option>${ops.map(o => `<option ${st[k] === o ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>`).join("")}
+        ${st.fCat || st.fMarca || st.fMont || st.busca ? '<button class="btn f pq" data-acao="limpar">Limpar filtros</button>' : ""}</div>
+      <section class="cartao tabela-c"><table>
+        <thead><tr><th>Produto</th><th>Códigos internos</th><th class="ocultar-mob">Categoria</th><th>Situação</th><th class="ocultar-mob">Atenção</th></tr></thead>
+        <tbody>${lista.map(p => `<tr class="cl" data-abrir="${esc(p.id)}" tabindex="0">
+          <td><div style="display:flex;gap:12px;align-items:center">${fotoEl(p)}<div style="min-width:0"><div class="nm">${esc(p.nomeExt)}</div><div class="sub">${p.variantes.length > 1 ? `${p.variantes.length} variações` : esc(p.referencias[0] ? "Ref. " + p.referencias[0] : "Sem referência")}</div></div></div></td>
+          <td>${codigoEl(p.codigos[0])}${p.codigos.length > 1 ? `<div class="sub">+ ${p.codigos.length - 1}</div>` : ""}</td>
+          <td class="ocultar-mob sub">${esc(titulo(p.secao))}</td><td>${situ(p.situacao)}</td><td class="ocultar-mob"><div class="alertas">${alertasEl(p)}</div></td></tr>`).join("") || `<tr><td colspan="5" style="padding:40px;text-align:center" class="sub">Nenhum produto com esses filtros. Tente limpar a busca.</td></tr>`}</tbody>
+      </table><div class="pag"><span>${lista.length} de ${A.length} na amostra</span><span>Página 1 de 1</span></div></section>`;
+  }
+
+// Editor de texto livre com formatação simples: **negrito**, listas com "- " e subtítulos com "## "
+function formatar(txt) {
+  const linhas = esc(txt || "").split(/\n/), out = [];
+  let lista = false;
+  const inline = (l) => l.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+  for (const l of linhas) {
+    if (/^\s*-\s+/.test(l)) { if (!lista) { out.push("<ul>"); lista = true; } out.push(`<li>${inline(l.replace(/^\s*-\s+/, ""))}</li>`); continue; }
+    if (lista) { out.push("</ul>"); lista = false; }
+    if (/^##\s+/.test(l)) out.push(`<h4>${inline(l.replace(/^##\s+/, ""))}</h4>`);
+    else if (l.trim()) out.push(`<p>${inline(l)}</p>`);
+  }
+  if (lista) out.push("</ul>");
+  return out.join("") || '<p class="sub">Nada escrito ainda.</p>';
+}
+function editorTexto(id, rotulo, valor, ajuda, exemplo, ed) {
+  const prev = st.prev && st.prev[id];
+  return `<div class="campo editor"><div class="ed-topo"><label for="${id}">${rotulo}</label>
+      ${ed ? `<div class="ed-barra" role="toolbar" aria-label="Formatação de ${rotulo}"><button type="button" class="btn f pq" data-fmt="negrito" data-alvo="${id}" title="Negrito (Ctrl+B)"><b>B</b></button><button type="button" class="btn f pq" data-fmt="lista" data-alvo="${id}" title="Lista">• Lista</button><button type="button" class="btn f pq" data-fmt="titulo" data-alvo="${id}" title="Subtítulo">Subtítulo</button><button type="button" class="btn f pq ${prev ? "on" : ""}" data-prev="${id}">${prev ? "Editar" : "Pré-visualizar"}</button></div>` : ""}</div>
+    ${prev || !ed ? `<div class="ed-prev">${formatar(st.textos[id] ?? valor)}</div>` : `<textarea class="inp" id="${id}" placeholder="${esc(exemplo)}">${esc(st.textos[id] ?? valor)}</textarea>`}
+    <span class="ajuda">${ajuda}</span></div>`;
+}
+function telaProduto() {
+  const p = A.find((x) => x.id === st.produto) || A[0];
+  const ed = pode("editar"),
+    ro = ed ? "" : "readonly";
+  const impostoVisivel = pode("imposto") && p.cats.includes("Importados");
+  const abas = [
+    ["geral", "Dados gerais"],
+    ["variacoes", "Variações e referências", p.variantes.length],
+    ["aplicacoes", "Aplicação e especificações"],
+    ["historico", "Histórico"],
+  ];
+  const mais = (txt, attr = "") =>
+    ed
+      ? `<button class="copiar" ${attr}>${icone("mais", 'style="width:14px;height:14px"')}${txt}</button>`
+      : "";
+  const faltas = [
+    ["Nome e categoria principal", true, "geral"],
+    ["Variação com código interno", p.codigos.length > 0, "variacoes"],
+    ["Foto", !!p.foto, "geral"],
+    ["Referência", p.referencias.length > 0, "variacoes"],
+  ];
+  let corpo = "";
+  if (st.aba === "geral")
+    corpo = `<div class="form"><div style="display:flex;flex-direction:column;gap:16px">
+        ${ed ? p.pendencias.map(x => `<div class="pend"><strong style="font-size:13px;color:var(--alerta)">Informação sem campo definido</strong><q>${esc(x)}</q><span class="ajuda">Escolha onde esta informação deve ficar:</span><div class="acoes">${["Referência", "Aplicação", "Especificação", "Observação"].map(a => `<button class="btn pq" data-acao="pend">${a}</button>`).join("")}<button class="btn pq f" data-acao="pend">Não é necessária</button></div></div>`).join("") : ""}
+        <section class="cartao bloco"><h3>Identificação</h3>
+          <div class="campo"><label for="f-nome">Nome no site</label><input class="inp" id="f-nome" value="${esc(p.nomeExt)}" ${ro}><span class="ajuda">Por extenso, como o cliente lê. Ex.: "Arruela de alumínio 14 × 20 mm".</span></div>
+          ${pode("local") ? `<div class="campo"><label for="f-local">Onde está guardado <span class="trava">interno</span></label>${pode("editarLocal") ? `<input class="inp" id="f-local" value="${esc(local(p.id))}" placeholder="Ex.: Corredor 3, prateleira B2">` : `<div>${localEl(p.id)}</div>`}<span class="ajuda">Escreva como a equipe fala. Aparece na consulta rápida; nunca vai para o site.</span></div>` : ""}
+          <div class="campo"><label>Marcas e logos</label><div class="refs">${(p.logos.length ? p.logos : p.marcas.map((m) => ({ nome: m }))).map((l) => `<span class="ref" style="padding:4px 10px">${l.img ? `<img src="${esc(l.img)}" alt="" style="height:16px">` : ""}<b>${esc(l.nome)}</b></span>`).join("") || '<span class="sub">Nenhuma marca</span>'}${mais("Marca")}</div></div>
+        </section>
+        <section class="cartao bloco" id="sec-fotos"><h3>Fotos</h3>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:stretch">${p.foto ? `<figure style="margin:0;display:flex;flex-direction:column;gap:6px;width:140px"><img class="foto" style="width:140px;height:140px" src="${esc(p.foto)}" alt="${esc(p.nomeExt)}"><span class="ajuda" title="Texto alternativo gerado do nome e da marca">Alt: ${esc(p.nomeExt)}</span></figure>` : ""}
+          ${ed ? `<label class="cartao" style="width:140px;height:140px;border-style:dashed;display:grid;place-items:center;text-align:center;cursor:pointer;color:var(--texto-2);font-size:13px;padding:10px">${icone("mais")}<span>Arraste fotos aqui<br>ou clique</span><input type="file" accept="image/*" multiple class="sr"></label>` : ""}</div>
+          ${p.foto ? "" : '<span class="ajuda">Sem foto, o produto só entra no Google se tiver referência.</span>'}
+        </section>
+        <section class="cartao bloco"><h3>Categorias</h3>
+          <div class="linha2">
+            <div class="campo"><label for="f-cat-princ">Categoria principal</label><select class="inp" id="f-cat-princ" ${ed ? "" : "disabled"}>${GRUPOS.map(([g, cs]) => `<optgroup label="${esc(g)}">${cs.map(c => `<option ${c === p.cats[0] ? "selected" : ""}>${esc(c)}</option>`).join("")}</optgroup>`).join("")}</select><span class="ajuda">Onde o produto aparece primeiro no site.</span></div>
+            <div class="campo"><label for="f-add-cat">Também aparece em <span class="sub" style="font-weight:400">(opcional)</span></label>
+              <div class="refs">${p.cats.slice(1).map(c => `<span class="ref" style="padding:4px 6px 4px 10px;font-size:13px">${esc(c)}${ed ? `<button class="copiar" style="height:22px;padding:0 6px" data-cat-rm="${esc(c)}" aria-label="Remover ${esc(c)}">✕</button>` : ""}</span>`).join("")}
+              ${ed ? `<select class="inp" id="f-add-cat" style="width:auto;height:32px;font-size:13px"><option value="">+ Adicionar outra</option>${GRUPOS.map(([g, cs]) => `<optgroup label="${esc(g)}">${cs.filter(c => !p.cats.includes(c)).map(c => `<option>${esc(c)}</option>`).join("")}</optgroup>`).join("")}</select>` : ""}</div>
+              ${p.cats.length === 1 && !ed ? '<span class="sub">Nenhuma</span>' : ""}<span class="ajuda">Ex.: um produto importado também pode ficar em "Importados".</span></div>
+          </div>
+        </section>
+        <section class="cartao bloco"><h3>Informações para o cliente</h3>
+          ${editorTexto("f-obs", "Observações", p.detalhes, "Aparece na página do produto.", "Ex.: **Atenção:** substituir os dois coxins (lado direito e esquerdo).", ed)}
+          <div class="campo" style="max-width:360px"><label for="f-emb">Embalagem</label><input class="inp" id="f-emb" placeholder="Ex.: caixa com 10 unidades" ${ro}></div>
+        </section></div>
+        <aside style="display:flex;flex-direction:column;gap:16px;position:sticky;top:84px">
+          <section class="cartao bloco"><h3>Situação</h3>${situ(p.situacao)}
+            <ul class="lista-sel">${faltas.map((f) => `<li>${f[1] ? `<span class="sub">✓ ${f[0]}</span>` : `<button class="btn f pq" style="color:var(--erro);padding:0 4px" data-aba="${f[2]}">✗ ${f[0]} · resolver</button>`}</li>`).join("")}</ul>
+            ${p.foraGoogle ? `<div class="tag i" style="white-space:normal;line-height:1.4;padding:6px 10px">Ainda não aparece no Google: ${p.revisar === "pendente" ? "falta confirmar o nome" : "falta foto ou referência"}. Ele entra sozinho quando estiver completo.</div>` : '<div class="tag" style="color:var(--ok);background:var(--ok-fundo);white-space:normal;padding:6px 10px">Já aparece nas buscas do Google.</div>'}
+          </section>
+          
+        </aside></div>`;
+  if (st.aba === "variacoes")
+    corpo = `<section class="cartao tabela-c"><table class="var-t">
+        <thead><tr><th>Código interno</th><th>Variação</th><th>Referências</th>${impostoVisivel ? '<th>Imposto <span class="trava">interno</span></th>' : ""}</tr></thead>
+        <tbody>${p.variantes
+          .map(
+            (
+              v,
+            ) => `<tr><td><div style="display:flex;gap:8px;align-items:center">${codigoEl(v.codigo)}${copiarBtn(v.codigo)}</div></td>
+          <td><input class="inp" style="height:36px" value="${esc(v.descricao || porExtenso(v.nome_completo))}" aria-label="Descrição da variação" ${ro}></td>
+          <td><div class="refs">${v.referencias.map((r) => `<span class="ref"><b>${/^SC-/.test(r) ? "SILC" : "Original"}</b>${esc(r)}</span>`).join("")}${mais("Referência")}</div></td>
+          ${impostoVisivel ? `<td><input class="inp cod" style="height:36px;width:90px" value="${esc(v.valor_parenteses || "")}" aria-label="Imposto da variação ${esc(v.codigo)}" ${ro}></td>` : ""}</tr>`,
+          )
+          .join("")}</tbody></table>
+        ${
+          ed
+            ? `<div class="pag" style="gap:8px;flex-wrap:wrap;justify-content:flex-start"><button class="btn pq">${icone("mais")}Adicionar variação</button><button class="btn pq" data-acao="colar">Colar lista de variações</button><span style="margin-left:auto">Arraste as linhas para mudar a ordem</span></div>
+          ${st.colar ? `<div class="bloco" style="border-top:1px solid var(--linha)"><div class="campo"><label for="f-colar">Uma variação por linha: código interno, ponto e vírgula, descrição</label><textarea class="inp cod" id="f-colar" placeholder="764381143; 40 mm&#10;764381144; 42 mm&#10;764381145; 45 mm"></textarea><span class="ajuda">Útil para listas de medidas. Códigos repetidos ou que já existem no catálogo são apontados antes de salvar.</span></div><div style="display:flex;gap:8px"><button class="btn p pq" data-acao="colar-ok">Adicionar à lista</button><button class="btn f pq" data-acao="colar">Cancelar</button></div></div>` : ""}`
+            : ""
+        }
+        ${impostoVisivel ? '<p class="sub" style="padding:0 14px 12px;margin:0">O imposto aparece porque o produto está em Importados. É um dado interno: nunca vai para o site.</p>' : ""}</section>`;
+  if (st.aba === "aplicacoes") {
+    const montadoras = p.aplicacoes.length ? p.aplicacoes : [];
+    const anos = (p.detalhes.match(/\b(1[0-9]{3}|2[0-9]{3})\b(\s*\/\s*\b\d{4}\b)*/) || [""])[0];
+    const aplic = montadoras.length ? montadoras.map((m) => `- **${m}**${anos ? " " + anos : ""}`).join("\n") + (/TRAS/i.test(p.nome) ? "\n\nPosição: **traseira**" : /DIANT/i.test(p.nome) ? "\n\nPosição: **dianteira**" : "") + (/\bLD\b/.test(p.nome) ? ", lado **direito**" : /\bLE\b/.test(p.nome) ? ", lado **esquerdo**" : "") : "";
+    const medida = (p.nome.match(/\d+(?:[.,]\d+)?\s*X\s*\d+(?:[.,]\d+)?|\d+MM/i) || [""])[0];
+    const espec = medida ? `- **Medida:** ${medida}` : "";
+    corpo = `<div style="display:flex;flex-direction:column;gap:16px">
+        <section class="cartao bloco"><h3>Aplicação</h3>
+          ${editorTexto("f-aplic", "Onde a peça serve", aplic, "Escreva livremente: montadora, modelo, ano, posição, lado. Use **negrito** e listas para organizar.", "Ex.:\n- **Mercedes-Benz** Axor 1933 / 2035 / 2544\n- **Volvo** FH 2010 em diante\n\nPosição: **traseira**, lado **direito**", ed)}
+          <div class="campo"><label>Montadoras (para o filtro do site)</label><div class="refs">${montadoras.map((m) => `<span class="ref" style="padding:4px 10px"><b>${esc(m)}</b>${ed ? `<button class="copiar" style="height:22px;padding:0 6px" aria-label="Remover ${esc(m)}">✕</button>` : ""}</span>`).join("") || '<span class="sub">Nenhuma</span>'}${mais("Montadora")}</div><span class="ajuda">Quem filtrar por estas montadoras no site encontra este produto.</span></div>
+        </section>
+        <section class="cartao bloco"><h3>Especificações técnicas</h3>
+          ${editorTexto("f-espec", "Especificações", espec, `Medidas, rosca, material, tensão… Um modelo da categoria ${esc(p.cats[0])} pode vir preenchido.`, "Ex.:\n- **Rosca:** M16 x 1,5\n- **Haste:** longa, 250 mm\n- **Material:** aço", ed)}
+        </section></div>`;
+  }  if (st.aba === "historico")
+    corpo = `<section class="cartao bloco"><h3>Histórico de alterações</h3><ul class="lista-hist">${[
+      ["AN", "Ana", "alterou o nome no site", "ontem, 16:40"],
+      ["BR", "Bruno", "adicionou 2 referências", "08/11, 10:12"],
+      ["RE", "Responsável", "cadastrou o produto", "06/11, 09:00"],
+    ]
+      .map(
+        (h) =>
+          `<li><span class="avatar">${h[0]}</span><span><b>${h[1]}</b> ${h[2]}<br><span class="sub">${h[3]}</span></span></li>`,
+      )
+      .join("")}</ul></section>`;
+  return `<a href="#produtos" class="btn f pq" style="margin-bottom:12px">${icone("seta")}Produtos</a>
+      <div class="prod-cab">${fotoEl(p)}<div style="flex:1;min-width:220px"><h1>${esc(p.nomeExt)}</h1><div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">${situ(p.situacao)}${alertasEl(p)}</div></div>
+        ${pode("publicar") ? `<div style="display:flex;gap:8px">${p.situacao === "pub" ? '<button class="btn" data-acao="desativar">Desativar</button>' : '<button class="btn esc" data-acao="publicar">Publicar</button>'}</div>` : ""}</div>
+      <nav class="abas" role="tablist">${abas.map((a) => `<button role="tab" aria-selected="${st.aba === a[0]}" class="${st.aba === a[0] ? "on" : ""}" data-aba="${a[0]}">${a[1]}${a[2] != null ? `<em>${a[2]}</em>` : ""}</button>`).join("")}</nav>
+      ${corpo}
+      ${st.sujo ? `<div class="barra-salvar"><span class="mud">● Alterações não salvas</span><span class="sub ocultar-mob">Ctrl+S salva</span><span style="flex:1"></span><button class="btn f" data-acao="descartar">Descartar</button><button class="btn p" data-acao="salvar">Salvar alterações</button></div>` : ""}`;
+}
+// ---------- Orçamentos (lista de cotação: sem preço, sem cliente) ----------
+const hojeISO = new Date();
+const diasAtras = (n) => {
+  const d = new Date(hojeISO);
+  d.setDate(d.getDate() - n);
+  return d;
+};
+const fmtData = (d) => d.toLocaleDateString("pt-BR");
+const ORC = [
+  {
+    n: 123,
+    ident: "WhatsApp: catraca e cuíca, Scania 124",
+    data: diasAtras(0),
+    autor: "Carla (balcão)",
+    situ: "ras",
+    itens: [
+      { id: A[1]?.id, codigo: A[1]?.codigos[0], qtd: 2, obs: "", preco: 389.9 },
+      {
+        id: A[2]?.id,
+        codigo: A[2]?.codigos[0],
+        qtd: 1,
+        obs: "cliente quer a original",
+      },
+    ],
+  },
+  {
+    n: 122,
+    ident: "Balcão: arruelas e anéis para oficina",
+    data: diasAtras(1),
+    autor: "Responsável",
+    situ: "con",
+    itens: [
+      { id: A[0]?.id, codigo: A[0]?.codigos[3], qtd: 20, obs: "", preco: 0.85 },
+      { id: A[0]?.id, codigo: A[0]?.codigos[5], qtd: 20, obs: "", preco: 0.95 },
+    ],
+  },
+  {
+    n: 121,
+    ident: "Telefone: frota Transportes Bahia",
+    data: diasAtras(4),
+    autor: "Diego (vendas)",
+    situ: "con",
+    itens: [{ id: A[6]?.id, codigo: A[6]?.codigos[0], qtd: 4, obs: "", preco: 412.5 }],
+  },
+  {
+    n: 120,
+    ident: "",
+    data: diasAtras(9),
+    autor: "Carla (balcão)",
+    situ: "ras",
+    itens: [],
+  },
+];
+const brl = (n) => (n == null || n === "" || isNaN(n) ? "—" : Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }));
+const totalItem = (i) => (i.preco == null || i.preco === "" ? null : Number(i.preco) * Number(i.qtd || 0));
+const totalOrc = (o) => o.itens.reduce((s, i) => s + (totalItem(i) || 0), 0);
+const faltaPreco = (o) => o.itens.some((i) => i.preco == null || i.preco === "");
+const orcSitu = (s) =>
+  s === "con"
+    ? '<span class="pill pub">Concluído</span>'
+    : '<span class="pill ras">Rascunho</span>';
+const nomeVar = (p, cod) => {
+  const v = p?.variantes.find((x) => x.codigo === cod) || p?.variantes[0];
+  return v ? v.descricao || porExtenso(v.nome_completo) : "";
+};
+const refVar = (p, cod) => {
+  const v = p?.variantes.find((x) => x.codigo === cod);
+  return (v?.referencias || [])[0] || (p?.referencias || [])[0] || "";
+};
+
+function confirmaExcluirOrc() {
+  const o = ORC.find((x) => x.n === st.excluirOrc);
+  if (!o) return "";
+  return `<div class="modal-fundo" data-fechar-exc="1"><div class="modal cartao" role="alertdialog" aria-modal="true" aria-labelledby="t-exc">
+      <h2 id="t-exc">Excluir o orçamento ${String(o.n).padStart(4, "0")}?</h2>
+      <p style="margin:0">${esc(o.ident || "Sem identificação")} · ${o.itens.length} ${o.itens.length === 1 ? "item" : "itens"}${o.itens.length ? " · " + brl(totalOrc(o)) : ""}</p>
+      <p class="sub" style="margin:0">Esta ação não pode ser desfeita.</p>
+      <footer style="display:flex;gap:8px;justify-content:flex-end"><button class="btn f" data-fechar-exc="1">Cancelar</button><button class="btn perigo-forte" data-acao="orc-excluir-ok">Excluir orçamento</button></footer>
+    </div></div>`;
+}
+function telaOrcamentos() {
+  const f = st.orcF || {};
+  const q = (f.q || "").toLowerCase();
+  const limite = { hoje: 0, d7: 7, d30: 30 }[f.periodo];
+  const lista = ORC.filter((o) => {
+    if (f.situ && o.situ !== f.situ) return false;
+    if (f.autor && o.autor !== f.autor) return false;
+    if (limite != null && (hojeISO - o.data) / 864e5 > limite + 0.99)
+      return false;
+    if (!pode("orcTodos") && o.autor !== "Responsável" && st.perfil !== "adm")
+      return false;
+    if (!q) return true;
+    const alvo = [
+      String(o.n).padStart(4, "0"),
+      o.ident,
+      ...o.itens.map((i) => (A.find((p) => p.id === i.id) || {}).nomeExt || ""),
+    ]
+      .join(" ")
+      .toLowerCase();
+    return alvo.includes(q);
+  });
+  const autores = [...new Set(ORC.map((o) => o.autor))];
+  return `<div class="cab"><div><h1>Orçamentos</h1><p>Listas de produtos para cotação, com quantidades, valores e total.</p></div><button class="btn p" data-acao="orc-novo">${icone("mais")}Novo orçamento</button></div>
+    <div class="filtros">
+      <label class="busca-g" style="max-width:320px;height:40px">${icone("consulta")}<span class="sr">Buscar orçamento</span><input id="orc-busca" placeholder="Número, identificação ou produto" value="${esc(f.q || "")}"></label>
+      ${[
+        [
+          "situ",
+          "Situação",
+          [
+            ["", "Todas"],
+            ["ras", "Rascunho"],
+            ["con", "Concluído"],
+          ],
+        ],
+        [
+          "periodo",
+          "Período",
+          [
+            ["", "Qualquer data"],
+            ["hoje", "Hoje"],
+            ["d7", "Últimos 7 dias"],
+            ["d30", "Últimos 30 dias"],
+          ],
+        ],
+        ["autor", "Quem criou", [["", "Todos"], ...autores.map((a) => [a, a])]],
+      ]
+        .map(
+          ([k, rot, ops]) =>
+            `<label class="sr" for="of-${k}">${rot}</label><select id="of-${k}" data-ofil="${k}" class="chip ${f[k] ? "on" : ""}" style="max-width:200px">${ops.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? "selected" : ""}>${rot}: ${esc(l)}</option>`).join("")}</select>`,
+        )
+        .join("")}
+      ${f.situ || f.periodo || f.autor || f.q ? '<button class="btn f pq" data-acao="orc-limpar">Limpar filtros</button>' : ""}
+    </div>
+    <section class="cartao tabela-c"><table><thead><tr><th>Nº</th><th>Identificação</th><th>Itens</th><th style="text-align:right">Valor total</th><th class="ocultar-mob">Quem criou</th><th>Data</th><th>Situação</th><th><span class="sr">Ações</span></th></tr></thead>
+      <tbody>${lista.map((o) => `<tr class="cl" tabindex="0" data-orc-abrir="${o.n}"><td class="cod">${String(o.n).padStart(4, "0")}</td><td><span class="nm">${esc(o.ident || "Sem identificação")}</span></td><td class="sub">${o.itens.length} ${o.itens.length === 1 ? "item" : "itens"}</td><td class="cod" style="text-align:right">${o.itens.length ? brl(totalOrc(o)) : "—"}</td><td class="ocultar-mob sub">${esc(o.autor)}</td><td class="sub">${fmtData(o.data)}</td><td>${orcSitu(o.situ)}</td><td style="text-align:right"><button class="btn f pq perigo" data-orc-excluir="${o.n}" aria-label="Excluir orçamento ${String(o.n).padStart(4, "0")}" title="Excluir">${icone("lixo")}</button></td></tr>`).join("") || '<tr><td colspan="8" style="padding:40px;text-align:center" class="sub">Nenhum orçamento com esses filtros.</td></tr>'}</tbody></table>
+      <div class="pag"><span>${lista.length} de ${ORC.length} orçamentos</span></div></section>${confirmaExcluirOrc()}`;
+}
+
+function telaOrcamento() {
+  const o = ORC.find((x) => x.n === st.orcAtual) || ORC[0];
+  const ed = o.situ === "ras";
+  const q = (st.orcBusca || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[.\-\s]/g, "");
+  const achados =
+    q.length < 3
+      ? []
+      : A.filter((p) =>
+          [
+            p.nomeExt,
+            p.nome,
+            ...p.referencias,
+            ...(pode("codigo") ? p.codigos : []),
+          ]
+            .join(" ")
+            .toLowerCase()
+            .replace(/[.\-\s]/g, "")
+            .includes(q),
+        ).slice(0, 6);
+  const texto = () =>
+    [
+      `Orçamento ${String(o.n).padStart(4, "0")}${o.ident ? " · " + o.ident : ""}`,
+      "",
+      ...o.itens.map((i) => {
+        const p = A.find((x) => x.id === i.id);
+        const ref = refVar(p, i.codigo);
+        return `${i.qtd} x ${p ? p.nomeExt : "?"}${nomeVar(p, i.codigo) && p.variantes.length > 1 ? " · " + nomeVar(p, i.codigo) : ""}${ref ? " · Ref. " + ref : ""}${st.copiarInt && pode("codigo") ? " · Cód. " + i.codigo : ""}${st.copiarInt && pode("local") ? " · " + (local(p?.id) || "sem localização") : ""}${i.obs ? " (" + i.obs + ")" : ""}${totalItem(i) != null ? " Â· " + brl(i.preco) + " = " + brl(totalItem(i)) : ""}`;
+      }),
+      "",
+      `Total: ${brl(totalOrc(o))}`,
+    ].join("\n");
+  return `<a href="#orcamentos" class="btn f pq" style="margin-bottom:12px">${icone("seta")}Orçamentos</a>
+    <div class="cab"><div style="flex:1;min-width:260px"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h1 style="font-variant-numeric:tabular-nums">Orçamento ${String(o.n).padStart(4, "0")}</h1>${orcSitu(o.situ)}<span class="sub">${ed ? "✓ Salvo automaticamente" : "Concluído em " + fmtData(o.data)}</span></div>
+      <label class="sr" for="orc-ident">Identificação</label><input class="inp" id="orc-ident" style="margin-top:10px;max-width:560px" value="${esc(o.ident)}" placeholder="Identificação (ex.: Pedido do WhatsApp, caminhão Scania 124)" ${ed ? "" : "readonly"}></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">${ed ? `<button class="btn perigo" data-orc-excluir="${o.n}">${icone("lixo")}Excluir</button><button class="btn" data-acao="orc-copiar">Copiar lista</button><button class="btn esc" data-acao="orc-concluir">Concluir</button>` : `<button class="btn perigo" data-orc-excluir="${o.n}">${icone("lixo")}Excluir</button><button class="btn" data-acao="orc-copiar">Copiar lista</button><button class="btn esc" data-acao="orc-reabrir">Editar</button>`}</div></div>
+    ${st.orcCopiar ? `<section class="cartao bloco" style="margin-bottom:16px"><h3>Copiar lista</h3>${pode("codigo") || pode("local") ? `<label class="perm" style="padding:0"><input type="checkbox" id="orc-int" ${st.copiarInt ? "checked" : ""}><span><b>Incluir código interno e localização</b><small>Use só para uso interno. Desmarque antes de enviar a alguém de fora.</small></span></label>` : ""}<textarea class="inp cod" readonly style="min-height:120px">${esc(texto())}</textarea><div style="display:flex;gap:8px"><button class="btn p" data-acao="orc-copiar-ok">Copiar</button><button class="btn f" data-acao="orc-copiar">Fechar</button></div></section>` : ""}
+    ${
+      ed
+        ? `<section class="cartao bloco" style="margin-bottom:16px"><label for="orc-add" style="font-weight:600">Adicionar produto</label><input class="inp grande" id="orc-add" style="height:48px" value="${esc(st.orcBusca || "")}" placeholder="Nome, referência ou código interno" autocomplete="off">
+      ${
+        achados.length
+          ? `<div style="display:flex;flex-direction:column;gap:8px">${achados
+              .map(
+                (
+                  p,
+                ) => `<div class="orc-res">${fotoEl(p)}<div style="min-width:0;flex:1"><div class="nm">${esc(p.nomeExt)}</div><div class="sub">${p.referencias[0] ? "Ref. " + esc(p.referencias[0]) : esc(p.cats[0])}</div></div>
+          ${p.variantes.length > 1 ? `<label class="sr" for="v-${esc(p.id)}">Variação</label><select class="inp" id="v-${esc(p.id)}" style="width:auto;max-width:220px;height:38px">${p.variantes.map((v) => `<option value="${esc(v.codigo)}">${esc(v.descricao || porExtenso(v.nome_completo))}</option>`).join("")}</select>` : ""}
+          <label class="sr" for="q-${esc(p.id)}">Quantidade</label><input class="inp cod" id="q-${esc(p.id)}" type="number" min="1" value="1" style="width:72px;height:38px"><button class="btn p pq" style="height:38px" data-orc-add="${esc(p.id)}">Adicionar</button></div>`,
+              )
+              .join("")}</div>`
+          : q.length >= 3
+            ? '<p class="sub" style="margin:0">Nenhum produto encontrado.</p>'
+            : '<span class="ajuda">Digite pelo menos 3 letras. Enter adiciona o primeiro resultado.</span>'
+      }</section>`
+        : ""
+    }
+    <section class="cartao tabela-c"><table><thead><tr><th>Produto</th>${pode("codigo") ? "<th>Código interno</th>" : ""}${pode("local") ? '<th class="ocultar-mob">Onde está</th>' : ""}<th>Qtd.</th><th>Valor unit.</th><th style="text-align:right">Total</th><th class="ocultar-mob">Observação</th>${ed ? "<th></th>" : ""}</tr></thead>
+      <tbody>${
+        o.itens
+          .map((i, k) => {
+            const p = A.find((x) => x.id === i.id);
+            return `<tr><td><div style="display:flex;gap:10px;align-items:center">${p ? fotoEl(p) : ""}<div style="min-width:0"><div class="nm">${esc(p ? p.nomeExt : "Produto")}</div><div class="sub">${p && p.variantes.length > 1 ? esc(nomeVar(p, i.codigo)) + " · " : ""}${refVar(p, i.codigo) ? "Ref. " + esc(refVar(p, i.codigo)) : ""}</div></div></div></td>
+        ${pode("codigo") ? `<td><div style="display:flex;gap:6px;align-items:center">${codigoEl(i.codigo)}${copiarBtn(i.codigo)}</div></td>` : ""}${pode("local") ? `<td class="ocultar-mob">${localEl(p?.id)}</td>` : ""}
+        <td>${ed ? `<input class="inp cod" type="number" min="1" value="${i.qtd}" data-orc-qtd="${k}" aria-label="Quantidade" style="width:72px;height:36px">` : `<b class="cod">${i.qtd}</b>`}</td>
+        <td>${ed ? `<div class="valor"><span>R$</span><input class="inp cod" inputmode="decimal" value="${i.precoTxt != null ? i.precoTxt : i.preco == null ? "" : Number(i.preco).toFixed(2).replace(".", ",")}" data-orc-preco="${k}" aria-label="Valor unitário" placeholder="0,00"></div>` : `<span class="cod">${brl(i.preco)}</span>`}</td>
+        <td class="cod" style="text-align:right;font-weight:600;white-space:nowrap">${brl(totalItem(i))}</td>
+        <td class="ocultar-mob">${ed ? `<input class="inp" value="${esc(i.obs)}" data-orc-obs="${k}" placeholder="Opcional" aria-label="Observação" style="height:36px">` : esc(i.obs) || '<span class="sub">—</span>'}</td>
+        ${ed ? `<td><button class="btn f pq" data-orc-rm="${k}" aria-label="Remover item">✕</button></td>` : ""}</tr>`;
+          })
+          .join("") ||
+        `<tr><td colspan="8" style="padding:36px;text-align:center" class="sub">Nenhum item ainda. Busque um produto acima para começar.</td></tr>`
+      }</tbody></table>
+      <div class="orc-total"><span class="sub">${o.itens.length} ${o.itens.length === 1 ? "item" : "itens"} · ${o.itens.reduce((s, i) => s + Number(i.qtd || 0), 0)} unidades · criado por ${esc(o.autor)} em ${fmtData(o.data)}</span><span class="vt"><span>Total do orçamento</span><b class="cod">${brl(totalOrc(o))}</b></span></div>${ed && faltaPreco(o) && o.itens.length ? `<p class="ajuda" style="padding:0 16px 14px;margin:0;color:var(--alerta)">Há itens sem valor. Preencha todos os valores para poder concluir.</p>` : ""}</section>${confirmaExcluirOrc()}`;
+}
+function telaCategorias() {
+  const q = (st.buscaCat || "").trim().toLowerCase();
+  const qtd = (c) => 40 + ((c.length * 37) % 380);
+  const grupos = GRUPOS.map(([g, cs]) => [
+    g,
+    cs.filter(
+      (c) => !q || c.toLowerCase().includes(q) || g.toLowerCase().includes(q),
+    ),
+  ]).filter(([, cs]) => cs.length);
+  const ed = st.editCat;
+  const grupoDe = (c) => (GRUPOS.find(([, cs]) => cs.includes(c)) || [""])[0];
+  return `<div class="cab"><div><h1>Categorias</h1><p>As categorias organizam o catálogo no site. Cada uma fica dentro de um grupo.</p></div>
+        <div style="display:flex;gap:8px"><button class="btn" data-acao="novo-grupo">Novo grupo</button><button class="btn p" data-acao="nova-cat">${icone("mais")}Nova categoria</button></div></div>
+      <div class="filtros"><label class="busca-g" style="max-width:360px;height:40px">${icone("consulta")}<span class="sr">Buscar categoria</span><input id="busca-cat" placeholder="Buscar categoria" value="${esc(st.buscaCat || "")}"></label><span class="sub">Use as setas ao lado de cada categoria para mudar a ordem no site.</span></div>
+      <div class="grupos">${
+        grupos
+          .map(
+            ([
+              g,
+              cs,
+            ]) => `<section class="cartao grp-card"><header><h2>${esc(g)}</h2><span class="sub">${cs.length} ${cs.length === 1 ? "categoria" : "categorias"}</span></header>
+        <ul>${cs
+          .map(
+            (c, i) => `<li>
+          <span class="ordem"><button class="btn f pq" aria-label="Subir ${esc(c)}" ${i === 0 ? "disabled" : ""} data-mover="${esc(c)}|-1">${icone("cima")}</button><button class="btn f pq" aria-label="Descer ${esc(c)}" ${i === cs.length - 1 ? "disabled" : ""} data-mover="${esc(c)}|1">${icone("baixo")}</button></span>
+          <span class="nome-cat">${esc(c)}</span>
+          <a class="sub" href="#produtos" data-ver-cat="${esc(c)}">${fmt(qtd(c))} produtos</a>
+          <button class="btn pq" data-editar-cat="${esc(c)}">Editar</button></li>`,
+          )
+          .join("")}</ul></section>`,
+          )
+          .join("") || '<p class="sub">Nenhuma categoria com esse nome.</p>'
+      }</div>
+      ${
+        ed
+          ? `<div class="modal-fundo" data-fechar="1"><div class="modal cartao" role="dialog" aria-modal="true" aria-labelledby="t-modal">
+          <header style="display:flex;justify-content:space-between;align-items:center"><h2 id="t-modal">${ed === "*nova*" ? "Nova categoria" : "Editar categoria"}</h2><button class="btn f pq" data-fechar="1" aria-label="Fechar">✕</button></header>
+          <div class="campo"><label for="c-nome">Nome</label><input class="inp" id="c-nome" value="${ed === "*nova*" ? "" : esc(ed)}" placeholder="Ex.: Cuícas e catracas"></div>
+          <div class="campo"><label for="c-grupo">Grupo</label><select class="inp" id="c-grupo">${GRUPOS.map(([g]) => `<option ${g === grupoDe(ed) ? "selected" : ""}>${esc(g)}</option>`).join("")}</select></div>
+          <div class="campo"><label for="c-desc">Texto de apresentação <span class="sub" style="font-weight:400">(opcional)</span></label><textarea class="inp" id="c-desc" placeholder="Aparece no topo da página da categoria no site.">${ed === "*nova*" ? "" : `Peças de ${esc(ed.toLowerCase())} para caminhões, carretas e ônibus das principais montadoras.`}</textarea></div>
+          <div class="campo"><label for="c-modelo">Modelo de especificações <span class="sub" style="font-weight:400">(opcional)</span></label><textarea class="inp" id="c-modelo" style="font-size:14px">- **Tipo:**&#10;- **Haste:**&#10;- **Rosca:**</textarea><span class="ajuda">Vem preenchido ao cadastrar um produto desta categoria. Aceita **negrito** e listas.</span></div>
+          <footer style="display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--linha);padding-top:14px"><button class="btn f" data-fechar="1">Cancelar</button><button class="btn p" data-acao="salvar-cat">Salvar</button></footer>
+        </div></div>`
+          : ""
+      }`;
+}
+  function telaMarcas() {
+    const ms = {}; A.forEach(p => { p.logos.forEach(l => ms[l.nome] = ms[l.nome] || { img: l.img, n: 0 }); p.marcas.forEach(m => { ms[m] = ms[m] || { n: 0 }; ms[m].n++; }); });
+    ms["SILC"] = ms["SILC"] || { n: 8 };
+    const lista = Object.entries(ms).sort((a, b) => b[1].n - a[1].n);
+    const tipo = n => /Mercedes|Volvo|Scania|Volkswagen|Ford|Iveco|DAF|MAN|Agrale|Chevrolet|Fiat|Toyota|Mitsubishi/.test(n) ? "Montadora" : /Randon|Guerra|Facchini|Noma|Librelato|Carreta/.test(n) ? "Implemento" : "Fabricante";
+    return `<div class="cab"><div><h1>Marcas</h1><p>Fabricantes, montadoras e implementos. A logo aparece nos produtos e no filtro do site.</p></div><button class="btn p">${icone("mais")}Nova marca</button></div>
+      <div class="filtros"><button class="chip on">Todas</button><button class="chip">Fabricantes</button><button class="chip">Montadoras</button><button class="chip">Implementos</button></div>
+      <div class="marcas">${lista.map(([n, m]) => `<article class="cartao mc"><div class="lg">${m.img ? `<img src="${esc(m.img)}" alt="Logo ${esc(n)}">` : `<span class="iniciais">${esc(n.slice(0, 2).toUpperCase())}</span>`}</div><b>${esc(n)}</b><span class="tag">${tipo(n)}</span><span class="sub">${m.n || 1} produtos na amostra</span></article>`).join("")}</div>`;
+  }
+
+  function telaConsulta() {
+    const q = st.consulta.trim().toLowerCase().replace(/[.\-\s]/g, "");
+    const res = q.length < 3 ? [] : A.filter(p => [p.nomeExt, p.nome, p.detalhes, ...p.referencias, ...p.variantes.map(v => v.nome_completo)].join(" ").toLowerCase().replace(/[.\-\s]/g, "").includes(q)).slice(0, 20);
+    return `<div class="consulta"><div class="cab"><div><h1>Consulta rápida</h1><p>Cole o que o cliente mandou no WhatsApp: nome, referência ou o link do produto. Veja o código e onde o item está guardado.</p></div></div>
+      <label class="sr" for="consulta">O que o cliente pediu</label><input class="inp grande" id="consulta" value="${esc(st.consulta)}" placeholder="Ex.: catraca scania, 9454200338, SC-03.158" autocomplete="off">
+      <p class="sub">${q.length < 3 ? "Digite pelo menos 3 caracteres." : `${res.length} resultado${res.length === 1 ? "" : "s"}`}</p>
+      <div style="display:flex;flex-direction:column;gap:12px">${res.map(p => `<article class="cartao res">${fotoEl(p)}<div style="min-width:0"><div class="nm">${esc(p.nomeExt)}</div><div class="sub">${esc(titulo(p.secao))}${p.referencias.length ? " · Ref. " + esc(p.referencias.slice(0, 2).join(", ")) : ""}</div>
+        ${pode("local") ? `<div style="margin-top:8px">${localEl(p.id, true)}</div>` : ""}
+        <div class="tabela-c" style="margin-top:8px"><table><thead><tr><th>Variação</th><th>Código interno</th></tr></thead><tbody>${p.variantes.slice(0, 6).map(v => `<tr><td>${esc(v.descricao || porExtenso(v.nome_completo))}</td><td><div style="display:flex;gap:8px;align-items:center">${codigoEl(v.codigo)}${copiarBtn(v.codigo)}</div></td></tr>`).join("")}</tbody></table>${p.variantes.length > 6 ? `<p class="sub">+ ${p.variantes.length - 6} variações</p>` : ""}</div></div></article>`).join("")}</div></div>`;
+  }
+
+  function telaUsuarios() {
+    const ab = st.usuariosAba, perf = PERFIS.find(x => x.id === st.perfilSel);
+    const abas = `<nav class="abas" role="tablist"><button class="${ab === "usuarios" ? "on" : ""}" data-uaba="usuarios">Usuários <em>${USUARIOS.length}</em></button><button class="${ab === "perfis" ? "on" : ""}" data-uaba="perfis">Perfis de acesso <em>${PERFIS.length}</em></button></nav>`;
+    if (ab === "usuarios") return `<div class="cab"><div><h1>Usuários e perfis</h1><p>Quem acessa o painel e o que cada um pode fazer.</p></div><button class="btn p">${icone("mais")}Novo usuário</button></div>${abas}
+      <section class="cartao tabela-c"><table><thead><tr><th>Nome</th><th class="ocultar-mob">E-mail</th><th>Perfil</th><th>Situação</th><th></th></tr></thead><tbody>${USUARIOS.map(u => `<tr><td><div style="display:flex;gap:10px;align-items:center"><span class="avatar">${esc(u[0].slice(0, 2).toUpperCase())}</span><b>${esc(u[0])}</b></div></td><td class="ocultar-mob sub">${esc(u[1])}</td><td>${esc(PERFIS.find(p => p.id === u[2]).nome)}</td><td>${u[3] === "Ativo" ? '<span class="pill pub">Ativo</span>' : '<span class="pill ina">Bloqueado</span>'}</td><td style="text-align:right;white-space:nowrap"><button class="btn f pq" data-acao="senha">Redefinir senha</button> <button class="btn pq">Editar</button></td></tr>`).join("")}</tbody></table></section>`;
+    return `<div class="cab"><div><h1>Usuários e perfis</h1><p>Crie perfis com as permissões que quiser e atribua às pessoas. Vale na hora.</p></div><button class="btn p">${icone("mais")}Novo perfil</button></div>${abas}
+      <div class="perfis"><section class="cartao">${PERFIS.map(p => `<div class="perf ${p.id === st.perfilSel ? "on" : ""}" data-perfil="${p.id}"><span><b>${esc(p.nome)}</b><br><span class="sub">${p.pessoas} ${p.pessoas === 1 ? "pessoa" : "pessoas"}</span></span>${p.fixo ? '<span class="tag">padrão</span>' : ""}</div>`).join("")}</section>
+      <section class="cartao bloco"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center"><h2>${esc(perf.nome)}</h2>${perf.fixo ? "" : '<button class="btn pq">Excluir perfil</button>'}</div>
+        ${perf.fixo ? '<p class="tag o" style="white-space:normal;margin:0">O perfil Administrador sempre tem todas as permissões e não pode ser excluído.</p>' : ""}
+        <div class="perms">${PERMS.map(([id, nome, desc, sens]) => `<label class="perm"><input type="checkbox" ${perf.perms.includes(id) ? "checked" : ""} ${perf.fixo ? "disabled" : ""} data-perm="${id}"><span><b>${nome}</b> ${sens ? `<span class="trava">${icone("cadeado", 'style="width:11px;height:11px"')}sensível</span>` : ""}<small>${desc}</small></span></label>`).join("")}</div>
+        ${perf.fixo ? "" : '<button class="btn p" style="align-self:flex-start" data-acao="salvar">Salvar perfil</button>'}</section></div>`;
+  }
+
+  function telaEntrar() {
+    return `<div class="entrar"><div class="lado"><b style="font:700 28px var(--f-titulo);color:var(--ouro)">Falcão</b><h1>Painel do catálogo <span>da linha pesada.</span></h1><p style="color:#a9a9b0;max-width:380px">Cadastre, revise e publique os produtos que aparecem no site e no catálogo.</p></div>
+      <form id="form-entrar" novalidate><h2>Entrar</h2><div class="campo"><label for="e-mail">E-mail</label><input class="inp" id="e-mail" type="email" autocomplete="username" value="responsavel@bahiafalcao.com.br"></div>
+        <div class="campo"><label for="e-senha">Senha</label><input class="inp" id="e-senha" type="password" autocomplete="current-password" value="********"><span class="ajuda">Esqueceu a senha? Peça ao administrador para redefinir.</span></div>
+        <button class="btn p" type="submit" style="height:46px;justify-content:center">Entrar</button></form></div>`;
+  }
+
+  // ---------- Roteamento e eventos ----------
+  const TELAS = { inicio: telaInicio, produtos: telaProdutos, produto: telaProduto, categorias: telaCategorias, marcas: telaMarcas, consulta: telaConsulta, orcamentos: telaOrcamentos, orcamento: telaOrcamento, usuarios: telaUsuarios };
+  function render() {
+    const tela = (location.hash || "#inicio").slice(1);
+    if (tela === "entrar") { raiz.innerHTML = telaEntrar(); return; }
+    const fn = TELAS[tela] || telaInicio;
+    raiz.innerHTML = casca(tela, fn());
+    document.title = "Painel Falcão (protótipo)";
+  }
+  window.addEventListener("hashchange", () => { st.menu = false; st.sujo = false; render(); window.scrollTo(0, 0); });
+  function adicionarItem(pid) {
+    const o = ORC.find((x) => x.n === st.orcAtual), p = A.find((x) => x.id === pid);
+    const codigo = document.getElementById("v-" + pid)?.value || p.variantes[0].codigo;
+    const qtd = Math.max(1, Number(document.getElementById("q-" + pid)?.value || 1));
+    const ja = o.itens.find((i) => i.id === pid && i.codigo === codigo);
+    if (ja) ja.qtd = Number(ja.qtd) + qtd; else o.itens.push({ id: pid, codigo, qtd, obs: "" });
+    st.orcBusca = ""; render(); toast(ja ? "Quantidade somada ao item que já estava na lista" : "Item adicionado"); document.getElementById("orc-add")?.focus();
+  }
+  function aplicarFormato(id, tipo) {
+    const ta = document.getElementById(id); if (!ta) return;
+    const a = ta.selectionStart, b = ta.selectionEnd, v = ta.value;
+    if (tipo === "negrito") { const sel = v.slice(a, b) || "texto"; ta.value = v.slice(0, a) + "**" + sel + "**" + v.slice(b); ta.setSelectionRange(a + 2, a + 2 + sel.length); }
+    else { const ini = v.lastIndexOf("\n", a - 1) + 1, marca = tipo === "lista" ? "- " : "## "; ta.value = v.slice(0, ini) + marca + v.slice(ini); ta.setSelectionRange(a + marca.length, b + marca.length); }
+    st.textos[id] = ta.value; ta.focus();
+    if (!st.sujo) { st.sujo = true; const pos = ta.selectionStart; render(); const n = document.getElementById(id); n.focus(); n.setSelectionRange(pos, pos); }
+  }
+  document.addEventListener("click", e => {
+    const t = e.target.closest("[data-filtro],[data-abrir],[data-aba],[data-acao],[data-cat],[data-perfil],[data-uaba],[data-copiar],[data-abrir-p],[data-cat-add],[data-cat-rm],[data-cat-principal],[data-mover],[data-editar-cat],[data-fechar],[data-ver-cat],[data-ir-filtro],[data-fmt],[data-prev],[data-orc-abrir],[data-orc-add],[data-orc-rm],[data-orc-excluir],[data-fechar-exc],#abrir-menu");
+    if (!t) return;
+    if (t.dataset.fechar && (e.target === t || t.tagName === "BUTTON")) { st.editCat = null; render(); return; }
+    if (t.dataset.fechar) return;
+    if (t.dataset.editarCat) { st.editCat = t.dataset.editarCat; render(); document.getElementById("c-nome")?.focus(); return; }
+    if (t.dataset.verCat) { st.fCat = t.dataset.verCat; st.filtro = "todos"; return; }
+    if (t.dataset.mover) { const [c, d] = t.dataset.mover.split("|"); const g = GRUPOS.find(([, cs]) => cs.includes(c)); if (g) { const cs = g[1], i = cs.indexOf(c), j = i + Number(d); if (j >= 0 && j < cs.length) { [cs[i], cs[j]] = [cs[j], cs[i]]; render(); toast("Ordem atualizada"); } } return; }
+    const orc = ORC.find((x) => x.n === st.orcAtual);
+    if (t.dataset.orcExcluir) { e.stopPropagation(); st.excluirOrc = Number(t.dataset.orcExcluir); render(); return; }
+    if (t.dataset.fecharExc) { if (e.target === t || t.tagName === "BUTTON") { st.excluirOrc = null; render(); } return; }
+    if (t.dataset.orcAbrir) { st.orcAtual = Number(t.dataset.orcAbrir); st.orcBusca = ""; st.orcCopiar = false; location.hash = "#orcamento"; return; }
+    if (t.dataset.orcAdd) { adicionarItem(t.dataset.orcAdd); return; }
+    if (t.dataset.orcRm) { orc.itens.splice(Number(t.dataset.orcRm), 1); render(); toast("Item removido"); return; }
+    if (t.dataset.fmt) { aplicarFormato(t.dataset.alvo, t.dataset.fmt); return; }
+    if (t.dataset.prev) { const ta = document.getElementById(t.dataset.prev); if (ta) st.textos[t.dataset.prev] = ta.value; st.prev[t.dataset.prev] = !st.prev[t.dataset.prev]; render(); return; }
+    if (t.dataset.irFiltro) { st.filtro = t.dataset.irFiltro; st.fCat = st.fMarca = st.fMont = ""; return; }
+    const prod = A.find(x => x.id === st.produto);
+    if (t.dataset.catAdd) { const c = document.getElementById("f-add-cat")?.value; if (c && prod && !prod.cats.includes(c)) { prod.cats.push(c); st.sujo = true; render(); toast(`Categoria “${c}” adicionada`); } return; }
+    if (t.dataset.catRm) { prod.cats = prod.cats.filter(c => c !== t.dataset.catRm); st.sujo = true; render(); return; }
+    if (t.dataset.catPrincipal) { prod.cats = [t.dataset.catPrincipal, ...prod.cats.filter(c => c !== t.dataset.catPrincipal)]; st.sujo = true; render(); return; }
+    if (t.id === "abrir-menu") { st.menu = !st.menu; render(); return; }
+    if (t.dataset.filtro) { st.filtro = t.dataset.filtro; render(); }
+    if (t.dataset.abrir) { st.produto = t.dataset.abrir; st.aba = "geral"; location.hash = "#produto"; }
+    if (t.dataset.abrirP) { st.produto = t.dataset.abrirP; st.aba = "geral"; }
+    if (t.dataset.aba) { st.aba = t.dataset.aba; render(); }
+    if (t.dataset.cat) { st.cat = t.dataset.cat; render(); }
+    if (t.dataset.perfil) { st.perfilSel = t.dataset.perfil; render(); }
+    if (t.dataset.uaba) { st.usuariosAba = t.dataset.uaba; render(); }
+    if (t.dataset.copiar) { const c = t.dataset.copiar; (navigator.clipboard?.writeText(c) || Promise.reject()).then(() => toast(`Código ${c} copiado`), () => toast(`Código ${c}`)); }
+    const a = t.dataset.acao;
+    if (a === "orc-novo") { const n = Math.max(...ORC.map((o) => o.n)) + 1; ORC.unshift({ n, ident: "", data: new Date(), autor: "Responsável", situ: "ras", itens: [] }); st.orcAtual = n; st.orcBusca = ""; location.hash = "#orcamento"; setTimeout(() => document.getElementById("orc-add")?.focus(), 50); }
+    if (a === "orc-limpar") { st.orcF = {}; render(); }
+    if (a === "orc-concluir") { const o = ORC.find((x) => x.n === st.orcAtual); if (!o.itens.length) { toast("Adicione pelo menos um item antes de concluir"); } else if (faltaPreco(o)) { toast("Preencha o valor de todos os itens antes de concluir"); } else { o.situ = "con"; render(); toast("Orçamento concluído"); } }
+    if (a === "orc-reabrir") { ORC.find((x) => x.n === st.orcAtual).situ = "ras"; render(); toast("Orçamento liberado para edição. Fica como rascunho até concluir de novo."); }
+    if (a === "orc-excluir-ok") { const i = ORC.findIndex((x) => x.n === st.excluirOrc); const n = st.excluirOrc; if (i >= 0) ORC.splice(i, 1); st.excluirOrc = null; if (location.hash === "#orcamento") location.hash = "#orcamentos"; else render(); toast(`Orçamento ${String(n).padStart(4, "0")} excluído`); return; }
+    if (a === "orc-excluir") { if (st.confirmaExcluir) { const i = ORC.findIndex((x) => x.n === st.orcAtual); ORC.splice(i, 1); st.confirmaExcluir = false; location.hash = "#orcamentos"; toast("Rascunho excluído"); } else { st.confirmaExcluir = true; toast("Clique de novo em “Excluir rascunho” para confirmar"); setTimeout(() => (st.confirmaExcluir = false), 4000); } }
+    if (a === "orc-copiar") { st.orcCopiar = !st.orcCopiar; render(); }
+    if (a === "orc-copiar-ok") { const ta = document.querySelector("textarea.cod[readonly]"); (navigator.clipboard?.writeText(ta.value) || Promise.reject()).then(() => toast("Lista copiada"), () => { ta.select(); toast("Selecionado: use Ctrl+C"); }); }
+    if (a === "salvar") { st.sujo = false; render(); toast("Alterações salvas"); }
+    if (a === "nova-cat") { st.editCat = "*nova*"; render(); document.getElementById("c-nome")?.focus(); }
+    if (a === "novo-grupo") { toast("Novo grupo: escolha um nome (no sistema real abre uma janela igual à de categoria)"); }
+    if (a === "salvar-cat") { st.editCat = null; render(); toast("Categoria salva"); }
+    if (a === "colar") { st.colar = !st.colar; render(); }
+    if (a === "colar-ok") { const linhas = (document.getElementById("f-colar")?.value || "").split(/\n/).filter(l => l.trim()); st.colar = false; st.sujo = true; render(); toast(`${linhas.length} variações adicionadas à lista`); }
+    if (a === "senha") { toast("Senha temporária gerada. Entregue à pessoa; ela troca no primeiro acesso."); }
+    if (a === "limpar") { st.fCat = st.fMarca = st.fMont = ""; st.busca = ""; st.filtro = "todos"; render(); }
+    if (a === "descartar") { st.sujo = false; render(); toast("Alterações descartadas"); }
+    if (a === "publicar") { toast("Produto publicado. Já aparece no site."); }
+    if (a === "desativar") { toast("Produto desativado. O endereço passa a responder “removido”."); }
+    if (a === "revisado") { st.revFeitos++; st.revIdx++; render(); toast("Marcado como completo"); }
+    if (a === "pular") { st.revIdx++; render(); }
+    if (a === "pend") { toast("Pendência resolvida"); t.closest(".pend").remove(); }
+  });
+  document.addEventListener("keydown", e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b" && e.target.closest?.(".editor")) { e.preventDefault(); aplicarFormato(e.target.id, "negrito"); return; }
+    if (e.key === "Enter" && e.target.id === "orc-add") { e.preventDefault(); const b = document.querySelector("[data-orc-add]"); if (b) b.click(); return; }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); document.getElementById("busca-global")?.focus(); }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); if (st.sujo) { st.sujo = false; render(); toast("Alterações salvas"); } }
+    if (e.key === "Enter" && e.target.matches("tr.cl")) e.target.click();
+  });
+  document.addEventListener("input", e => {
+    if (e.target.id === "busca-global") { st.busca = e.target.value; if (location.hash !== "#produtos") { location.hash = "#produtos"; } else { const pos = e.target.selectionStart; render(); const el = document.getElementById("busca-global"); el.focus(); el.setSelectionRange(pos, pos); } return; }
+    if (e.target.closest?.(".editor") && e.target.tagName === "TEXTAREA") { st.textos[e.target.id] = e.target.value; if (!st.sujo) { st.sujo = true; const id = e.target.id, pos = e.target.selectionStart; render(); const n = document.getElementById(id); n.focus(); n.setSelectionRange(pos, pos); } return; }
+    if (e.target.id === "orc-busca") { st.orcF.q = e.target.value; const pos = e.target.selectionStart; render(); const el = document.getElementById("orc-busca"); el.focus(); el.setSelectionRange(pos, pos); return; }
+    if (e.target.id === "orc-add") { st.orcBusca = e.target.value; const pos = e.target.selectionStart; render(); const el = document.getElementById("orc-add"); el.focus(); el.setSelectionRange(pos, pos); return; }
+    if (e.target.id === "orc-ident") { ORC.find((x) => x.n === st.orcAtual).ident = e.target.value; return; }
+    if (e.target.dataset.orcQtd || e.target.dataset.orcPreco) { const campo = e.target.dataset.orcQtd ? "orcQtd" : "orcPreco", k = e.target.dataset[campo]; const it = ORC.find((x) => x.n === st.orcAtual).itens[Number(k)]; if (campo === "orcQtd") it.qtd = Math.max(1, Number(e.target.value || 1)); else { const v = e.target.value.replace(/\./g, "").replace(",", "."); it.precoTxt = e.target.value; it.preco = e.target.value.trim() === "" || isNaN(Number(v)) ? null : Number(v); } const pos = e.target.selectionStart; render(); const n = document.querySelector(campo === "orcQtd" ? `[data-orc-qtd="${k}"]` : `[data-orc-preco="${k}"]`); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (_) {} } return; }
+    if (e.target.dataset.orcObs) { ORC.find((x) => x.n === st.orcAtual).itens[Number(e.target.dataset.orcObs)].obs = e.target.value; return; }
+    if (e.target.id === "busca-cat") { st.buscaCat = e.target.value; const pos = e.target.selectionStart; render(); const el = document.getElementById("busca-cat"); el.focus(); el.setSelectionRange(pos, pos); return; }
+    if (e.target.id === "consulta") { st.consulta = e.target.value; const pos = e.target.selectionStart; render(); const el = document.getElementById("consulta"); el.focus(); el.setSelectionRange(pos, pos); return; }
+    if (location.hash === "#produto" && !st.sujo && pode("editar")) { st.sujo = true; const foco = document.activeElement?.id; render(); if (foco) document.getElementById(foco)?.focus(); }
+  });
+  document.addEventListener("change", e => {
+    if (e.target.dataset && e.target.dataset.orcPreco) { const it = ORC.find((x) => x.n === st.orcAtual).itens[Number(e.target.dataset.orcPreco)]; delete it.precoTxt; render(); return; }
+    if (e.target.dataset.ofil) { st.orcF[e.target.dataset.ofil] = e.target.value; render(); return; }
+    if (e.target.id === "orc-int") { st.copiarInt = e.target.checked; render(); return; }
+    if (e.target.id === "f-cat-princ") { const prod = A.find(x => x.id === st.produto); const c = e.target.value; prod.cats = [c, ...prod.cats.filter(x => x !== c)]; st.sujo = true; render(); return; }
+    if (e.target.id === "f-add-cat" && e.target.value) { const prod = A.find(x => x.id === st.produto); const c = e.target.value; if (prod && !prod.cats.includes(c)) { prod.cats.push(c); st.sujo = true; render(); toast(`Categoria “${c}” adicionada`); } return; }
+    if (e.target.dataset.fsel) { st[e.target.dataset.fsel] = e.target.value; render(); return; }
+    if (e.target.id === "ver-como") { st.perfil = e.target.value; render(); toast("Vendo o painel como: " + PERFIS.find(p => p.id === st.perfil).nome); } });
+  document.addEventListener("submit", e => { if (e.target.id === "form-entrar") { e.preventDefault(); location.hash = "#inicio"; } });
+  render();
+})();
+</script>
+</body>
+</html>
