@@ -1,0 +1,538 @@
+[
+  {
+    "id": "EX-0101",
+    "nome": "TERMINAL ROSCADO",
+    "secao": "IMPORTADOS",
+    "grupo": "TERMINAL ROSCADO",
+    "codigos": ["EX-0101", "EX-0102", "EX-0103"],
+    "referencias": [],
+    "marcas": [],
+    "aplicacoes": ["Mercedes-Benz"],
+    "detalhes": "",
+    "destaque": "",
+    "pagina_pdf": "4",
+    "foto": "fotos/img_1.png",
+    "revisar": "",
+    "ocr": "",
+    "texto_completo": "TERMINAL ROSCADO 06 X 06 IMP (9,99) TERMINAL ROSCADO 08 X 06 IMP (9,99) TERMINAL ROSCADO 10 X 10 IMP (9,99)",
+    "variantes": [
+      {
+        "codigo": "EX-0101",
+        "descricao": "06 X 06 IMP (9,99)",
+        "nome_completo": "TERMINAL ROSCADO 06 X 06 IMP (9,99)",
+        "referencias": [],
+        "destaque": "",
+        "detalhes": "",
+        "valor_parenteses": "9,99",
+        "revisar": ""
+      },
+      {
+        "codigo": "EX-0102",
+        "descricao": "08 X 06 IMP (9,99)",
+        "nome_completo": "TERMINAL ROSCADO 08 X 06 IMP (9,99)",
+        "referencias": [],
+        "destaque": "",
+        "detalhes": "",
+        "valor_parenteses": "9,99",
+        "revisar": ""
+      },
+      {
+        "codigo": "EX-0103",
+        "descricao": "10 X 10 IMP (9,99)",
+        "nome_completo": "TERMINAL ROSCADO 10 X 10 IMP (9,99)",
+        "referencias": [],
+        "destaque": "",
+        "detalhes": "",
+        "valor_parenteses": "9,99",
+        "revisar": ""
+      }
+    ],
+    "logos": [],
+    "tambem_em": []
+  },
+  {
+    "id": "EX-0201",
+    "nome": "FORQUILHA COMPLETA 3/4 CUICA IMP (7,7)",
+    "secao": "IMPORTADOS",
+    "grupo": "",
+    "codigos": ["EX-0201"],
+    "referencias": [],
+    "marcas": [],
+    "aplicacoes": [],
+    "detalhes": "",
+    "destaque": "",
+    "pagina_pdf": "5",
+    "foto": "fotos/img_2.png",
+    "revisar": "",
+    "ocr": "",
+    "texto_completo": "FORQUILHA COMPLETA 3/4 CUICA IMP (7,7)",
+    "variantes": [
+      {
+        "codigo": "EX-0201",
+        "descricao": "FORQUILHA COMPLETA 3/4 CUICA IMP (7,7)",
+        "nome_completo": "FORQUILHA COMPLETA 3/4 CUICA IMP (7,7)",
+        "referencias": [],
+        "destaque": "",
+        "detalhes": "",
+        "valor_parenteses": "7,7",
+        "revisar": ""
+      }
+    ],
+    "logos": [],
+    "tambem_em": ["pág. 12 (Cuícas, catracas e acessórios)"]
+  },
+  {
+    "id": "EX-0301",
+    "nome": "CATRACA AUTOMATICA 28 EST DIANT LE",
+    "secao": "CUICAS, CATRACAS E ACESSÓRIOS",
+    "grupo": "",
+    "codigos": ["EX-0301"],
+    "referencias": [],
+    "marcas": ["Master"],
+    "aplicacoes": ["Volvo", "Carreta / reboque"],
+    "detalhes": "",
+    "destaque": "",
+    "pagina_pdf": "12",
+    "foto": "fotos/img_3.png",
+    "revisar": "",
+    "ocr": "",
+    "texto_completo": "CATRACA AUTOMATICA 28 EST DIANT LE",
+    "variantes": [
+      {
+        "codigo": "EX-0301",
+        "descricao": "CATRACA AUTOMATICA 28 EST DIANT LE",
+        "nome_completo": "CATRACA AUTOMATICA 28 EST DIANT LE",
+        "referencias": [],
+        "destaque": "",
+        "detalhes": "",
+        "valor_parenteses": "",
+        "revisar": ""
+      }
+    ],
+    "logos": [{ "nome": "Volvo", "img": "logos/volvo.png" }],
+    "tambem_em": []
+  },
+  {
+    "id": "EX-0201",
+    "nome": "FORQUILHA COMPLETA 3/4 CUICA IMP (7,7)",
+    "secao": "CUICAS, CATRACAS E ACESSÓRIOS",
+    "grupo": "",
+    "codigos": ["EX-0201"],
+    "referencias": [],
+    "marcas": [],
+    "aplicacoes": [],
+    "detalhes": "",
+    "destaque": "",
+    "pagina_pdf": "12",
+    "foto": "fotos/img_4.png",
+    "revisar": "",
+    "ocr": "",
+    "texto_completo": "FORQUILHA COMPLETA 3/4 CUICA IMP (7,7)",
+    "variantes": [
+      {
+        "codigo": "EX-0201",
+        "descricao": "FORQUILHA COMPLETA 3/4 CUICA IMP (7,7)",
+        "nome_completo": "FORQUILHA COMPLETA 3/4 CUICA IMP (7,7)",
+        "referencias": [],
+        "destaque": "",
+        "detalhes": "",
+        "valor_parenteses": "7,7",
+        "revisar": ""
+      }
+    ],
+    "logos": [],
+    "tambem_em": ["pág. 5 (Importados)"]
+  },
+  {
+    "id": "EX-0401",
+    "nome": "HASTE LONGA CUICA 30 X 30",
+    "secao": "CUICAS, CATRACAS E ACESSÓRIOS",
+    "grupo": "",
+    "codigos": ["EX-0401"],
+    "referencias": [],
+    "marcas": [],
+    "aplicacoes": [],
+    "detalhes": "",
+    "destaque": "",
+    "pagina_pdf": "13",
+    "foto": "",
+    "revisar": "",
+    "ocr": "",
+    "texto_completo": "HASTE LONGA CUICA 30 X 30",
+    "variantes": [
+      {
+        "codigo": "EX-0401",
+        "descricao": "HASTE LONGA CUICA 30 X 30",
+        "nome_completo": "HASTE LONGA CUICA 30 X 30",
+        "referencias": [],
+        "destaque": "",
+        "detalhes": "",
+        "valor_parenteses": "",
+        "revisar": ""
+      }
+    ],
+    "logos": [],
+    "tambem_em": []
+  },
+  {
+    "id": "EX-0501",
+    "nome": "ANEL RETENCAO",
+    "secao": "ANEL ELÁSTICO, ROLETE E TRAVA",
+    "grupo": "",
+    "codigos": ["EX-0501", "EX-0502"],
+    "referencias": [],
+    "marcas": [],
+    "aplicacoes": [],
+    "detalhes": "",
+    "destaque": "",
+    "pagina_pdf": "20",
+    "foto": "fotos/img_5.png",
+    "revisar": "",
+    "ocr": "",
+    "texto_completo": "ANEL RETENCAO 1,2 ANEL RETENCAO 1,5",
+    "variantes": [
+      {
+        "codigo": "EX-0501",
+        "descricao": "1,2",
+        "nome_completo": "ANEL RETENCAO 1,2",
+        "referencias": [],
+        "destaque": "",
+        "detalhes": "",
+        "valor_parenteses": "1,2",
+        "revisar": ""
+      },
+      {
+        "codigo": "EX-0502",
+        "descricao": "1,5",
+        "nome_completo": "ANEL RETENCAO 1,5",
+        "referencias": [],
+        "destaque": "",
+        "detalhes": "",
+        "valor_parenteses": "1,5",
+        "revisar": ""
+      }
+    ],
+    "logos": [],
+    "tambem_em": []
+  },
+  {
+    "id": "EX-0601",
+    "nome": "TAMBOR FREIO DIANT FORD/CARGO 1422",
+    "secao": "SISTEMA DE RODA",
+    "grupo": "",
+    "codigos": ["EX-0601"],
+    "referencias": [],
+    "marcas": [],
+    "aplicacoes": ["Ford"],
+    "detalhes": "CUBO: LONA: FRUM: 3588 BATISTA: 4313/6015 ORIG: 2SO-405-615A",
+    "destaque": "USA-SE",
+    "pagina_pdf": "30",
+    "foto": "fotos/img_6.png",
+    "revisar": "",
+    "ocr": "",
+    "texto_completo": "TAMBOR FREIO DIANT FORD/CARGO 1422 FRUM: 3588 USA-SE BATISTA: 4313/6015 CUBO: LONA: ORIG: 2SO-405-615A",
+    "variantes": [
+      {
+        "codigo": "EX-0601",
+        "descricao": "TAMBOR FREIO DIANT FORD/CARGO 1422",
+        "nome_completo": "TAMBOR FREIO DIANT FORD/CARGO 1422",
+        "referencias": [],
+        "destaque": "USA-SE",
+        "detalhes": "CUBO: LONA: FRUM: 3588 BATISTA: 4313/6015 ORIG: 2SO-405-615A",
+        "valor_parenteses": "",
+        "revisar": ""
+      }
+    ],
+    "logos": [],
+    "tambem_em": []
+  },
+  {
+    "id": "EX-0701",
+    "nome": "VALVULA PEDAL FREIO",
+    "secao": "VÁLVULAS",
+    "grupo": "",
+    "codigos": ["EX-0701"],
+    "referencias": ["461-319-004"],
+    "marcas": ["Wabco"],
+    "aplicacoes": ["Scania"],
+    "detalhes": "REF ORIG: 1-428-337. OBS: acompanha reparo",
+    "destaque": "",
+    "pagina_pdf": "40",
+    "foto": "fotos/img_7.png",
+    "revisar": "",
+    "ocr": "",
+    "texto_completo": "VALVULA PEDAL FREIO REF ORIG: 1-428-337. OBS: acompanha reparo WABCO 461-319-004",
+    "variantes": [
+      {
+        "codigo": "EX-0701",
+        "descricao": "VALVULA PEDAL FREIO",
+        "nome_completo": "VALVULA PEDAL FREIO",
+        "referencias": ["461-319-004"],
+        "destaque": "",
+        "detalhes": "REF ORIG: 1-428-337. OBS: acompanha reparo",
+        "valor_parenteses": "",
+        "revisar": ""
+      }
+    ],
+    "logos": [],
+    "tambem_em": []
+  },
+  {
+    "id": "EX-0801",
+    "nome": "BUCHA BARRA ESTABILIZADORA",
+    "secao": "BOLSAS E AMORTECEDORES CABINE",
+    "grupo": "",
+    "codigos": ["EX-0801"],
+    "referencias": [],
+    "marcas": ["Eckisil"],
+    "aplicacoes": ["Volkswagen"],
+    "detalhes": "DIMENSÃO: 18X27MM ALTURA: 40MM",
+    "destaque": "",
+    "pagina_pdf": "50",
+    "foto": "fotos/img_8.png",
+    "revisar": "pendente",
+    "ocr": "sim",
+    "texto_completo": "BUCHA BARRA ESTABILIZADORA DIMENSÃO: 18X27MM ALTURA: 40MM",
+    "variantes": [
+      {
+        "codigo": "EX-0801",
+        "descricao": "BUCHA BARRA ESTABILIZADORA",
+        "nome_completo": "BUCHA BARRA ESTABILIZADORA",
+        "referencias": [],
+        "destaque": "",
+        "detalhes": "DIMENSÃO: 18X27MM ALTURA: 40MM",
+        "valor_parenteses": "",
+        "revisar": "pendente"
+      }
+    ],
+    "logos": [],
+    "tambem_em": []
+  },
+  {
+    "id": "EX-0901",
+    "nome": "SUPORTE MOLA TRAS",
+    "secao": "BALANÇAS, SUPORTES E PINOS",
+    "grupo": "",
+    "codigos": ["EX-0901"],
+    "referencias": [],
+    "marcas": ["Suspensys"],
+    "aplicacoes": ["Ford"],
+    "detalhes": "SUPORTE TRUCK CENTRAL LE SC-03.158",
+    "destaque": "",
+    "pagina_pdf": "60",
+    "foto": "fotos/img_9.png",
+    "revisar": "",
+    "ocr": "",
+    "texto_completo": "SUPORTE MOLA TRAS SUPORTE TRUCK CENTRAL LE SC-03.158 SILC",
+    "variantes": [
+      {
+        "codigo": "EX-0901",
+        "descricao": "SUPORTE MOLA TRAS",
+        "nome_completo": "SUPORTE MOLA TRAS",
+        "referencias": [],
+        "destaque": "",
+        "detalhes": "SUPORTE TRUCK CENTRAL LE SC-03.158",
+        "valor_parenteses": "",
+        "revisar": ""
+      }
+    ],
+    "logos": [],
+    "tambem_em": ["pág. 70 (Lançamentos)"]
+  },
+  {
+    "id": "EX-0911",
+    "nome": "SUPORTE MOLA DIANT",
+    "secao": "BALANÇAS, SUPORTES E PINOS",
+    "grupo": "",
+    "codigos": ["EX-0911"],
+    "referencias": [],
+    "marcas": [],
+    "aplicacoes": ["Volvo"],
+    "detalhes": "",
+    "destaque": "",
+    "pagina_pdf": "60",
+    "foto": "",
+    "revisar": "",
+    "ocr": "",
+    "texto_completo": "SUPORTE MOLA DIANT",
+    "variantes": [
+      {
+        "codigo": "EX-0911",
+        "descricao": "SUPORTE MOLA DIANT",
+        "nome_completo": "SUPORTE MOLA DIANT",
+        "referencias": [],
+        "destaque": "",
+        "detalhes": "",
+        "valor_parenteses": "",
+        "revisar": ""
+      }
+    ],
+    "logos": [],
+    "tambem_em": []
+  },
+  {
+    "id": "EX-0901",
+    "nome": "SUPORTE MOLA TRAS",
+    "secao": "LANÇAMENTOS",
+    "grupo": "",
+    "codigos": ["EX-0901"],
+    "referencias": [],
+    "marcas": ["Suspensys"],
+    "aplicacoes": ["Ford"],
+    "detalhes": "SUPORTE TRUCK CENTRAL LE SC-03.158",
+    "destaque": "",
+    "pagina_pdf": "70",
+    "foto": "fotos/img_10.png",
+    "revisar": "",
+    "ocr": "",
+    "texto_completo": "SUPORTE MOLA TRAS SUPORTE TRUCK CENTRAL LE SC-03.158 SILC",
+    "variantes": [
+      {
+        "codigo": "EX-0901",
+        "descricao": "SUPORTE MOLA TRAS",
+        "nome_completo": "SUPORTE MOLA TRAS",
+        "referencias": [],
+        "destaque": "",
+        "detalhes": "SUPORTE TRUCK CENTRAL LE SC-03.158",
+        "valor_parenteses": "",
+        "revisar": ""
+      }
+    ],
+    "logos": [],
+    "tambem_em": ["pág. 60 (Balanças, suportes e pinos)"]
+  },
+  {
+    "id": "EX-1001",
+    "nome": "SUPORTE MOLA MB P/DIANT E TRAS",
+    "secao": "LANÇAMENTOS",
+    "grupo": "",
+    "codigos": ["EX-1001"],
+    "referencias": ["A958.325.1701"],
+    "marcas": [],
+    "aplicacoes": ["Mercedes-Benz"],
+    "detalhes": "Aplicação: Atego 1418, 1518. Código Silc: SC-01.151",
+    "destaque": "",
+    "pagina_pdf": "70",
+    "foto": "fotos/img_11.png",
+    "revisar": "",
+    "ocr": "",
+    "texto_completo": "SUPORTE MOLA MB P/DIANT E TRAS Aplicação: Atego 1418, 1518. Código Silc: SC-01.151 REF ORIG: A958.325.1701",
+    "variantes": [
+      {
+        "codigo": "EX-1001",
+        "descricao": "SUPORTE MOLA MB P/DIANT E TRAS",
+        "nome_completo": "SUPORTE MOLA MB P/DIANT E TRAS",
+        "referencias": ["A958.325.1701"],
+        "destaque": "",
+        "detalhes": "Aplicação: Atego 1418, 1518. Código Silc: SC-01.151",
+        "valor_parenteses": "",
+        "revisar": ""
+      }
+    ],
+    "logos": [{ "nome": "Atego", "img": "logos/atego.png" }],
+    "tambem_em": []
+  },
+  {
+    "id": "EX-1101",
+    "nome": "KIT GAMBIARRA TRIPLA",
+    "secao": "LANÇAMENTOS",
+    "grupo": "",
+    "codigos": ["EX-1101"],
+    "referencias": [],
+    "marcas": [],
+    "aplicacoes": [],
+    "detalhes": "",
+    "destaque": "",
+    "pagina_pdf": "71",
+    "foto": "fotos/img_12.png",
+    "revisar": "",
+    "ocr": "",
+    "texto_completo": "KIT GAMBIARRA TRIPLA",
+    "variantes": [
+      {
+        "codigo": "EX-1101",
+        "descricao": "KIT GAMBIARRA TRIPLA",
+        "nome_completo": "KIT GAMBIARRA TRIPLA",
+        "referencias": [],
+        "destaque": "",
+        "detalhes": "",
+        "valor_parenteses": "",
+        "revisar": ""
+      }
+    ],
+    "logos": [],
+    "tambem_em": []
+  },
+  {
+    "id": "EX-1201",
+    "nome": "PARAFUSO RODA",
+    "secao": "PARAFUSOS E PORCAS",
+    "grupo": "",
+    "codigos": ["EX-1201", "EX-1202"],
+    "referencias": [],
+    "marcas": [],
+    "aplicacoes": ["Scania", "Volvo"],
+    "detalhes": "",
+    "destaque": "",
+    "pagina_pdf": "80",
+    "foto": "fotos/img_13.png",
+    "revisar": "",
+    "ocr": "",
+    "texto_completo": "PARAFUSO RODA M22 X 1,5 X 90 REF: EX-0301 PARAFUSO RODA M22 X 1,5 X 110",
+    "variantes": [
+      {
+        "codigo": "EX-1201",
+        "descricao": "M22 X 1,5 X 90",
+        "nome_completo": "PARAFUSO RODA M22 X 1,5 X 90",
+        "referencias": ["EX-0301"],
+        "destaque": "",
+        "detalhes": "",
+        "valor_parenteses": "",
+        "revisar": ""
+      },
+      {
+        "codigo": "EX-1202",
+        "descricao": "M22 X 1,5 X 110",
+        "nome_completo": "PARAFUSO RODA M22 X 1,5 X 110",
+        "referencias": [],
+        "destaque": "",
+        "detalhes": "",
+        "valor_parenteses": "",
+        "revisar": ""
+      }
+    ],
+    "logos": [],
+    "tambem_em": []
+  },
+  {
+    "id": "EX-1301",
+    "nome": "FILTRO AR",
+    "secao": "FILTROS",
+    "grupo": "",
+    "codigos": ["EX-1301"],
+    "referencias": ["C 30 1500"],
+    "marcas": ["Mann"],
+    "aplicacoes": ["Randon", "Ônibus"],
+    "detalhes": "REF TECFIL: ARL 6070",
+    "destaque": "",
+    "pagina_pdf": "90",
+    "foto": "fotos/img_14.png",
+    "revisar": "",
+    "ocr": "",
+    "texto_completo": "FILTRO AR REF TECFIL: ARL 6070 C 30 1500",
+    "variantes": [
+      {
+        "codigo": "EX-1301",
+        "descricao": "FILTRO AR",
+        "nome_completo": "FILTRO AR",
+        "referencias": ["C 30 1500"],
+        "destaque": "",
+        "detalhes": "REF TECFIL: ARL 6070",
+        "valor_parenteses": "",
+        "revisar": ""
+      }
+    ],
+    "logos": [],
+    "tambem_em": []
+  }
+]

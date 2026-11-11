@@ -90,3 +90,33 @@ describe("papel público (catalogo_publico)", () => {
     }
   });
 });
+
+describe("papel do painel (catalogo_painel)", () => {
+  // Consulta a permissão em vez de executar o comando: o teste nunca apaga nada de verdade.
+  async function painelPode(tabela: string, acao: string): Promise<boolean> {
+    const { rows } = await dono.query<{ pode: boolean }>(
+      "SELECT has_table_privilege('catalogo_painel', quote_ident($1), $2) AS pode",
+      [tabela, acao],
+    );
+    return rows[0]?.pode ?? false;
+  }
+
+  it("só acrescenta na auditoria: não altera nem apaga histórico e registro de acessos", async () => {
+    expect(await painelPode("Alteracao", "INSERT")).toBe(true);
+    expect(await painelPode("Alteracao", "UPDATE")).toBe(false);
+    expect(await painelPode("Alteracao", "DELETE")).toBe(false);
+    expect(await painelPode("RegistroAcesso", "INSERT")).toBe(true);
+    expect(await painelPode("RegistroAcesso", "UPDATE")).toBe(false);
+    expect(await painelPode("RegistroAcesso", "DELETE")).toBe(false);
+  });
+
+  it("não mexe no controle de migrações", async () => {
+    expect(await painelPode("_prisma_migrations", "SELECT")).toBe(false);
+    expect(await painelPode("_prisma_migrations", "DELETE")).toBe(false);
+  });
+
+  it("continua lendo e gravando as tabelas do catálogo", async () => {
+    expect(await painelPode("Produto", "UPDATE")).toBe(true);
+    expect(await painelPode("VariacaoInterna", "DELETE")).toBe(true);
+  });
+});

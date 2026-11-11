@@ -1,7 +1,7 @@
 # Tarefas 003: Painel do administrador (etapa 1) e orçamentos (spec 004)
 
 - **Plano:** [plan.md](./plan.md) · **Specs:** [003](./spec.md) e [004](../004-orcamentos/spec.md) · **Base:** [plano 002](../002-catalogo-backend/plan.md)
-- **Status:** Em implementação (2026-11-11): etapa 1, T001–T033 concluídas
+- **Status:** Em implementação: etapa 1 concluída (T001–T050, 2026-11-12); próxima: etapa 2 (T051)
 
 > Regras:
 > - Cada tarefa é pequena (até ~30 min) e termina com os testes verdes.
@@ -65,23 +65,23 @@
 - [x] T033 Implementar `indexavel()`
 
 ### Importação do catálogo (002 §2.3)
-- [ ] T034 Fixture **anonimizada** com ~30 cards (lista de medidas, repetido em 2 categorias, importado, SILC, lançamento, sem foto, com pendência, referência igual a código interno) + teste que falha se a fixture tiver número de 6 a 9 dígitos
-- [ ] T035 Teste pequeno `agrupar`: card com várias medidas = 1 produto com 1 variação por código; cards com o mesmo código = 1 produto em várias categorias, com uma principal (002 CA1.2, CA6.7)
-- [ ] T036 Implementar `agrupar()`
-- [ ] T037 Teste pequeno importados: `IMP (6,5)` → categoria Importados + imposto interno 6,50, e some do nome (002 CA4.5)
-- [ ] T038 Implementar `importados()`
-- [ ] T039 Teste pequeno referências: marca e tipo pelo rótulo ("REF SILC", "Orig. Mercedes"); referência igual a código interno vira **alerta** e não é publicada
-- [ ] T040 Implementar `referencias()`
-- [ ] T041 Teste pequeno `classificar`: aplicação e especificações em texto formatado, montadoras em `ProdutoMarca`, sobra vira pendência (002 CA1.3, CA1.4)
-- [ ] T042 Implementar `classificar()`
-- [ ] T043 Teste pequeno nome por extenso pelo dicionário; nome abreviado guardado só para busca
-- [ ] T044 Implementar `nomePorExtenso()` + dicionário versionado
-- [ ] T045 Teste pequeno `verificarSigilo()`: acusa código interno ou imposto em qualquer texto público (002 CA4.2)
-- [ ] T046 Implementar `verificarSigilo()`
-- [ ] T047 Teste grande importação da fixture: todo código importado, `CardOrigem` por card, ordem do PDF (003 CA14.3, 002 CA1.8), duas importações = mesmo banco (CA1.5), relatório (CA1.6), trava com produto editado ou de cadastro (CA1.7)
-- [ ] T048 Implementar a CLI `importar -- --origem <pasta>` (sem fotos; elas entram na T090)
-- [ ] T049 Importar o catálogo extraído real no `falcao_dev` e revisar o relatório (fora do Git)
-- [ ] T050 `npm run check` verde + revisão do `code-reviewer` da etapa 1
+- [x] T034 Fixture **anonimizada** com ~30 cards (lista de medidas, repetido em 2 categorias, importado, SILC, lançamento, sem foto, com pendência, referência igual a código interno) + teste que falha se a fixture tiver número de 6 a 9 dígitos
+- [x] T035 Teste pequeno `agrupar`: card com várias medidas = 1 produto com 1 variação por código; cards com o mesmo código = 1 produto em várias categorias, com uma principal (002 CA1.2, CA6.7)
+- [x] T036 Implementar `agrupar()`
+- [x] T037 Teste pequeno importados: `IMP (6,5)` → categoria Importados + imposto interno 6,50, e some do nome (002 CA4.5)
+- [x] T038 Implementar `importados()`
+- [x] T039 Teste pequeno referências: marca e tipo pelo rótulo ("REF SILC", "Orig. Mercedes"); referência igual a código interno vira **alerta** e não é publicada
+- [x] T040 Implementar `referencias()`
+- [x] T041 Teste pequeno `classificar`: aplicação e especificações em texto formatado, montadoras em `ProdutoMarca`, sobra vira pendência (002 CA1.3, CA1.4)
+- [x] T042 Implementar `classificar()`
+- [x] T043 Teste pequeno nome por extenso pelo dicionário; nome abreviado guardado só para busca
+- [x] T044 Implementar `nomePorExtenso()` + dicionário versionado
+- [x] T045 Teste pequeno `verificarSigilo()`: acusa código interno ou imposto em qualquer texto público (002 CA4.2)
+- [x] T046 Implementar `verificarSigilo()`
+- [x] T047 Teste grande importação da fixture: todo código importado, `CardOrigem` por card, ordem do PDF (003 CA14.3, 002 CA1.8), duas importações = mesmo banco (CA1.5), relatório (CA1.6), trava com produto editado ou de cadastro (CA1.7)
+- [x] T048 Implementar a CLI `importar -- --origem <pasta>` (sem fotos; elas entram na T090)
+- [x] T049 Importar o catálogo extraído real no `falcao_dev` e revisar o relatório (fora do Git)
+- [x] T050 `npm run check` verde + revisão do `code-reviewer` da etapa 1
 
 ## Etapa 2: Login, sessão, usuários, perfis e registro de acessos
 
@@ -251,3 +251,40 @@
 - **T030/T031:** foi criada a função `textoSimples()` em `packages/texto-formatado`, para títulos, descrições e busca.
 - **T007:** gitleaks no `pre-push` (via Docker) e no CI (imagem fixada por digest). Falta o responsável ligar *secret scanning* e *push protection* nas configurações do GitHub.
 - **Portão de formatação:** o `npm run format:check` acusa a pasta `02 — Catálogo Digital…-html/`, que está fora do Git e não foi criada neste trabalho.
+- **T034:** a fixture tem 16 cards (não ~30), cobrindo todos os casos listados e mais o "número sem IMP" e o card repetido em Lançamentos.
+- **T037:** só o padrão `IMP (x,xx)` vale como imposto. No PDF há 174 números entre parênteses **sem** IMP (ex.: "ANEL RETENCAO 1,2"), que são medidas.
+- **T039/T045, sigilo:** a referência igual a um código interno **não** entra na tabela `Referencia` (que o papel público lê): vira pendência interna e alerta no relatório. Pelo mesmo motivo, `chaveImportacao` saiu de `Produto` e foi para `ProdutoInterno` (2ª migração). Código interno citado dentro do nome (ex.: "(ARCA - <código interno>)", 76 casos reais) sai do texto público e o original vira pendência interna.
+- **Lançamentos (R5):** 238 produtos, só 5 com outra categoria. A categoria é deduzida pelas primeiras palavras do nome quando há uma dominante (≥ 60% e ≥ 2 produtos), com pendência "Categoria deduzida pelo nome" para conferir; sem categoria segura, o produto fica como **rascunho** com pendência.
+- **Trava (CA1.7):** além de produto do cadastro e produto editado, recusa também banco com **localização** preenchida ou com **orçamento**, que a recarga apagaria.
+- **Entrada:** caracteres de controle do OCR (ex.: `\u0000`, que o PostgreSQL recusa) são removidos na leitura.
+- **Fotos:** a T048 não grava `Imagem`; as fotos entram na T090. O "aparece no Google" da carga considera a foto do card.
+- **T049:** a primeira carga real foi feita com uma verificação de sigilo que tinha pontos cegos; a nota "zero códigos internos" daquela carga estava **errada** (ver a revisão abaixo). O banco local foi recarregado depois das correções.
+- **Busca (para a T091):** "catraca scania" também acha cuícas, porque a categoria se chama "Cuícas, catracas e acessórios" (peso B). A ordenação por relevância da busca do painel resolve.
+
+## Revisão da etapa 1 (T050, `code-reviewer`, 2026-11-12)
+
+Veredito: "precisa de ajustes". Tudo corrigido com teste antes (Vermelho → Verde), exceto o que está em "Pendente":
+
+- **C1, imposto sem parênteses:** "IMP 9,99" passava pela extração e pelo sigilo, e chegou a `nome`, `slug` e SEO de 10 produtos na carga local. A extração e a verificação agora aceitam IMP com ou sem parênteses e com ponto; "IMP 14T" (14 toneladas) não conta como imposto.
+- **C2, código numérico colado em letras:** "IABV4983…" e "…ANEL" passavam (11 linhas públicas). Código só de dígitos agora é comparado com fronteira de dígito; o nome que perde um código fica "a revisar".
+- **C3, dados reais em arquivos não commitados:** 2 códigos internos reais em comentários e 2 produtos reais com o imposto verdadeiro na fixture. Trocados por fictícios (códigos `1110001…`, impostos 9,99, 7,7 e 8,8, conferidos contra o catálogo real). A fixture ganhou um teste que só aceita esses impostos, e foi criado o hook **pre-commit** (`FALCAO_CATALOGO_REAL`), que barra commit com código interno real. O histórico do Git estava limpo.
+- **C4, produto sem nome:** 190 publicados com nome vazio e 218 endereços começando com hífen. O nome agora vem da variação ou do começo do texto do card (com pendência "Nome deduzido" e "a revisar"); sem nome aproveitável, o produto fica como rascunho com pendência "Nome ausente".
+- **I1:** `CardOrigem.categoriaId` ficava sempre nulo; agora liga 5.097 de 5.336 cards (os outros são de Lançamentos).
+- **I2/I3:** o endereço nunca passa de 70 nem começa ou termina com hífen; a descrição sempre termina com a cidade.
+- **I4:** depois de gravar, a própria transação varre todas as tabelas públicas (inclusive `buscaTexto`) e desfaz tudo se achar código interno ou imposto.
+- **I5:** a trava também recusa histórico do painel, grupos e categorias com grupo, texto ou SEO; e duas importações não rodam juntas (`pg_advisory_xact_lock`).
+- **I6:** `marcarAlertas` (código morto) removido; comentários do schema e do serializador corrigidos. O cadastro (T099) recusa referência igual a código interno.
+- **I7:** só o parêntese que contém o código é removido.
+- **I8:** testes de orçamento, histórico, categoria organizada, concorrência, `categoriaId` e sigilo pós-gravação.
+- **S1:** nova migração: o painel só acrescenta em `Alteracao` e `RegistroAcesso` e não toca em `_prisma_migrations` (expurgos rodarão com o papel dono). Um teste destrutivo apagou o controle de migrações do banco de **testes**; foi recuperado com `migrate resolve` e o teste passou a consultar `has_table_privilege`.
+- **S3:** referência de variação removida não sai no painel, no site nem na busca.
+- **S4/S5/S6/S7:** `normalizarCodigo` no `gravar`; CI com `permissions: contents: read` e ações fixadas por SHA; hook com o digest do gitleaks; byte NUL do `tasks.md` removido; "REF. SILC código" vira similar Silc e "1234 2 PECAS" não emenda o "2".
+- **S9:** a foto só conta para o Google quando as fotos estiverem importadas (opção `comFotos`, ligada na T090).
+
+**Resultado da carga local depois das correções:** 4.499 produtos, 240 rascunhos, 1.639 nomes a revisar, 265 indexáveis (sem contar fotos). Duas varreduras (a do domínio e uma independente em Python, com fronteira de dígito) sobre 14.676 linhas públicas: **zero** códigos internos e **zero** marcas de imposto.
+
+**Pendente (decidir depois):**
+- **S2:** o papel público lê colunas de controle (`revisarNome`, `origem`, `editadoManualmente`) e rascunhos; hoje só o serializador filtra. Avaliar `GRANT SELECT (colunas)` ou uma view quando a API pública (plano 002) for construída.
+- **S8:** o histórico do painel precisa omitir código interno, imposto e localização para quem não pode vê-los (já previsto na T113).
+- **Números sem IMP:** 174 cards têm número entre parênteses sem a palavra IMP. Alguns são medidas ("ANEL RETENCAO 1,2"), mas outros podem ser imposto sem o rótulo (ex.: um card de cuíca com "3,25" no fim). Confirmar com o responsável.
+

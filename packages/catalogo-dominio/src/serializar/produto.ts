@@ -76,6 +76,12 @@ export type ProdutoPainel = {
 
 const ativas = (p: ProdutoCarregado) => p.variacoes.filter((v) => v.excluidaEm === null);
 
+/** Referências do produto e das variações ativas (a de variação removida some junto com ela). */
+function referenciasAtivas(p: ProdutoCarregado) {
+  const idsAtivos = new Set(ativas(p).map((v) => v.id));
+  return p.referencias.filter((r) => r.variacaoId === null || idsAtivos.has(r.variacaoId));
+}
+
 export function serializarProdutoPainel(p: ProdutoCarregado, perfil: PerfilDeAcesso): ProdutoPainel {
   const verCodigo = pode(perfil, "ver_codigo_interno");
   const verImposto = pode(perfil, "ver_imposto");
@@ -101,9 +107,10 @@ export function serializarProdutoPainel(p: ProdutoCarregado, perfil: PerfilDeAce
       if (verImposto && v.interno) variacao.imposto = v.interno.imposto?.toString() ?? null;
       return variacao;
     }),
-    // Referência não publicada está em alerta (ex.: igual a um código interno):
-    // só aparece para quem pode ver código interno.
-    referencias: p.referencias
+    // Referência não publicada (oculta do site) só aparece para quem pode ver código interno,
+    // por cautela. Referência igual a código interno nunca chega aqui: a importação a manda para
+    // pendência e o cadastro a recusa.
+    referencias: referenciasAtivas(p)
       .filter((r) => r.publicada || verCodigo)
       .map((r) => ({
         id: r.id,
@@ -145,7 +152,7 @@ export function serializarProdutoPublico(p: ProdutoCarregado): ProdutoPublico {
     embalagem: p.embalagem,
     novo: p.novo,
     variacoes: ativas(p).map((v) => ({ id: v.id, descricao: v.descricao })),
-    referencias: p.referencias
+    referencias: referenciasAtivas(p)
       .filter((r) => r.publicada)
       .map((r) => ({
         variacaoId: r.variacaoId,

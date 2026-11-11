@@ -95,3 +95,20 @@ describe("recalcularBusca", () => {
     expect(tudo).not.toContain("6,5");
   });
 });
+
+describe("recalcularBusca com variação removida", () => {
+  it("não busca pela referência de uma variação removida", async () => {
+    const produto = await banco.produto.create({ data: { nome: "Lona", slug: "lona" } });
+    const removida = await banco.variacao.create({
+      data: { produtoId: produto.id, descricao: "Antiga", excluidaEm: new Date() },
+    });
+    await banco.referencia.create({
+      data: { produtoId: produto.id, variacaoId: removida.id, codigo: "XYZ-999", codigoNormalizado: "XYZ999" },
+    });
+
+    await banco.$transaction((tx) => recalcularBusca(tx, produto.id));
+
+    const { buscaCodigos } = await banco.produto.findUniqueOrThrow({ where: { id: produto.id } });
+    expect(buscaCodigos).toBe("");
+  });
+});

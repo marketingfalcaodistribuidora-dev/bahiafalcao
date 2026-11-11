@@ -75,4 +75,19 @@ describe("gerarTextosSeo (002 CA6.2)", () => {
     expect(descricao).toMatch(/^Parafuso de roda, categoria Parafusos\. Aplicação: Scania 112, 113, .+…\. /);
     expect(descricao.endsWith(" Linha pesada em Feira de Santana – BA.")).toBe(true);
   });
+
+  it("com nome longo e várias referências, encurta o começo mas mantém a cidade", () => {
+    const { descricao } = gerarTextosSeo({
+      nome: "Jogo de reparo completo da válvula pneumática do freio de estacionamento traseiro reforçado com anel",
+      marca: "Wabco",
+      referencias: ["2V5609818B-COMPLETO-A", "42-422-9988-REFORCO", "80087-ABC-123-XYZ"],
+      aplicacao: "",
+      categoria: "Freios",
+      local: LOCAL,
+    });
+
+    expect(descricao.length).toBeLessThanOrEqual(155);
+    expect(descricao.endsWith(" Linha pesada em Feira de Santana – BA.")).toBe(true);
+    expect(descricao.startsWith("Jogo de reparo")).toBe(true);
+  });
 });

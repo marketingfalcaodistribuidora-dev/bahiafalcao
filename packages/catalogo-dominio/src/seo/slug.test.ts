@@ -41,4 +41,25 @@ describe("gerarSlug (002 CA6.1)", () => {
 
     expect(gerarSlug("Filtro", ["", "  ", "Mann"], (s) => ocupados.has(s))).toBe("filtro-mann");
   });
+
+  it("nunca passa de 70 nem começa ou termina com hífen, mesmo com sufixos longos", () => {
+    const sempreOcupadoSemHash = (s: string) => !/-[0-9a-f]{6}$/.test(s);
+    const slug = gerarSlug(
+      "Cubo de roda traseiro",
+      ["Mercedes-Benz", "22 x 150 pf flange aço 10.9 Mercedes-Benz 1,5 torque macho completo reforçado", "2SO405615A"],
+      sempreOcupadoSemHash,
+    );
+
+    expect(slug.length).toBeLessThanOrEqual(70);
+    expect(slug).toMatch(/^cubo-/);
+    expect(slug).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+  });
+
+  it("sem nome, usa o primeiro sufixo como base", () => {
+    expect(gerarSlug("", ["Sistema de roda"], livre)).toBe("sistema-de-roda");
+  });
+
+  it("sem nome nem sufixo, usa 'produto' como base", () => {
+    expect(gerarSlug("", [], livre)).toBe("produto");
+  });
 });

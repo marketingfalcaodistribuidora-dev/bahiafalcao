@@ -114,8 +114,6 @@ model Categoria {
 
 model Produto {
   id                 Int                      @id @default(autoincrement())
-  /// Chave estável da carga inicial (menor código interno do grupo ou página+ordem). Interna por natureza, não sai na API.
-  chaveImportacao    String?                  @unique
   slug               String                   @unique
   /// Nome por extenso (o que aparece).
   nome               String
@@ -218,7 +216,8 @@ model Referencia {
   tipo              TipoReferencia @default(EQUIVALENTE)
   codigo            String
   codigoNormalizado String
-  /// Falso enquanto um alerta (ex.: igual a um código interno) não for revisado.
+  /// Falso = oculta do site pelo responsável. Referência igual a código interno NUNCA entra
+  /// nesta tabela (pública): a importação a manda para Pendencia e o cadastro a recusa.
   publicada         Boolean        @default(true)
   ordem             Int            @default(0)
 
@@ -264,10 +263,12 @@ model VariacaoInterna {
 }
 
 model ProdutoInterno {
-  produtoId   Int     @id
-  produto     Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  produtoId       Int     @id
+  produto         Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
   /// Onde fica no estoque, em texto livre (H15). Uma por produto.
-  localizacao String  @default("")
+  localizacao     String  @default("")
+  /// Chave estável da carga inicial (menor código interno do grupo). INTERNA: fica fora das tabelas públicas.
+  chaveImportacao String? @unique
 
   @@index([localizacao(ops: raw("gin_trgm_ops"))], type: Gin)
 }

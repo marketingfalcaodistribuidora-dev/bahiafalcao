@@ -1,0 +1,7 @@
+#!/bin/sh
+# Repositório público: nenhum código interno real pode entrar num commit.
+# Defina FALCAO_CATALOGO_REAL com o caminho do produtos.json extraído (fora do repositório).
+arquivos=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx|js|mjs|json|md|sql|prisma|yml|yaml|txt|csv)$' | grep -v 'package-lock.json')
+[ -z "$arquivos" ] && exit 0
+# shellcheck disable=SC2086
+npx --no-install tsx packages/catalogo-dominio/src/ferramentas/verificar-dados-reais.ts $arquivos

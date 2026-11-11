@@ -1,0 +1,27 @@
+{
+  "tiposDeVeiculo": ["Carreta / reboque", "Ônibus"],
+  "implementos": ["Randon", "Facchini", "Guerra", "Noma", "Librelato", "Iderol", "Rossetti"],
+  "conversao": [
+    "FRUM",
+    "BATISTA",
+    "CERCENA",
+    "DURAMETAL",
+    "TOME",
+    "FIRESTONE",
+    "CONTITECH",
+    "GOODYEAR",
+    "BOSCH",
+    "TECFIL",
+    "FRAS-LE",
+    "FRASLE",
+    "SABO",
+    "NAKATA",
+    "TRW",
+    "MERITOR",
+    "VIEMAR",
+    "COFAP",
+    "MONROE",
+    "MANN",
+    "WEGA"
+  ]
+}

@@ -27,7 +27,7 @@ function produtoDoBanco() {
         descricao: "20 mm",
         ordem: 0,
         excluidaEm: null,
-        interno: { codigoInterno: "EX-0001", imposto: { toString: () => "6.50" } },
+        interno: { codigoInterno: "EX-0001", imposto: { toString: () => "9.99" } },
       },
       {
         id: 2,
@@ -49,7 +49,7 @@ function produtoDoBanco() {
       { id: 6, variacaoId: null, tipo: "EQUIVALENTE" as const, codigo: "EX-0001", publicada: false, marca: null },
     ],
     pendencias: [{ id: 1, trecho: "texto solto EX-0001" }],
-    cardsOrigem: [{ id: 1, pagina: 12, textoOriginal: "ANEL ELAST EXT EX-0001 IMP (6,5)" }],
+    cardsOrigem: [{ id: 1, pagina: 12, textoOriginal: "ANEL ELAST EXT EX-0001 IMP (9,99)" }],
   };
 }
 
@@ -67,7 +67,7 @@ describe("serializarProdutoPainel (CA12.9)", () => {
     expect(produto.variacoes[0]).not.toHaveProperty("codigoInterno");
     expect(produto.variacoes[0]).not.toHaveProperty("imposto");
     expect(JSON.stringify(produto)).not.toContain("EX-0001");
-    expect(JSON.stringify(produto)).not.toContain("6.50");
+    expect(JSON.stringify(produto)).not.toContain("9.99");
     expect(JSON.stringify(produto)).not.toContain("Corredor 3");
   });
 
@@ -75,7 +75,7 @@ describe("serializarProdutoPainel (CA12.9)", () => {
     const produto = serializarProdutoPainel(produtoDoBanco(), comTudo);
 
     expect(produto.localizacao).toBe("Corredor 3, prateleira B");
-    expect(produto.variacoes[0]).toMatchObject({ codigoInterno: "EX-0001", imposto: "6.50" });
+    expect(produto.variacoes[0]).toMatchObject({ codigoInterno: "EX-0001", imposto: "9.99" });
   });
 
   it("cada permissão libera só o seu campo", () => {
@@ -104,6 +104,19 @@ describe("serializarProdutoPainel (CA12.9)", () => {
     expect(semCodigo.referencias.map((r) => r.codigo)).toEqual(["SC-03.158"]);
   });
 
+  it("não mostra referência de variação removida, nem no painel nem no site", () => {
+    const comReferenciaDaRemovida = {
+      ...produtoDoBanco(),
+      referencias: [
+        ...produtoDoBanco().referencias,
+        { id: 7, variacaoId: 2, tipo: "ORIGINAL" as const, codigo: "XYZ-999", publicada: true, marca: null },
+      ],
+    };
+
+    expect(JSON.stringify(serializarProdutoPainel(comReferenciaDaRemovida, comTudo))).not.toContain("XYZ-999");
+    expect(JSON.stringify(serializarProdutoPublico(comReferenciaDaRemovida))).not.toContain("XYZ-999");
+  });
+
   it("não mostra variações removidas", () => {
     const produto = serializarProdutoPainel(produtoDoBanco(), comTudo);
 
@@ -118,8 +131,8 @@ describe("serializarProdutoPublico (002 CA4.2)", () => {
     for (const proibido of [
       "EX-0001",
       "EX-0002",
-      "6.50",
-      "6,5",
+      "9.99",
+      "9,99",
       "Corredor 3",
       "texto solto",
       "ANEL ELAST EXT",

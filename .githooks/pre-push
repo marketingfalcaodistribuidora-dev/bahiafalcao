@@ -6,7 +6,7 @@
 if docker info >/dev/null 2>&1; then
   echo "pre-push: procurando segredos com gitleaks..."
   if ! MSYS_NO_PATHCONV=1 docker run --rm -v "$(pwd -W 2>/dev/null || pwd):/repo" \
-    ghcr.io/gitleaks/gitleaks:v8.30.1 git /repo --no-banner --redact; then
+    ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f git /repo --no-banner --redact; then
     echo ""
     echo "pre-push: BLOQUEADO. O gitleaks encontrou um possível segredo (veja acima)."
     exit 1

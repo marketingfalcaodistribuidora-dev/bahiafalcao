@@ -41,5 +41,13 @@ export function gerarTextosSeo(d: DadosTextoSeo): { titulo: string; descricao: s
   if (aplicacao && espaco >= 15) {
     return { titulo, descricao: `${inicio}${referencias}${rotulo}${cortarPalavra(aplicacao, espaco)}….${fim}` };
   }
-  return { titulo, descricao: cortarPalavra(fixo, TAMANHO_MAXIMO_DESCRICAO) };
+  // Sem espaço para a aplicação: reduz as referências e depois o começo, mas a cidade fica sempre.
+  for (let n = refs.length; n >= 0; n--) {
+    const parcial = n ? ` Ref. ${refs.slice(0, n).join(", ")}.` : "";
+    if (inicio.length + parcial.length + fim.length <= TAMANHO_MAXIMO_DESCRICAO) {
+      return { titulo, descricao: `${inicio}${parcial}${fim}` };
+    }
+  }
+  const espacoInicio = TAMANHO_MAXIMO_DESCRICAO - fim.length - 1; // "."
+  return { titulo, descricao: `${cortarPalavra(inicio.replace(/\.$/, ""), espacoInicio)}.${fim}` };
 }

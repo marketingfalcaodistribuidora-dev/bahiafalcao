@@ -6,7 +6,13 @@ Distribuidora de autopeças e ferramentas para **linha pesada** (caminhões, car
 
 ```
 frontend/   Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS v4 (workspace npm)
-backend/    reservado para o futuro backend; ainda vazio (ver backend/CLAUDE.md)
+packages/   código compartilhado (workspaces npm):
+  catalogo-dominio/  regras do catálogo e do painel: Prisma + PostgreSQL, sigilo, permissões, busca, SEO, importação
+  texto-formatado/   formatação segura dos textos livres (negrito, listas, subtítulos)
+admin/      painel do administrador (Next.js), a criar (plano 003); usa packages/catalogo-dominio
+api/        API pública do catálogo (Fastify), a criar (plano 002); usa packages/catalogo-dominio
+infra/      banco local em Docker (infra/dev, porta 5433) e, no futuro, a VPS
+backend/    vazio; a arquitetura aprovada usa packages/, admin/ e api/ (ver backend/CLAUDE.md)
 specs/      SDD: constituição, modelos e uma pasta por funcionalidade (spec, plano, tarefas)
 docs/       design de referência (docs/design, SOMENTE LEITURA) e documentação
 .claude/    agentes, skills, hooks e permissões do Claude Code
@@ -36,6 +42,8 @@ docs/       design de referência (docs/design, SOMENTE LEITURA) e documentaçã
 | `npm run test:coverage` | cobertura de testes |
 | `npm run format` | Prettier em tudo |
 | `npm run check` | portão completo: formatação, lint, tipos, testes e build |
+| `npm run db:subir` / `npm run db:descer` | banco local em Docker (necessário para os testes do catálogo) |
+| `npm run importar -w packages/catalogo-dominio -- --origem "<pasta>"` | carga inicial do catálogo extraído (relatório em `importacao-relatorios/`, fora do Git) |
 
 ## Regras do projeto
 
