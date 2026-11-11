@@ -1,6 +1,21 @@
 #!/bin/sh
 # Portão local: nenhum push sai sem passar pela verificação completa.
 # Ativado automaticamente pelo script "prepare" (git config core.hooksPath .githooks).
+
+# 1) Segredos: o repositório é público. Varre o histórico com gitleaks (via Docker).
+if docker info >/dev/null 2>&1; then
+  echo "pre-push: procurando segredos com gitleaks..."
+  if ! MSYS_NO_PATHCONV=1 docker run --rm -v "$(pwd -W 2>/dev/null || pwd):/repo" \
+    ghcr.io/gitleaks/gitleaks:v8.30.1 git /repo --no-banner --redact; then
+    echo ""
+    echo "pre-push: BLOQUEADO. O gitleaks encontrou um possível segredo (veja acima)."
+    exit 1
+  fi
+else
+  echo "pre-push: AVISO: Docker parado, varredura de segredos pulada (o CI ainda vai varrer)."
+fi
+
+# 2) Qualidade (os testes médios precisam do banco: npm run db:subir)
 echo "pre-push: rodando npm run check (formatação, lint, tipos, testes e build)..."
 npm run check
 status=$?

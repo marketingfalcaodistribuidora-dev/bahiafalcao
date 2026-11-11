@@ -1,0 +1,30 @@
+# Banco de desenvolvimento e de testes (só na máquina local).
+# Subir: npm run db:subir · Descer: npm run db:descer
+# A porta 5433 evita conflito com o PostgreSQL instalado no Windows (5432).
+# Os dados ficam num volume do Docker, fora do OneDrive.
+name: falcao-dev
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${SENHA_POSTGRES:-postgres-local}
+      SENHA_MIGRACOES: ${SENHA_MIGRACOES:-migracoes-local}
+      SENHA_PAINEL: ${SENHA_PAINEL:-painel-local}
+      SENHA_PUBLICO: ${SENHA_PUBLICO:-publico-local}
+      TZ: America/Bahia
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - falcao-pg:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d falcao_teste"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  falcao-pg:

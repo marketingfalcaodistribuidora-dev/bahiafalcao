@@ -1,0 +1,448 @@
+// Modelo do catálogo e do painel. Planos 002 (§4) e 003 (§5).
+// A conexão fica em prisma.config.ts. Permissões por papel na migração (plano 003, §3).
+//
+// PÚBLICAS (o papel catalogo_publico lê): Grupo, Categoria, Produto, ProdutoCategoria,
+//   Variacao, Marca, ProdutoMarca, Referencia, Imagem, SlugAntigo.
+// INTERNAS (só o painel): todo o resto. Código interno, imposto e localização
+//   moram SÓ em tabelas internas.
+
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum SituacaoProduto {
+  RASCUNHO
+  PUBLICADO
+  INATIVO
+}
+
+enum OrigemProduto {
+  PDF
+  CADASTRO
+}
+
+enum TipoMarca {
+  FABRICANTE
+  MONTADORA
+  IMPLEMENTO
+}
+
+enum PapelMarca {
+  FABRICANTE
+  LOGO
+  MONTADORA
+}
+
+enum TipoReferencia {
+  ORIGINAL
+  SIMILAR
+  EQUIVALENTE
+  FABRICANTE
+}
+
+enum TipoSlug {
+  PRODUTO
+  CATEGORIA
+  GRUPO
+}
+
+enum SituacaoOrcamento {
+  RASCUNHO
+  CONCLUIDO
+}
+
+/// Permissões fixas no código; o perfil guarda a lista (plano 003, §2.2).
+enum Permissao {
+  ver_produtos
+  editar_produtos
+  publicar
+  ver_codigo_interno
+  ver_imposto
+  ver_localizacao
+  editar_localizacao
+  categorias
+  marcas
+  consulta_rapida
+  orcamentos
+  orcamentos_de_todos
+  historico
+  usuarios_perfis
+}
+
+// ─── Catálogo: tabelas públicas ──────────────────────────────────────────────
+
+model Grupo {
+  id           Int         @id @default(autoincrement())
+  nome         String
+  slug         String      @unique
+  ordem        Int         @default(0)
+  descricao    String      @default("")
+  seoTitulo    String?
+  seoDescricao String?
+  indexavel    Boolean     @default(false)
+  atualizadoEm DateTime    @updatedAt
+  categorias   Categoria[]
+}
+
+model Categoria {
+  id                   Int                @id @default(autoincrement())
+  grupoId              Int?
+  grupo                Grupo?             @relation(fields: [grupoId], references: [id], onDelete: SetNull)
+  nome                 String
+  slug                 String             @unique
+  ordem                Int                @default(0)
+  descricao            String             @default("")
+  /// Texto formatado sugerido para as especificações de produtos novos (CA7.3).
+  modeloEspecificacoes String             @default("")
+  seoTitulo            String?
+  seoDescricao         String?
+  indexavel            Boolean            @default(false)
+  atualizadoEm         DateTime           @updatedAt
+  produtos             ProdutoCategoria[]
+  cardsOrigem          CardOrigem[]
+
+  @@index([grupoId, ordem])
+}
+
+model Produto {
+  id                 Int                      @id @default(autoincrement())
+  /// Chave estável da carga inicial (menor código interno do grupo ou página+ordem). Interna por natureza, não sai na API.
+  chaveImportacao    String?                  @unique
+  slug               String                   @unique
+  /// Nome por extenso (o que aparece).
+  nome               String
+  /// Nome abreviado do catálogo antigo: só para a busca achar (R3).
+  nomeCatalogo       String                   @default("")
+  aplicacao          String                   @default("")
+  especificacoes     String                   @default("")
+  observacoes        String                   @default("")
+  embalagem          String?
+  situacao           SituacaoProduto          @default(RASCUNHO)
+  origem             OrigemProduto            @default(CADASTRO)
+  novo               Boolean                  @default(false)
+  indexavel          Boolean                  @default(false)
+  revisarNome        Boolean                  @default(false)
+  seoTitulo          String?
+  seoDescricao       String?
+  hashPublico        String?
+  /// tsvector preenchido por recalcularBusca() (plano 002, §2.2). Nunca contém código interno.
+  buscaTexto         Unsupported("tsvector")?
+  /// Referências normalizadas, para busca parcial por trigramas. Nunca contém código interno.
+  buscaCodigos       String                   @default("")
+  /// Controle de conflito de edição (CA4.9).
+  versao             Int                      @default(1)
+  editadoManualmente Boolean                  @default(false)
+  criadoEm           DateTime                 @default(now())
+  atualizadoEm       DateTime                 @updatedAt
+  categorias         ProdutoCategoria[]
+  variacoes          Variacao[]
+  marcas             ProdutoMarca[]
+  referencias        Referencia[]
+  imagens            Imagem[]
+  interno            ProdutoInterno?
+  cardsOrigem        CardOrigem[]
+  pendencias         Pendencia[]
+
+  @@index([situacao, indexavel])
+  @@index([buscaTexto], type: Gin)
+  @@index([buscaCodigos(ops: raw("gin_trgm_ops"))], type: Gin)
+}
+
+model ProdutoCategoria {
+  produtoId   Int
+  produto     Produto   @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  categoriaId Int
+  categoria   Categoria @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  ordem       Int       @default(0)
+  principal   Boolean   @default(false)
+
+  @@id([produtoId, categoriaId])
+  @@unique([produtoId], where: { principal: true }, map: "ProdutoCategoria_uma_principal")
+  @@index([categoriaId, ordem])
+}
+
+model Variacao {
+  id             Int              @id @default(autoincrement())
+  produtoId      Int
+  produto        Produto          @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  descricao      String           @default("")
+  /// Texto abreviado do catálogo antigo: só para a busca.
+  nomeCatalogo   String           @default("")
+  ordem          Int              @default(0)
+  /// Exclusão lógica: preserva orçamentos antigos.
+  excluidaEm     DateTime?
+  interno        VariacaoInterna?
+  referencias    Referencia[]
+  itensOrcamento OrcamentoItem[]
+
+  @@index([produtoId, ordem])
+}
+
+model Marca {
+  id          Int            @id @default(autoincrement())
+  nome        String         @unique
+  slug        String         @unique
+  tipo        TipoMarca      @default(FABRICANTE)
+  logo        String?
+  produtos    ProdutoMarca[]
+  referencias Referencia[]
+}
+
+model ProdutoMarca {
+  produtoId Int
+  produto   Produto    @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  marcaId   Int
+  marca     Marca      @relation(fields: [marcaId], references: [id], onDelete: Restrict)
+  papel     PapelMarca
+
+  @@id([produtoId, marcaId, papel])
+  @@index([marcaId, papel])
+}
+
+model Referencia {
+  id                Int            @id @default(autoincrement())
+  produtoId         Int
+  produto           Produto        @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  variacaoId        Int?
+  variacao          Variacao?      @relation(fields: [variacaoId], references: [id], onDelete: Cascade)
+  marcaId           Int?
+  marca             Marca?         @relation(fields: [marcaId], references: [id], onDelete: SetNull)
+  tipo              TipoReferencia @default(EQUIVALENTE)
+  codigo            String
+  codigoNormalizado String
+  /// Falso enquanto um alerta (ex.: igual a um código interno) não for revisado.
+  publicada         Boolean        @default(true)
+  ordem             Int            @default(0)
+
+  @@index([codigoNormalizado])
+  @@index([produtoId])
+}
+
+model Imagem {
+  id        Int     @id @default(autoincrement())
+  produtoId Int
+  produto   Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  /// Nome-base do arquivo no armazenamento (gerado no servidor); os 3 tamanhos derivam dele.
+  arquivo   String  @unique
+  alt       String
+  largura   Int
+  altura    Int
+  ordem     Int     @default(0)
+
+  @@index([produtoId, ordem])
+}
+
+model SlugAntigo {
+  id         Int      @id @default(autoincrement())
+  slug       String
+  tipo       TipoSlug
+  entidadeId Int
+  criadoEm   DateTime @default(now())
+
+  @@unique([slug, tipo])
+}
+
+// ─── Catálogo: tabelas internas ──────────────────────────────────────────────
+
+model VariacaoInterna {
+  variacaoId        Int      @id
+  variacao          Variacao @relation(fields: [variacaoId], references: [id], onDelete: Cascade)
+  codigoInterno     String   @unique
+  /// Forma normalizada, para a busca do painel por trigramas (só com permissão).
+  codigoNormalizado String   @default("")
+  imposto           Decimal? @db.Decimal(5, 2)
+
+  @@index([codigoNormalizado(ops: raw("gin_trgm_ops"))], type: Gin)
+}
+
+model ProdutoInterno {
+  produtoId   Int     @id
+  produto     Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  /// Onde fica no estoque, em texto livre (H15). Uma por produto.
+  localizacao String  @default("")
+
+  @@index([localizacao(ops: raw("gin_trgm_ops"))], type: Gin)
+}
+
+model CardOrigem {
+  id            Int        @id @default(autoincrement())
+  produtoId     Int
+  produto       Produto    @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  pagina        Int
+  ordem         Int
+  categoriaId   Int?
+  categoria     Categoria? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  textoOriginal String     @default("")
+
+  @@unique([pagina, ordem])
+  @@index([produtoId])
+}
+
+model Pendencia {
+  id        Int      @id @default(autoincrement())
+  produtoId Int
+  produto   Produto  @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  trecho    String
+  tipo      String   @default("desconhecido")
+  criadoEm  DateTime @default(now())
+
+  @@index([produtoId])
+}
+
+model ChaveApi {
+  id          Int                @id @default(autoincrement())
+  nome        String
+  hashSha256  String             @unique
+  criadaEm    DateTime           @default(now())
+  criadaPorId Int?
+  criadaPor   Usuario?           @relation(fields: [criadaPorId], references: [id], onDelete: SetNull)
+  expiraEm    DateTime?
+  revogadaEm  DateTime?
+  ultimoUso   DateTime?
+  consultas   RegistroConsulta[]
+}
+
+model RegistroConsulta {
+  id                 Int      @id @default(autoincrement())
+  chaveApiId         Int
+  chaveApi           ChaveApi @relation(fields: [chaveApiId], references: [id], onDelete: Cascade)
+  /// Ids dos produtos devolvidos. Nunca o termo digitado (LGPD).
+  produtosRetornados Int[]
+  criadoEm           DateTime @default(now())
+
+  @@index([criadoEm])
+}
+
+// ─── Painel: acesso e auditoria (internas) ───────────────────────────────────
+
+model Perfil {
+  id            Int         @id @default(autoincrement())
+  nome          String      @unique
+  /// Perfil Administrador: tem todas as permissões por definição no código (CA12.6).
+  administrador Boolean     @default(false)
+  permissoes    Permissao[]
+  criadoEm      DateTime    @default(now())
+  atualizadoEm  DateTime    @updatedAt
+  usuarios      Usuario[]
+}
+
+model Usuario {
+  id                      Int              @id @default(autoincrement())
+  nome                    String
+  /// Sempre em minúsculas.
+  email                   String           @unique
+  senhaHash               String
+  perfilId                Int
+  perfil                  Perfil           @relation(fields: [perfilId], references: [id], onDelete: Restrict)
+  ativo                   Boolean          @default(true)
+  trocarSenha             Boolean          @default(false)
+  senhaTemporariaExpiraEm DateTime?
+  ultimoAcesso            DateTime?
+  criadoEm                DateTime         @default(now())
+  sessoes                 Sessao[]
+  registros               RegistroAcesso[]
+  alteracoes              Alteracao[]
+  orcamentos              Orcamento[]
+  chavesCriadas           ChaveApi[]
+}
+
+model Sessao {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  /// SHA-256 do token; o token em si só existe no cookie.
+  tokenHash String   @unique
+  criadaEm  DateTime @default(now())
+  ultimoUso DateTime @default(now())
+  expiraEm  DateTime
+  ip        String?
+
+  @@index([usuarioId])
+  @@index([expiraEm])
+}
+
+model TentativaLogin {
+  id       Int      @id @default(autoincrement())
+  email    String
+  ip       String
+  sucesso  Boolean
+  criadaEm DateTime @default(now())
+
+  @@index([email, ip, criadaEm])
+  @@index([criadaEm])
+}
+
+model RegistroAcesso {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  evento    String
+  /// Sem dado sensível (nada de senha, token, código interno).
+  detalhe   String   @default("")
+  ip        String?
+  criadoEm  DateTime @default(now())
+
+  @@index([criadoEm(sort: Desc)])
+}
+
+model Alteracao {
+  id         Int      @id @default(autoincrement())
+  usuarioId  Int?
+  usuario    Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  entidade   String
+  entidadeId Int
+  versao     Int?
+  acao       String
+  /// { campo: { antes, depois } }
+  campos     Json     @default("{}")
+  criadaEm   DateTime @default(now())
+
+  @@index([entidade, entidadeId, criadaEm(sort: Desc)])
+  @@index([criadaEm(sort: Desc)])
+}
+
+// ─── Orçamentos (spec 004, internas) ─────────────────────────────────────────
+
+model Orcamento {
+  /// Número sequencial do orçamento (R4).
+  numero        Int               @id @default(autoincrement())
+  identificacao String            @default("")
+  situacao      SituacaoOrcamento @default(RASCUNHO)
+  versao        Int               @default(1)
+  criadoPorId   Int
+  criadoPor     Usuario           @relation(fields: [criadoPorId], references: [id], onDelete: Restrict)
+  criadoEm      DateTime          @default(now())
+  atualizadoEm  DateTime          @updatedAt
+  concluidoEm   DateTime?
+  itens         OrcamentoItem[]
+
+  @@index([criadoPorId, situacao, criadoEm])
+  @@index([criadoEm])
+}
+
+model OrcamentoItem {
+  id                  Int       @id @default(autoincrement())
+  orcamentoNumero     Int
+  orcamento           Orcamento @relation(fields: [orcamentoNumero], references: [numero], onDelete: Cascade)
+  variacaoId          Int
+  variacao            Variacao  @relation(fields: [variacaoId], references: [id], onDelete: Restrict)
+  /// Inteira e ≥ 1 (CHECK na migração).
+  quantidade          Int       @default(1)
+  valorUnitario       Decimal?  @db.Decimal(12, 2)
+  observacao          String    @default("")
+  ordem               Int
+  /// Cópia no momento em que o item entrou (R5).
+  nomeNoMomento       String
+  variacaoNoMomento   String    @default("")
+  referenciaNoMomento String    @default("")
+
+  @@unique([orcamentoNumero, variacaoId])
+}

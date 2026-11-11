@@ -1,0 +1,39 @@
+{
+  "name": "@falcao/catalogo-dominio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Regras do catálogo e do painel: Prisma, validação, permissões, sigilo, busca e importação.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "prisma": "prisma",
+    "db:gerar": "prisma generate",
+    "db:migrar": "prisma migrate dev",
+    "postinstall": "prisma generate"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/pg": "^8.23.1",
+    "@vitest/coverage-v8": "^5.1.0",
+    "dotenv": "^18.0.10",
+    "eslint": "^9.39.5",
+    "prisma": "^7.10.1",
+    "typescript": "~5.9.0",
+    "typescript-eslint": "^8.72.2",
+    "vitest": "^5.1.0"
+  },
+  "dependencies": {
+    "@falcao/texto-formatado": "^0.1.0",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "pg": "^8.23.1",
+    "zod": "^4.6.7"
+  }
+}

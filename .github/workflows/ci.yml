@@ -18,6 +18,17 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # histórico completo para a varredura de segredos
+
+      - name: Procurar segredos (gitleaks, repositório público)
+        run: >-
+          docker run --rm -v "$PWD:/repo"
+          ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+          git /repo --no-banner --redact
+
+      - name: Subir PostgreSQL de testes (mesmo compose da máquina local)
+        run: docker compose -f infra/dev/docker-compose.yml up -d --wait
 
       - uses: actions/setup-node@v5
         with:
@@ -26,6 +37,9 @@ jobs:
 
       - name: Instalar dependências (lockfile exato)
         run: npm ci
+
+      - name: Variáveis do banco local de testes
+        run: cp packages/catalogo-dominio/.env.example packages/catalogo-dominio/.env
 
       - name: Verificação completa
         run: npm run check

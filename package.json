@@ -1,9 +1,10 @@
 {
   "name": "falcao-distribuidora",
   "private": true,
-  "description": "Site institucional da Falcão Distribuidora (frontend Next.js) e futuro backend.",
+  "description": "Site institucional da Falcão Distribuidora (frontend Next.js), domínio do catálogo e painel do administrador.",
   "workspaces": [
-    "frontend"
+    "frontend",
+    "packages/*"
   ],
   "engines": {
     "node": ">=22"
@@ -11,13 +12,15 @@
   "scripts": {
     "prepare": "node -e \"try{require('child_process').execSync('git config core.hooksPath .githooks',{stdio:'ignore'})}catch{}\"",
     "dev": "npm run dev -w frontend",
-    "build": "npm run build -w frontend",
+    "build": "npm run build --workspaces --if-present",
     "start": "npm run start -w frontend",
-    "lint": "npm run lint -w frontend",
-    "typecheck": "npm run typecheck -w frontend",
-    "test": "npm run test -w frontend",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
     "test:watch": "npm run test:watch -w frontend",
-    "test:coverage": "npm run test:coverage -w frontend",
+    "test:coverage": "npm run test:coverage --workspaces --if-present",
+    "db:subir": "docker compose -f infra/dev/docker-compose.yml up -d --wait",
+    "db:descer": "docker compose -f infra/dev/docker-compose.yml down",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build"
@@ -25,5 +28,9 @@
   "devDependencies": {
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.8.1"
+  },
+  "allowScripts": {
+    "@prisma/engines@7.10.1": true,
+    "prisma@7.10.1": true
   }
 }

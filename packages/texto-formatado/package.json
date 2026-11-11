@@ -1,0 +1,17 @@
+{
+  "name": "@falcao/texto-formatado",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Formatação segura dos textos livres do catálogo: só negrito, listas e subtítulos; todo o resto é escapado.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  }
+}
