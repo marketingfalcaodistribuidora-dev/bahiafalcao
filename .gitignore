@@ -33,3 +33,6 @@ vercel-github-email.txt
 # Domínio do catálogo
 packages/*/src/generated/
 importacao-relatorios/
+
+# Referência local de design do catálogo (não versionar)
+02 — Catálogo Digital Falcão Distribuidora-html/
