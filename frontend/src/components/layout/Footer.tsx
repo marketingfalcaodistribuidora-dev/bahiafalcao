@@ -1,4 +1,6 @@
 import Image from "next/image";
+import { BotaoPreferenciasDeCookies } from "@/components/layout/AvisoDeCookies";
+import { deveCarregarTag } from "@/lib/consentimento";
 import { images } from "@/lib/images";
 import { phoneHref, site, whatsappLink, whatsappMessages } from "@/lib/site";
 
@@ -80,6 +82,12 @@ export function Footer() {
       <div className="wrap">
         <p className="mt-10 border-t border-chumbo pt-5 text-sm text-apagado">
           © {new Date().getFullYear()} {site.name}. Todos os direitos reservados.
+          {deveCarregarTag(site) && (
+            <>
+              {" · "}
+              <BotaoPreferenciasDeCookies className="text-apagado hover:text-ouro" />
+            </>
+          )}
         </p>
       </div>
     </footer>

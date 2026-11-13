@@ -18,6 +18,8 @@ export const site = {
   url: resolveSiteUrl(runtimeEnv),
   /** false nas URLs de preview da Vercel (não indexar). */
   indexable: isIndexable(runtimeEnv),
+  /** Tag do Google (contêiner do Tag Manager). Público; só carrega no site oficial, com consentimento (lib/consentimento.ts). */
+  googleTagId: "GTM-MTSNF479",
   /** Até 60 caracteres, palavra-chave primeiro (coberto por teste). */
   title: "Autopeças Linha Pesada | Bahia Falcão",
   /** Entre 120 e 160 caracteres, com o nome completo (coberto por teste). */

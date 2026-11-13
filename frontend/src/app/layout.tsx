@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow, Barlow_Condensed } from "next/font/google";
+import Script from "next/script";
+import { AvisoDeCookies } from "@/components/layout/AvisoDeCookies";
+import { deveCarregarTag, scriptInicialDaTag } from "@/lib/consentimento";
 import { buildJsonLd, jsonLdScript } from "@/lib/seo";
 import { site } from "@/lib/site";
 import "./globals.css";
@@ -71,6 +74,8 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // Tag do Google só no site oficial: consentimento negado ANTES de carregar (LGPD) e aviso de cookies.
+  const tagDoGoogle = deveCarregarTag(site);
   return (
     <html lang="pt-BR" className={`${barlow.variable} ${barlowCondensed.variable}`}>
       <body>
@@ -81,6 +86,19 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           Pular para o conteúdo
         </a>
         {children}
+        {tagDoGoogle && (
+          <>
+            <Script id="consentimento-google" strategy="beforeInteractive">
+              {scriptInicialDaTag()}
+            </Script>
+            <Script
+              id="tag-do-google"
+              strategy="afterInteractive"
+              src={`https://www.googletagmanager.com/gtm.js?id=${site.googleTagId}`}
+            />
+            <AvisoDeCookies />
+          </>
+        )}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(buildJsonLd()) }} />
       </body>
     </html>
