@@ -19,9 +19,11 @@ specs/
 
 | Fase | Comando | Saída | Portão para avançar |
 |---|---|---|---|
-| 1. Especificar | `/sdd especificar <descrição>` | `spec.md` | Nenhum `[PRECISA ESCLARECER]` aberto; usuário aprova |
-| 2. Planejar | `/sdd planejar NNN` | `plan.md` | Passa nos portões da constituição; usuário aprova |
-| 3. Tarefas | `/sdd tarefas NNN` | `tasks.md` | Cada critério de aceite coberto por um teste |
-| 4. Implementar | `/sdd implementar NNN` | código e testes | Cada tarefa feita com `/tdd`; `npm run check` verde |
+| 1. Especificar, planejar e listar tarefas | `/sdd-feature <descrição>` | `spec.md`, `plan.md`, `tasks.md` | Revisores de segurança e performance sem Crítico nem Alto; usuário aprova |
+| 2. Implementar | `/tdd-cycle T0NN` | código e testes | Teste falhando antes de cada código |
+| 3. Revisar | `/review-gate` (API) | relatório consolidado | Os quatro revisores aprovam |
+| 4. Verificar | `/verificar` | `npm run check` verde | Definition of Done cumprida |
 
-Numeração: `001`, `002`, ... na ordem de criação. Nome da pasta em português, minúsculo, com hífens.
+Numeração: `000`, `001`, `002`, ... na ordem de criação. Nome da pasta em português, minúsculo, com hífens.
+
+As specs da API do catálogo (`api/`) usam os modelos da skill `sdd-feature` e seguem também o `api/CLAUDE.md`; a fonte das regras de negócio é `docs/especificacao.md`.
