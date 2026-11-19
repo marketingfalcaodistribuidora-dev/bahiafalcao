@@ -1,7 +1,7 @@
 # Tarefas 000: Fundação da API do catálogo
 
 - **Plano:** [plan.md](./plan.md)
-- **Progresso:** 0 de 30
+- **Progresso:** 1 de 30
 
 Regras:
 - cada tarefa leva **até 2 h**;
@@ -10,12 +10,17 @@ Regras:
 
 ## Preparação (configuração: sem lógica, coberta pelos testes de integração)
 
-- [ ] T001 Atualizar o Node local para 26.13.1. Na raiz:
+- [x] T001 Atualizar o Node local para 26.13.1. Na raiz:
   - `.nvmrc`;
   - `.npmrc` (`save-exact`, `min-release-age=7`, `strict-allow-scripts`, `engine-strict`);
   - `engines`, `devEngines` e `allowScripts` (plano §2);
   - `^` → versão exata do lockfile na raiz e no `frontend/` (D18).
   - Conferir que `npm ci` e `npm run check` do site continuam passando e que a Vercel oferece Node 26 (senão o build do site quebra com `engine-strict`).
+  - **Feito em 19/11/2026:**
+    - Node 26.13.1 e npm 11.20.0;
+    - `npm ci` e `npm run check` verdes (95 testes, build ok), sem nenhuma versão alterada no lockfile;
+    - a Vercel oferece Node 26 com npm 11;
+    - prova numa pasta temporária: `vitest@5.1.1` (1 dia) recusado com `ETARGET … with a date before 12/11/2026`, e `core-js@3.45.1` (postinstall fora do `allowScripts`) recusado com `ESTRICTALLOWSCRIPTS`, sem instalar.
 - [ ] T002 Workspace `api/`:
   - `package.json` com as versões exatas da Fase 0;
   - `tsconfig.json` strict (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`);
@@ -81,3 +86,7 @@ Regras:
 
 | Tarefa | O que mudou | Por quê |
 |---|---|---|
+| T001 | `engines.node` ficou `26.x` (raiz e `frontend/`), e não `>=26.13.1 <27` | A Vercel reconhece `26.x` e pode estar numa 26 abaixo da 26.13.1 (o boletim dela cita a 26.12.1). O `.nvmrc` fixa a 26.13.1 no ambiente local. |
+| T001 | `devEngines` (npm ≥ 11.20.0) com `onFail: "warn"`, e não `"error"` | A doc da Vercel diz só "npm 11" para o Node 26. Um erro aqui derrubaria o deploy do site. O erro fica no CI (T028). |
+| T001 | O site passa a declarar Node 26 (`frontend/package.json` era `24.x`) | Decisão do responsável em 19/11/2026. Os testes e o build do site já passam em Node 26. Vale para a produção quando este ramo for juntado ao `main`. |
+| T001 | A sincronização do lockfile rodou uma vez com `--engine-strict=false` | O lockfile guardava o `24.x` antigo do `frontend/`, e o `engine-strict` recém-ligado barrava justamente a instalação que o corrige. Depois disso, `npm ci` passa com tudo ligado. |

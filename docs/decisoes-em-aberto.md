@@ -14,6 +14,8 @@ Legenda: 🔴 bloqueia a fase indicada · 🟡 pode seguir com o padrão propost
 | R6 | Hospedagem da API (parte de D1) | **Hostinger**, numa VPS: a hospedagem compartilhada não roda um processo Node contínuo nem PostgreSQL. A escolha entre `bahiafalcao.com.br/api` e `api.bahiafalcao.com.br` continua aberta em D1. | 19/11/2026 |
 | R7 | Primeiro Administrador (D6) | **Definido pelo responsável.** Nome e e-mail ficam **fora do repositório** (que é público) e são informados só ao rodar o comando `criar-admin` na instalação. | 19/11/2026 |
 | R8 | Serviço de e-mail (D2) | **Resend**, com o remetente `nao-responda@bahiafalcao.com.br` (só envio, sem caixa de entrada). O domínio é verificado no Resend com os registros de DNS que ele indicar (SPF, DKIM e, se pedido, DMARC). Até a Fase 1, a API usa o Mailpit local por trás da interface `EmailSender`. O jeito de falar com o Resend (API HTTP com `fetch`, sem pacote novo, ou o SDK oficial pelo protocolo de dependências) fica para o plano da Fase 1. | 19/11/2026 |
+| R9 | Node do site | O site (`frontend/`) também passa para **Node 26** (antes `24.x` na Vercel). Vale para a produção quando o ramo do catálogo for juntado ao `main`. | 19/11/2026 |
+| R10 | Onde o catálogo é desenvolvido | Sempre num **ramo à parte** (hoje `feat/api-fundacao`), nunca direto no `main`, que a Vercel publica. | 19/11/2026 |
 | R5 | Propostas das decisões **D10 a D20** (Fase 0) | **Aprovadas como propostas**, junto com a spec 000. Ficam na tabela abaixo para consulta até serem aplicadas nas tarefas. | 19/11/2026 |
 | R4 | Versão do Node | **Node 26 "Lithium"**, LTS ativa desde 28/10/2026 (conferido em nodejs.org/dist/index.json e no calendário oficial em 19/11/2026). Versão atual: 26.13.1 (correção de segurança de 10/11/2026). | 19/11/2026 |
 
