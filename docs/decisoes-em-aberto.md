@@ -11,6 +11,9 @@ Legenda: 🔴 bloqueia a fase indicada · 🟡 pode seguir com o padrão propost
 | R1 | Tecnologia do site atual e onde o catálogo roda (especificação, decisão 1) | O site é **Next.js 16** neste repositório (`frontend/`), publicado na Vercel. A API mora em **`api/`**, no mesmo repositório. | 19/11/2026 |
 | R2 | Código interno da Falcão no site | **É público.** Aparece no selo "cód.0103", na busca e na mensagem do WhatsApp, como na especificação. A regra antiga ("código interno nunca vai a público") deixou de valer. | 19/11/2026 |
 | R3 | Agentes e skills do prompt × os do site | **Somar.** Os do site ficam (`seo-specialist`, `frontend-engineer`, `/implementar-secao`, `/nova-pagina`, `/auditoria-seo`, `/verificar`, `/pre-deploy`); os antigos de backend, testes e revisão (`backend-architect`, `code-reviewer`, `security-auditor`, `test-engineer`, `/sdd`, `/tdd`) dão lugar aos do prompt. | 19/11/2026 |
+| R6 | Hospedagem da API (parte de D1) | **Hostinger**, numa VPS: a hospedagem compartilhada não roda um processo Node contínuo nem PostgreSQL. A escolha entre `bahiafalcao.com.br/api` e `api.bahiafalcao.com.br` continua aberta em D1. | 19/11/2026 |
+| R7 | Primeiro Administrador (D6) | **Definido pelo responsável.** Nome e e-mail ficam **fora do repositório** (que é público) e são informados só ao rodar o comando `criar-admin` na instalação. | 19/11/2026 |
+| R8 | Serviço de e-mail (D2) | **Resend**, com o remetente `nao-responda@bahiafalcao.com.br` (só envio, sem caixa de entrada). O domínio é verificado no Resend com os registros de DNS que ele indicar (SPF, DKIM e, se pedido, DMARC). Até a Fase 1, a API usa o Mailpit local por trás da interface `EmailSender`. O jeito de falar com o Resend (API HTTP com `fetch`, sem pacote novo, ou o SDK oficial pelo protocolo de dependências) fica para o plano da Fase 1. | 19/11/2026 |
 | R5 | Propostas das decisões **D10 a D20** (Fase 0) | **Aprovadas como propostas**, junto com a spec 000. Ficam na tabela abaixo para consulta até serem aplicadas nas tarefas. | 19/11/2026 |
 | R4 | Versão do Node | **Node 26 "Lithium"**, LTS ativa desde 28/10/2026 (conferido em nodejs.org/dist/index.json e no calendário oficial em 19/11/2026). Versão atual: 26.13.1 (correção de segurança de 10/11/2026). | 19/11/2026 |
 
@@ -18,12 +21,10 @@ Legenda: 🔴 bloqueia a fase indicada · 🟡 pode seguir com o padrão propost
 
 | # | Fase | Decisão | Proposta (se o responsável concordar) |
 |---|---|---|---|
-| D1 | 🔴 7 (🟡 até lá) | **Hospedagem e domínio da API.** O site está na Vercel, que não é lugar para um Fastify com PostgreSQL rodando o tempo todo. | API numa VPS (a Hostinger já foi cogitada) com PostgreSQL, atrás do próprio domínio: `bahiafalcao.com.br/api` com *rewrite* do Next para a API, ou `api.bahiafalcao.com.br`. As duas opções ficam documentadas na Fase 0 (seção 12 do prompt). |
-| D2 | 🔴 1 (convites) | **Serviço de e-mail e remetente** (especificação, decisão 2). | Interface `EmailSender` + Mailpit no local até decidir. Remetente sugerido na especificação: `nao-responda@bahiafalcao.com.br`. |
+| D1 | 🟡 7 | **Domínio da API.** A hospedagem já está decidida (R6: VPS da Hostinger). Falta escolher entre `bahiafalcao.com.br/api` (*rewrite* do Next, na Vercel, para a VPS) e `api.bahiafalcao.com.br` (DNS direto para a VPS). | As duas opções ficam documentadas na Fase 0 (seção 12 do prompt), com CORS, cookie e `TRUST_PROXY` de cada uma. |
 | D3 | 🟡 1 | **Regras de segurança:** bloqueio após 5 erros em 15 min, sessão de 8 h (30 dias com "Manter conectado"), convite de 7 dias, link de senha de 1 h. | Usar esses valores, todos por variável de ambiente. |
 | D4 | 🟡 4 | **Limite de peças por cotação** (sugestão: 50). Afeta o tamanho máximo de `GET /api/produtos/lote?codigos=`. | O lote aceita no máximo o limite da cotação (50). |
 | D5 | 🟡 3 | **O Editor pode excluir produtos** ou só ocultar? | Pode excluir (sugestão da especificação e tabela de papéis). |
-| D6 | 🔴 1 (comando `criar-admin`) | **Quem é o primeiro Administrador** (nome e e-mail). | — |
 | D7 | 🔴 3 | **Fotos:** mais de uma por peça? O modelo da especificação tem um só `foto_url`, mas o detalhe prevê "Várias fotos". | Uma foto por peça nesta versão (o próprio detalhe diz "fora do escopo se só 1 foto por produto"). |
 | D8 | — (front) | Arquivos finais da logo. | Não afeta o backend. |
 | D9 | 🔴 4 | **Relevância da busca.** A especificação diz "todas as palavras precisam aparecer (E)" e a ordem "código exato → original/similar exato → começo do nome → resto". O prompt acrescenta "similaridade (`similarity()`)" antes do "resto". Similaridade pode trazer peças que **não** têm todas as palavras. | Similaridade só para **ordenar** dentro do que já tem todas as palavras; nunca para incluir resultado que não as tenha. |
