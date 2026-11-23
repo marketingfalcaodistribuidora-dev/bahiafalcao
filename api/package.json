@@ -8,6 +8,7 @@
     "node": "26.x"
   },
   "scripts": {
+    "postinstall": "prisma generate",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --project unit",
@@ -15,7 +16,10 @@
     "test:coverage": "vitest run --coverage",
     "test:perf": "vitest run --config vitest.perf.config.ts",
     "db:subir": "docker compose up -d --wait",
-    "db:descer": "docker compose down"
+    "db:descer": "docker compose down",
+    "db:gerar": "prisma generate",
+    "db:migrar": "prisma migrate dev",
+    "db:aplicar": "prisma migrate deploy"
   },
   "dependencies": {
     "@fastify/cookie": "11.1.5",

@@ -74,7 +74,8 @@ Se a especificação e o prompt divergirem, **pare e pergunte**.
 | `npm run test:perf -w api` | performance: API compilada num processo, carga noutro, contra o `docker-compose` (não roda no CI) |
 | `npm run test:coverage -w api` | unitários + integração, com cobertura (falha abaixo de 90% em `src/modules/**`, `src/plugins/**` e `src/shared/**`) |
 | `npm run lint -w api` / `npm run typecheck -w api` | ESLint strict + segurança / `tsc --noEmit` |
-| `npm run db:migrate -w api` | migrations do Prisma (desenvolvimento) |
+| `npm run db:migrar -w api` / `npm run db:aplicar -w api` | cria e aplica migration no desenvolvimento (`prisma migrate dev`) / só aplica as existentes (`prisma migrate deploy`, o da produção) |
+| `npm run db:gerar -w api` | gera o cliente do Prisma em `src/generated/` (também roda sozinho no `npm ci`) |
 | `npm run seed -w api` / `npm run seed:perf -w api` | dados de exemplo / 10 mil produtos fictícios |
 | `npm run audit -w api` | `npm audit --audit-level=high` + `npm audit signatures` |
 | `npm run db:subir -w api` / `npm run db:descer -w api` | PostgreSQL 17 (porta 5433) + Mailpit (SMTP 1025, página 8025) locais; exige o `api/.env` |

@@ -2,10 +2,13 @@
 // execução do projeto "integracao":
 // 1) sobe um container com a MESMA imagem, initdb e configurações do api/docker-compose.yml
 //    (lidos do próprio arquivo), mais fsync e afins desligados: este banco nunca mede performance;
-// 2) aplica as migrations no banco-modelo (a partir da T007, quando houver migrations);
+// 2) aplica as migrations no banco-modelo (prisma migrate deploy, o mesmo comando da produção);
 // 3) fecha o modelo para conexões: uma conexão esquecida faria todo CREATE DATABASE falhar.
+import { execFileSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 import pg from "pg";
 import type { TestProject } from "vitest/node";
@@ -35,7 +38,15 @@ export async function setup(projeto: TestProject): Promise<void> {
 
   const conexao = { host: container.getHost(), port: container.getPort(), user: usuario, password: senha };
 
-  // Migrations no banco-modelo: entram na T007, junto com a primeira migration.
+  // Migrations no banco-modelo, pelo CLI do Prisma (o mesmo comando da produção).
+  const pastaDaApi = fileURLToPath(new URL("../../", import.meta.url));
+  const cliDoPrisma = createRequire(import.meta.url).resolve("prisma/build/index.js");
+  const urlDoModelo = `postgresql://${usuario}:${senha}@${conexao.host}:${String(conexao.port)}/${BANCO_MODELO}`;
+  execFileSync(process.execPath, [cliDoPrisma, "migrate", "deploy"], {
+    cwd: pastaDaApi,
+    env: { ...process.env, DATABASE_URL: urlDoModelo },
+    stdio: "pipe",
+  });
 
   const admin = new pg.Client({ ...conexao, database: "postgres" });
   await admin.connect();

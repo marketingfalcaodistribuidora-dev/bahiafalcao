@@ -98,10 +98,10 @@ export default defineConfig(
     rules: { "no-restricted-syntax": "off" },
   },
   {
-    // Testes e scripts de ferramenta (rodados à mão ou no CI, nunca na API): passam caminhos
-    // vindos da linha de comando e índices internos de propósito; as regras de segurança que
-    // procuram esses padrões geram ruído ali, sem proteger nada.
-    files: ["tests/**/*.ts", "scripts/**/*.ts"],
+    // Testes, scripts de ferramenta e a configuração do CLI do Prisma (rodados à mão ou no CI,
+    // nunca na API): passam caminhos e índices internos de propósito; as regras de segurança
+    // que procuram esses padrões geram ruído ali, sem proteger nada.
+    files: ["tests/**/*.ts", "scripts/**/*.ts", "prisma.config.ts"],
     rules: {
       "security/detect-object-injection": "off",
       "security/detect-non-literal-fs-filename": "off",

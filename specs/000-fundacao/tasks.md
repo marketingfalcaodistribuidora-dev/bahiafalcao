@@ -1,7 +1,7 @@
 # Tarefas 000: Fundação da API do catálogo
 
 - **Plano:** [plan.md](./plan.md)
-- **Progresso:** 6 de 12
+- **Progresso:** 7 de 12
 
 Regras:
 - o teste vem sempre antes do código, com a falha mostrada;
@@ -102,13 +102,20 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
     - `src/config/env.ts` passou nos 24 de primeira; tipos e lint limpos;
     - `src/config/**` entrou na cobertura de 90%: 100% das linhas e 91% dos ramos;
     - provado que a cobertura reprova abaixo do mínimo (só a integração rodando: 0%, saída 1), item que a T005 deixou anotado.
-- [ ] T007 Banco (Prisma):
+- [x] T007 Banco (Prisma):
   - teste antes: extensões e `f_unaccent` (`search_path` mínimo, `IMMUTABLE`, índice GIN numa tabela temporária, `SHOW lc_ctype`); P2002 → 409; pool esgotado → 503 em ~2 s, segurando a conexão com `pool.connect()`;
   - migration `0001_extensoes` (skill `prisma-migration`);
   - plugin `prisma` com os dois pools e o mapeamento dos erros;
   - gerador `prisma-client` com `output = "../src/generated/prisma"`, `moduleFormat = "esm"` e `importFileExtension = "js"`;
   - como o CLI e a API leem o `api/.env` (`process.loadEnvFile` ou `node --env-file`), sem o `NODE_ENV` de desenvolvimento vazar para os testes.
   - Critérios: CA6.3, CA2.5, CA1.5.
+  - **Feito em 23/11/2026:**
+    - testes antes: 8 unitários (tradução dos erros) e 11 de integração (extensões, pools, erros, contagem e fechamento);
+    - o teste de integração mostrou os formatos reais. A unicidade em SQL direto é P2010 (não P2002), e o pool esgotado é um erro do `pg`. Esses formatos viraram testes unitários (vermelhos) antes de ajustar a tradução;
+    - pool esgotado responde em ~2 s;
+    - `npm ci` gera o cliente do Prisma sozinho (`postinstall`), com as proteções de scripts ligadas;
+    - o `global-setup` aplica as migrations no banco-modelo com `prisma migrate deploy`;
+    - 82 testes da API, 100% das linhas e 94% dos ramos.
 - [ ] T008 Erros e logs:
   - teste antes: 404, 400 `validacao` com `campos`, campo extra, `__proto__`, 500 neutro, 413 e 415; `x-request-id`; logs por lista permitida, sem query, `set-cookie` nem campos aninhados em até 3 níveis;
   - `shared/erros.ts` e os plugins `erros`, `request-id` e `logs`.
@@ -161,6 +168,8 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
 | T002 | Os scripts `lint`, `typecheck`, `test` e `test:coverage` da raiz passaram a rodar em todos os workspaces (site e API) | O portão local (`npm run check`, também no `pre-push`) cobre a API desde já. |
 | T002 | Os scripts `dev`, `build`, `db:*`, `seed*`, `audit` e `test:integration` da API ainda não existem | Cada um entra na tarefa que cria o que ele roda, para não haver comando quebrado. |
 | T002 | `vitest.perf.config.ts` com `passWithNoTests` | Até a T027 não há medições. |
+| T007 | O banco é o módulo `src/shared/banco.ts`; o registro no Fastify fica para a T011 (quando existir o `app.ts`) | Ainda não há servidor. Sem `fastify-plugin` (não está na lista aprovada): os plugins serão registrados direto na raiz. |
+| T007 | `contarQueries` virou `contarConsultas`, em `tests/apoio/`, e soma os dois clientes | Fica junto do resto do apoio de testes; nome em português. |
 | T005 | `Clock`, `IdGenerator`, `montarApp` e `contarQueries` ficam para as tarefas que os usam primeiro (T007: `contarQueries`; T008: `IdGenerator` e `montarApp`; T011: `Clock`) | São código de produção ou dependem dele (Prisma, `app.ts`). Criá-los antes seria código sem uso nem teste de verdade. |
 | T005 | Em vez de um teste que compara o compose com o Testcontainers, o Testcontainers **lê** o compose | Uma fonte só elimina a divergência, em vez de só detectá-la. |
 | T003 | PostgreSQL 17.11 e Mailpit v1.33.1, e não as mais novas (17.12 de 21/11 e v1.34.0 de 17/11) | Regra dos 7 dias aplicada às imagens. A 17.12 entra a partir de 28/11/2026 (anotado no compose). |

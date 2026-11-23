@@ -174,3 +174,33 @@ Os containers só sobem com o `db:subir`. Eles não voltam sozinhos quando o Doc
 - **Variáveis desconhecidas são ignoradas:** o `api/.env` também guarda as do `docker-compose` (`POSTGRES_USUARIO`, `POSTGRES_SENHA`), que a API não usa.
 - **O `api/.env.example` não fica para trás:** um teste confere que ele documenta todas as variáveis que a API lê.
 - **Cobertura:** `src/config/` entrou na exigência de 90%. Ficou com 100% das linhas e 91% dos ramos. Também foi provado que a cobertura reprova abaixo do mínimo.
+
+## Banco (T007)
+
+### O que existe
+
+- **Prisma 7** com o adaptador do PostgreSQL (`@prisma/adapter-pg`). O cliente é gerado em `api/src/generated/` (fora do Git) pelo `npm ci` e pelo `npm run db:gerar -w api`.
+- **`api/prisma.config.ts`**: o Prisma 7 não lê o `.env` sozinho. Quando a `DATABASE_URL` não vem do ambiente, ela é lida do `api/.env`, sem sobrescrever o que já está definido (assim os testes usam a própria URL).
+- **Primeira migration (`20261123180000_extensoes`):** extensões `unaccent` e `pg_trgm` e a função `public.f_unaccent`, `IMMUTABLE`, para a busca sem acentos com índice (Fase 4). O porquê e o rollback estão no próprio arquivo.
+- **`api/src/shared/banco.ts`** (`criarBanco`): dois pools, cada um com o seu cliente do Prisma:
+
+| Pool | Usado por | Limite da consulta | Conexões | Espera por conexão |
+|---|---|---|---|---|
+| `publico` | rotas do catálogo | 2 s | até 10 | 2 s |
+| `administracao` | rotas da administração | 5 s | até 5 | 2 s |
+
+- **`api/src/shared/erros-do-banco.ts`** (`traduzirErroDoBanco`): o resto da API nunca vê erro do Prisma nem do PostgreSQL.
+
+| Erro do banco | Vira |
+|---|---|
+| Valor repetido (P2002, ou P2010 com `UniqueConstraintViolation` numa consulta direta) | `ErroDeConflito` (409), com os campos quando o Prisma os informa; nunca o nome do índice |
+| Pool sem conexão livre em 2 s | `ErroIndisponivel` (503) |
+| Qualquer outro | segue como está e vira 500 neutro (T008) |
+
+### Por quê
+
+- **Dois pools:** é o único jeito de ter limites de tempo diferentes para o público e para a administração sem pagar um comando a mais por requisição. O limite vai na própria conexão.
+- **Espera curta por conexão:** com o pool cheio, a pessoa recebe "indisponível, tente de novo" em 2 s, em vez de ficar presa até o tempo máximo da requisição.
+- **Tamanho dos pools:** conexões ≈ requisições simultâneas × tempo da consulta ÷ tempo da requisição. Para 20 simultâneas, dá cerca de 7; 10 dá folga. Revisto na Fase 4 com o teste de carga.
+- **Formatos de erro conferidos no banco real**, não supostos: a unicidade numa consulta direta chega como P2010 (e não P2002), e o pool esgotado chega como um erro do `pg`. Os dois viraram testes antes do código.
+- **Contagem de consultas (`tests/apoio/contar-consultas.ts`):** base dos testes de N+1 das próximas fases. Ela só funciona com `registrarConsultas: true`, que fica desligado na API porque custa caro.
