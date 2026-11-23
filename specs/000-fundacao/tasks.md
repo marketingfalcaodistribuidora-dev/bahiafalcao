@@ -126,6 +126,7 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
       - o mascarador copiava a requisição do Fastify e perdia o `url`, e toda requisição ficava sem resposta;
       - o Fastify aceitava texto puro, que virava 400 em vez de 415;
     - 4 testes do `request-id` (IP único, IPv6, vizinho fora da lista, sem endereço) escritos **depois** do código, como rede de segurança dos ramos (passaram de primeira);
+    - **prova por mutação (review-gate, T012):** 7 ramos do `request-id` quebrados de propósito; 6 deixaram testes vermelhos. A 7ª (tirar `versao !== 0`) sobreviveu por ser equivalente: o `BlockList` já devolve `false` para o que não é IP. A guarda saiu;
     - 110 testes da API, 100% das linhas e 94% dos ramos.
 - [x] T009 Segurança das respostas:
   - teste antes: cabeçalhos e CSP do JSON, CORS (`null`, domínio parecido, `Vary`), 429 também no 404, `X-Forwarded-For` de origem confiável e não confiável;
@@ -157,11 +158,17 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
     - o teste do desligamento travava: a conexão mantida pelo cliente segurava o fim. Corrigido com `Connection: close` durante o desligamento;
     - a matriz de autorização reclamou das 2 rotas novas e ganhou as entradas (2 rotas × 5 papéis);
     - `build`, `start` e `dev` conferidos à mão: a versão compilada recusa configuração inválida (código 1) e responde pela rede com os cabeçalhos de segurança;
+    - **prova por mutação (review-gate, T012):** 6 mutações no cache da prontidão (sem cache, sem chamada única, sem nova conferência, borda dos 2 s, limite de 1 s, limite padrão). O limite de 1 s sobreviveu, porque o teste usava 20 ms reais e não conferia o tempo. O teste passou a usar relógio controlado e a conferir 999 ms e 1000 ms; agora as 6 deixam testes vermelhos;
     - 169 testes da API, 100% das linhas e 95,7% dos ramos.
 - [ ] T012 Fechamento da fundação:
   - `api/README.md` (comandos, pool, as duas opções de domínio com CORS, cookie e `TRUST_PROXY`, D1), `CHANGELOG.md` e `docs/aplicacao/api-fundacao.md`;
   - passo a passo da proteção da `main` (D19), conferido com `gh api …/branches/main/protection`;
   - **`review-gate` da fundação inteira**, com os quatro revisores, e correção de todo Crítico e Alto.
+  - **Andamento em 23/11/2026:**
+    - README, CHANGELOG e documentação escritos;
+    - **rodada 1 do review-gate:** desempenho e qualidade APROVADO; backend e segurança REPROVADO (2 Altos e 7 Médios). Todos os Altos, todos os Médios e os Baixos baratos foram corrigidos, com teste antes (lista em `docs/aplicacao/api-fundacao.md`, seção "Review-gate da fundação");
+    - 207 testes da API; linhas, comandos e funções em 100%, ramos em 96,2%;
+    - falta: a rodada 2 do review-gate e a proteção da `main` (D19), que depende do responsável.
 
 ## Adiado para a fase que usa
 
@@ -176,10 +183,10 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
 
 ## Verificação
 
-- [ ] Cobertura ≥ 90% em `src/modules/**`, `src/plugins/**` e `src/shared/**`.
-- [ ] Matriz de autorização verde.
+- [x] Cobertura ≥ 90% em `src/modules/**`, `src/plugins/**` e `src/shared/**` (e também em `src/config/**`, `src/app.ts`, `src/servidor.ts` e `src/desligamento.ts`).
+- [x] Matriz de autorização verde.
 - [ ] `review-gate` da fundação aprovado (sem Crítico nem Alto).
-- [ ] `README`, `.env.example`, `docs/` e `CHANGELOG.md` atualizados.
+- [x] `README`, `.env.example`, `docs/` e `CHANGELOG.md` atualizados.
 
 ## Desvios registrados
 
@@ -209,4 +216,10 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
 | T003 | Além do provedor `builtin`, o `--locale=C.UTF-8` | Sem ele, o `lc_collate`/`lc_ctype` do sistema vinham da imagem (`en_US.utf8`). Agora o banco não herda nada da máquina. |
 | T003 | Usuário e senha do banco são obrigatórios no `api/.env`, sem valor padrão no compose | Nenhuma senha, nem a de desenvolvimento, fica no repositório público. |
 | — | As 30 tarefas viraram 12; normalização, paginação, `/docs`, contratos, medidor de performance e parte do CI foram para as fases que os usam; o `review-gate` passa a rodar por bloco | Pedido do responsável em 23/11/2026: a fundação estava lenta para o que entrega, e esses itens não são usados antes da Fase 1. Os critérios adiados estão listados na seção "Adiado para a fase que usa". |
+| T012 | O `IdGenerator` não é injetado: o `request-id` usa `randomUUID` direto | Nenhum teste precisa do valor exato do id; os testes conferem o formato (UUID) e quando o id do proxy é aceito. Vira dependência injetada se uma fase precisar. |
+| T012 | `campos` sai da resposta de erro quando está vazio | A RN1 diz "campos só quando há"; um objeto vazio não informa nada. |
+| T012 | A mensagem de conflito (409) é fixa ("Já existe um registro com este valor.") | Cada fase com unicidade (e-mail, código do produto) troca pela mensagem do campo, quando houver o caso real. |
+| T012 | O `tsconfig.json` liga `allowImportingTsExtensions` (o build desliga) | O check-lock roda antes do `npm ci`, no node puro, que exige import com `.ts`. |
+| T012 | O `idle_in_transaction_session_timeout` (10 s) vale nos dois pools, e não só na administração | Não custa nada e protege também uma transação que o público venha a abrir. |
+| T012 | O 401 das rotas não públicas saiu do `onRequest` (como dizia a T010) para o `preParsing` | No `onRequest`, ele cortava os cabeçalhos de segurança, o CORS e o limite de requisições (Alto do review-gate). |
 | T001 | A sincronização do lockfile rodou uma vez com `--engine-strict=false` | O lockfile guardava o `24.x` antigo do `frontend/`, e o `engine-strict` recém-ligado barrava justamente a instalação que o corrige. Depois disso, `npm ci` passa com tudo ligado. |
