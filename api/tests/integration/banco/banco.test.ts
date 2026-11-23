@@ -129,6 +129,22 @@ describe("contagem de consultas (CA8.3)", () => {
     expect(contador.total()).toBe(3);
     await contado.fechar();
   });
+
+  it("zerar recomeça a contagem (para medir só a requisição do teste)", async () => {
+    const contado = criarBanco({
+      url: doArquivo.url,
+      conexoes: { publico: 1, administracao: 1 },
+      registrarConsultas: true,
+    });
+    const contador = contarConsultas(contado);
+    await contado.publico.$queryRaw`SELECT 1`;
+
+    contador.zerar();
+    await contado.publico.$queryRaw`SELECT 2`;
+
+    expect(contador.total()).toBe(1);
+    await contado.fechar();
+  });
 });
 
 describe("fechar", () => {

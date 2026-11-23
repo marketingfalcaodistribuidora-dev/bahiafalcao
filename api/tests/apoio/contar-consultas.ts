@@ -7,12 +7,18 @@ interface ClienteComEventos {
   $on(evento: "query", ouvinte: () => void): void;
 }
 
-export function contarConsultas(banco: Banco): { total(): number } {
+/** `zerar()` recomeça a contagem: prepare os dados, zere e meça só a requisição do teste. */
+export function contarConsultas(banco: Banco): { total(): number; zerar(): void } {
   let total = 0;
   for (const cliente of [banco.publico, banco.administracao]) {
     (cliente as unknown as ClienteComEventos).$on("query", () => {
       total++;
     });
   }
-  return { total: () => total };
+  return {
+    total: () => total,
+    zerar: () => {
+      total = 0;
+    },
+  };
 }
