@@ -48,6 +48,45 @@ describe("o servidor não sobe com rota sem declarações (CA5.2)", () => {
     expect(erro).toMatch(/schema de resposta/);
   });
 
+  it("recusa rota cujo schema de resposta não declara nenhuma resposta de sucesso (2xx)", async () => {
+    ({ app } = await appDeTeste());
+
+    const erro = await erroAoSubir(app, (novo) =>
+      novo.get(
+        "/teste/so-erro",
+        { config: { acesso: "publico" }, schema: { response: { 404: z.object({ erro: z.string() }) } } },
+        () => ({ ok: true }),
+      ),
+    );
+
+    expect(erro).toMatch(/GET \/teste\/so-erro/);
+    expect(erro).toMatch(/2xx/);
+  });
+
+  it("aceita resposta de sucesso declarada como 201, 204 ou 2xx", async () => {
+    ({ app } = await appDeTeste());
+
+    const erro = await erroAoSubir(app, (novo) => {
+      novo.post(
+        "/teste/criada",
+        { config: { acesso: "publico" }, schema: { response: { 201: z.object({}) } } },
+        () => ({}),
+      );
+      novo.delete(
+        "/teste/apagada",
+        { config: { acesso: "publico" }, schema: { response: { 204: z.null() } } },
+        () => null,
+      );
+      novo.put(
+        "/teste/faixa",
+        { config: { acesso: "publico" }, schema: { response: { "2xx": z.object({}) } } },
+        () => ({}),
+      );
+    });
+
+    expect(erro).toBeNull();
+  });
+
   it("aceita rota com acesso e schema de resposta", async () => {
     ({ app } = await appDeTeste());
 

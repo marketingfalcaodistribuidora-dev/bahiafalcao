@@ -1,6 +1,7 @@
 // Acesso obrigatório em toda rota (spec 000, T010; CA5.2, CA5.5; RN5; plano §3, "Acesso").
-// - Toda rota declara config.acesso (publico, logado, editor ou admin) e o schema de resposta.
-//   Faltou um dos dois: o servidor não sobe, e o erro cita a rota.
+// - Toda rota declara config.acesso (publico, logado, editor ou admin) e o schema de resposta,
+//   com pelo menos uma resposta de sucesso (2xx). Faltou algo: o servidor não sobe, e o erro
+//   cita a rota.
 // - Exceções só nesta lista fechada, por método e URL exatos (rotas criadas por plugins que não
 //   têm schema de resposta). Elas recebem acesso "publico".
 // - Até a Fase 1 (login), qualquer rota que não seja "publico" responde 401 (com as mesmas
@@ -33,6 +34,9 @@ export const EXCECOES_DO_SCHEMA_DE_RESPOSTA: readonly EntradaDaMatriz[] = [
   { metodo: "OPTIONS", url: "*" },
 ];
 
+/** 200, 201, 204… ou a faixa "2xx": só sai o que o schema declara, inclusive no sucesso. */
+const RESPOSTA_DE_SUCESSO = /^2(\d\d|xx)$/i;
+
 const ehExcecao = (metodo: string, url: string) =>
   EXCECOES_DO_SCHEMA_DE_RESPOSTA.some((excecao) => excecao.metodo === metodo && excecao.url === url);
 
@@ -55,6 +59,9 @@ export function registrarAcesso(app: FastifyInstance): void {
       }
       if (!rota.schema?.response) {
         throw new Error(`Rota ${metodo} ${rota.url} sem schema de resposta: declare o que ela devolve.`);
+      }
+      if (!Object.keys(rota.schema.response).some((status) => RESPOSTA_DE_SUCESSO.test(status))) {
+        throw new Error(`Rota ${metodo} ${rota.url} sem resposta de sucesso (2xx) no schema de resposta.`);
       }
       // O HEAD automático repete o GET (mesmo acesso); a matriz confere o GET.
       if (metodo !== "HEAD") rotas.push({ metodo, url: rota.url });
