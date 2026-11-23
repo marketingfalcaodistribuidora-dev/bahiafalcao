@@ -55,7 +55,10 @@ function comoErroDeDominio(erro: FastifyError): ErroDeDominio | null {
 }
 
 export function registrarErros(app: FastifyInstance): void {
-  app.setNotFoundHandler((_pedido, resposta) => responder(resposta, new ErroNaoEncontrado()));
+  // O limite de requisições vale também para rota que não existe (contra varredura de rotas).
+  app.setNotFoundHandler({ preHandler: app.rateLimit() }, (_pedido, resposta) =>
+    responder(resposta, new ErroNaoEncontrado()),
+  );
 
   app.setErrorHandler((erro: FastifyError, pedido, resposta) => {
     const deDominio = comoErroDeDominio(erro);

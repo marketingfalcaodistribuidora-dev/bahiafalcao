@@ -17,7 +17,7 @@ export const configuracaoDeTeste = (ajustes: Partial<Configuracao> = {}): Config
 });
 
 /** A API de teste e o texto de tudo o que ela registrou no log. */
-export function appDeTeste(ajustes: Partial<Configuracao> = {}) {
+export async function appDeTeste(ajustes: Partial<Configuracao> = {}) {
   const linhas: string[] = [];
   const destinoDoLog = new Writable({
     write(pedaco: Buffer, _codificacao, pronto) {
@@ -25,6 +25,6 @@ export function appDeTeste(ajustes: Partial<Configuracao> = {}) {
       pronto();
     },
   });
-  const app = montarApp({ configuracao: configuracaoDeTeste(ajustes), destinoDoLog });
+  const app = await montarApp({ configuracao: configuracaoDeTeste(ajustes), destinoDoLog });
   return { app, log: () => linhas.join("") };
 }

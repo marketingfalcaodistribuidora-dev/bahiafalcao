@@ -1,7 +1,7 @@
 # Tarefas 000: Fundação da API do catálogo
 
 - **Plano:** [plan.md](./plan.md)
-- **Progresso:** 8 de 12
+- **Progresso:** 9 de 12
 
 Regras:
 - o teste vem sempre antes do código, com a falha mostrada;
@@ -127,10 +127,17 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
       - o Fastify aceitava texto puro, que virava 400 em vez de 415;
     - 4 testes do `request-id` (IP único, IPv6, vizinho fora da lista, sem endereço) escritos **depois** do código, como rede de segurança dos ramos (passaram de primeira);
     - 110 testes da API, 100% das linhas e 94% dos ramos.
-- [ ] T009 Segurança das respostas:
+- [x] T009 Segurança das respostas:
   - teste antes: cabeçalhos e CSP do JSON, CORS (`null`, domínio parecido, `Vary`), 429 também no 404, `X-Forwarded-For` de origem confiável e não confiável;
   - plugins `seguranca` (helmet), `cors`, `rate-limit` e `trustProxy`.
   - Critérios: CA4.1–CA4.3, CA4.5.
+  - **Feito em 23/11/2026:**
+    - 16 testes antes: 7 vermelhos (cabeçalhos, CORS, limite, IP do proxy); os 9 que já passavam eram casos negativos, que só ganharam sentido com os plugins ligados;
+    - dois ajustes apontados pelos testes:
+      - o helmet escreve a CSP sem espaço depois do `;` (é a mesma política; o teste aceita as duas formas);
+      - o CORS mandava `Allow-Credentials` para origem recusada; agora não sai nenhum cabeçalho de CORS sem origem permitida;
+    - mais um teste (rota com o próprio cache mantém o dela), escrito depois, para o ramo que a Fase 4 vai usar;
+    - 127 testes da API, 100% das linhas e 94,6% dos ramos.
 - [ ] T010 Acesso obrigatório:
   - teste antes: rota sem `acesso` ou sem schema de resposta → o servidor não sobe; lista fechada de exceções (CORS); rota não pública → 401; matriz de autorização (5 papéis × todas as rotas); campo fora do schema não sai;
   - plugin `acesso` (`onRoute` e `onRequest`) e o `serializerCompiler`.
@@ -175,6 +182,7 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
 | T002 | Os scripts `lint`, `typecheck`, `test` e `test:coverage` da raiz passaram a rodar em todos os workspaces (site e API) | O portão local (`npm run check`, também no `pre-push`) cobre a API desde já. |
 | T002 | Os scripts `dev`, `build`, `db:*`, `seed*`, `audit` e `test:integration` da API ainda não existem | Cada um entra na tarefa que cria o que ele roda, para não haver comando quebrado. |
 | T002 | `vitest.perf.config.ts` com `passWithNoTests` | Até a T027 não há medições. |
+| T009 | `montarApp` ficou assíncrona | Os plugins (limite, CORS, cabeçalhos) só alcançam as rotas registradas depois que carregam; esperar o carregamento evita rota sem proteção. |
 | T008 | O `serializerCompiler` do Zod entrou na T008, e não na T010 | O formato único de erro já usa rotas com schema de resposta. A T010 continua com a regra de que toda rota declare o schema. |
 | T008 | Removido o leitor de `text/plain` do Fastify | A API só aceita JSON (RN6); sem isso, texto puro virava 400 em vez de 415. |
 | T008 | Nos testes, a regra `no-unsafe-assignment` do lint fica desligada | O `expect.any()` do Vitest tem tipo `any`; no código da API a regra continua valendo. |

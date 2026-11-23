@@ -12,7 +12,7 @@ import { appDeTeste } from "./apoio-app.js";
 let app: FastifyInstance;
 
 beforeEach(async () => {
-  app = appDeTeste().app;
+  app = (await appDeTeste()).app;
   const rotas = app.withTypeProvider<ZodTypeProvider>();
   rotas.post(
     "/teste/cadastro",

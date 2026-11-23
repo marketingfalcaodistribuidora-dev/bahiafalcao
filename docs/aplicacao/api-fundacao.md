@@ -232,3 +232,23 @@ Os containers só sobem com o `db:subir`. Eles não voltam sozinhos quando o Doc
 - **Só JSON:** o Fastify aceita texto puro por padrão. Esse leitor foi removido, e outro formato recebe 415. Os envios de arquivo das próximas fases registram o próprio leitor.
 - **Mensagens de validação em português** (`z.config(z.locales.ptBR())`): a tela mostra o erro de cada campo como veio da API.
 - **Um defeito encontrado pelos testes:** o pino roda o mascarador *antes* dos serializadores. Copiar a requisição do Fastify perdia o `url` (um getter da classe), o serializador quebrava e a requisição ficava sem resposta. Agora o mascarador percorre só objetos simples e listas, e há um teste para o caso.
+
+## Segurança das respostas (T009)
+
+### O que existe (`api/src/plugins/seguranca.ts`)
+
+| Proteção | Como |
+|---|---|
+| Cabeçalhos | HSTS (2 anos, com subdomínios), `X-Content-Type-Options: nosniff` e CSP fechada para JSON (`default-src 'none'; frame-ancestors 'none'`), pelo `@fastify/helmet`, em toda resposta, inclusive de erro |
+| Cache | `Cache-Control: no-store` por padrão. Uma rota que declara o próprio cache (as públicas da Fase 4) mantém o dela |
+| CORS | Só as origens exatas de `CORS_ORIGENS`, com credenciais e `Vary: Origin`. Origem fora da lista, `null` ou domínio parecido não recebem nenhum cabeçalho de CORS. Nunca `*` |
+| Limite de requisições | `LIMITE_GERAL_POR_MIN` por IP, também nas rotas que não existem (contra varredura). Passou do limite: 429 `muitas_requisicoes` com `Retry-After` |
+| IP do cliente | `trustProxy` só com a lista de `TRUST_PROXY`. Sem lista, o `X-Forwarded-For` é ignorado e vale o endereço da conexão |
+
+### Por quê
+
+- **CSP fechada até no JSON:** se alguém abrir uma resposta da API no navegador, nada nela roda nem pode ser posto num iframe.
+- **`no-store`:** respostas da administração (Fase 1) não podem ficar guardadas no navegador ou num proxy.
+- **CORS exato:** um site parecido (`bahiafalcao.com.br.exemplo.com`) ou um documento local (`null`) não conseguem chamar a API com as credenciais de quem está logado. O plugin mandava `Allow-Credentials` mesmo para origem recusada; agora nenhum cabeçalho de CORS sai sem origem permitida.
+- **IP só do proxy confiável:** o limite de requisições (e, na Fase 1, o bloqueio de login e a auditoria) dependem do IP. Um `X-Forwarded-For` forjado não pode escolher o IP.
+- **`montarApp` passou a ser assíncrona:** os plugins do Fastify só alcançam as rotas registradas depois que eles carregam. Esperar o carregamento garante que nenhuma rota fique sem limite, CORS ou cabeçalhos.

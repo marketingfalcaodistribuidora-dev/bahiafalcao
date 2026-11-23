@@ -8,6 +8,7 @@ import type { Configuracao } from "./config/env.js";
 import { registrarErros } from "./plugins/erros.js";
 import { opcoesDoLog } from "./plugins/logs.js";
 import { geradorDeId } from "./plugins/request-id.js";
+import { registrarSeguranca } from "./plugins/seguranca.js";
 
 // Mensagens de validação em português, para a tela mostrar como vieram.
 z.config(z.locales.ptBR());
@@ -18,10 +19,17 @@ export interface DependenciasDaApp {
   destinoDoLog?: DestinationStream;
 }
 
-export function montarApp({ configuracao, destinoDoLog }: DependenciasDaApp): FastifyInstance {
+/**
+ * Monta a API. É assíncrona porque espera os plugins de segurança carregarem: os hooks deles
+ * (limite, CORS, cabeçalhos) só alcançam as rotas registradas depois.
+ */
+export async function montarApp({ configuracao, destinoDoLog }: DependenciasDaApp): Promise<FastifyInstance> {
   const app = Fastify({
     logger: opcoesDoLog(configuracao.nivelDoLog, destinoDoLog),
     genReqId: geradorDeId(configuracao.proxiesConfiaveis),
+    // IP real do cliente só quando a conexão vem de um proxy da lista (CA4.5). Sem lista, o
+    // X-Forwarded-For é ignorado e vale o endereço da conexão.
+    trustProxy: configuracao.proxiesConfiaveis.length ? configuracao.proxiesConfiaveis : false,
     // O id vem do genReqId (que só aceita o do proxy confiável), nunca direto do cabeçalho.
     requestIdHeader: false,
     // Corpo: até 100 KB por padrão (cada rota pode mudar). Conexões lentas são cortadas.
@@ -42,6 +50,7 @@ export function montarApp({ configuracao, destinoDoLog }: DependenciasDaApp): Fa
   app.addHook("onRequest", async (pedido, resposta) => {
     void resposta.header("x-request-id", pedido.id);
   });
+  await registrarSeguranca(app, configuracao);
   registrarErros(app);
   return app;
 }

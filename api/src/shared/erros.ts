@@ -72,6 +72,17 @@ export class ErroTipoNaoSuportado extends ErroDeDominio {
   }
 }
 
+/** Requisições demais do mesmo cliente em pouco tempo: 429 (com Retry-After). */
+export class ErroMuitasRequisicoes extends ErroDeDominio {
+  override readonly name = "ErroMuitasRequisicoes";
+  readonly codigo = "muitas_requisicoes";
+  readonly status = 429;
+
+  constructor() {
+    super("Muitas requisições em pouco tempo. Aguarde um instante e tente de novo.");
+  }
+}
+
 /** O banco não respondeu a tempo (pool sem conexão livre, banco fora do ar): 503. */
 export class ErroIndisponivel extends ErroDeDominio {
   override readonly name = "ErroIndisponivel";

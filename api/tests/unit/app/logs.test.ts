@@ -12,7 +12,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 describe("x-request-id (CA3.1)", () => {
   it("sem o cabeçalho, a resposta traz um id gerado", async () => {
-    ({ app } = appDeTeste());
+    ({ app } = await appDeTeste());
 
     const resposta = await app.inject({ method: "GET", url: "/nao-existe" });
 
@@ -20,7 +20,7 @@ describe("x-request-id (CA3.1)", () => {
   });
 
   it("de quem não é proxy confiável, o id enviado é trocado por um gerado", async () => {
-    ({ app } = appDeTeste({ proxiesConfiaveis: [] }));
+    ({ app } = await appDeTeste({ proxiesConfiaveis: [] }));
 
     const resposta = await app.inject({ method: "GET", url: "/nao-existe", headers: { "x-request-id": "forjado-1" } });
 
@@ -28,7 +28,7 @@ describe("x-request-id (CA3.1)", () => {
   });
 
   it("do proxy confiável, um id válido é mantido", async () => {
-    ({ app } = appDeTeste({ proxiesConfiaveis: ["10.0.0.0/8"] }));
+    ({ app } = await appDeTeste({ proxiesConfiaveis: ["10.0.0.0/8"] }));
 
     const resposta = await app.inject({
       method: "GET",
@@ -41,7 +41,7 @@ describe("x-request-id (CA3.1)", () => {
   });
 
   it("do proxy confiável, um id inválido (caracteres ou tamanho) é trocado", async () => {
-    ({ app } = appDeTeste({ proxiesConfiaveis: ["10.0.0.0/8"] }));
+    ({ app } = await appDeTeste({ proxiesConfiaveis: ["10.0.0.0/8"] }));
 
     const comEspaco = await app.inject({
       method: "GET",
@@ -63,7 +63,7 @@ describe("x-request-id (CA3.1)", () => {
 
 describe("logs sem dados sensíveis (CA3.2)", () => {
   it("registram método, rota sem query, status e o id, e nada dos cabeçalhos sensíveis", async () => {
-    const teste = appDeTeste();
+    const teste = await appDeTeste();
     app = teste.app;
 
     const resposta = await app.inject({
@@ -81,7 +81,7 @@ describe("logs sem dados sensíveis (CA3.2)", () => {
   });
 
   it("o set-cookie da resposta não vai para o log", async () => {
-    const teste = appDeTeste();
+    const teste = await appDeTeste();
     app = teste.app;
     app.get("/teste/sessao", (_pedido, resposta) => {
       void resposta.header("set-cookie", "__Host-sessao=SEGREDO-DA-SESSAO; HttpOnly");
@@ -94,7 +94,7 @@ describe("logs sem dados sensíveis (CA3.2)", () => {
   });
 
   it("o que a própria API registra é mascarado em qualquer nível (senha, token, cookie, authorization)", async () => {
-    const teste = appDeTeste();
+    const teste = await appDeTeste();
     app = teste.app;
     app.get("/teste/registro", (pedido) => {
       pedido.log.info(
@@ -112,7 +112,7 @@ describe("logs sem dados sensíveis (CA3.2)", () => {
   });
 
   it("um erro inesperado é registrado com o tipo e o id, sem a mensagem (que pode ter dados)", async () => {
-    const teste = appDeTeste();
+    const teste = await appDeTeste();
     app = teste.app;
     app.get("/teste/quebra", () => {
       throw new TypeError("falhou para o e-mail ana@exemplo.com");
