@@ -2,7 +2,7 @@
 
 Registro obrigatório da seção 5 do prompt. **Nenhum pacote entra sem uma linha aqui.** Verificação = `npm view` (idade, scripts de instalação, mantenedores, repositório, assinatura e proveniência) + base OSV (osv.dev) + `npm audit` do conjunto. Ferramenta de reputação (Socket): não disponível neste ambiente; registrado como limitação.
 
-**Situação:** lista da Fase 0 verificada em **19/11/2026** e **aprovada** pelo responsável na mesma data. A instalação acontece nas tarefas T001 e T002 da spec 000.
+**Situação:** lista da Fase 0 verificada em 19/11/2026, aprovada pelo responsável na mesma data, **verificada de novo e instalada em 23/11/2026** (tarefa T002 da spec 000). As tabelas mostram as versões instaladas.
 
 ## Regras aplicadas
 
@@ -19,11 +19,11 @@ Registro obrigatório da seção 5 do prompt. **Nenhum pacote entra sem uma linh
 | fastify-type-provider-zod | 7.0.0 | 24/06/2026 | igual | Schemas Zod como validação, serialização e OpenAPI | não | sim / sim | nenhuma | `@fastify/type-provider-json-schema-to-ts` (perde o Zod como fonte única) |
 | openapi-types | 12.1.3 | 24/05/2023 | igual | Só tipos; exigido (peer) pelo `fastify-type-provider-zod` | não | sim / — | nenhuma | — (peer obrigatório). Sem versão nova há 30 meses, mas é só declaração de tipos e não tem problema de segurança aberto. |
 | @fastify/helmet | 13.2.0 | 13/10/2026 | igual | Cabeçalhos de segurança, CSP em `/docs` | não | sim / sim | nenhuma | Cabeçalhos à mão (mais código próprio) |
-| @fastify/cors | 11.4.1 | 05/11/2026 | 11.4.3 (13/11, 6 dias) | CORS com lista exata de origens | não | sim / sim | nenhuma | Hook próprio |
+| @fastify/cors | 11.4.3 | 13/11/2026 | igual | CORS com lista exata de origens | não | sim / sim | nenhuma | Hook próprio |
 | @fastify/cookie | 11.1.5 | 27/10/2026 | igual | Cookie da sessão `__Host-` | não | sim / sim | nenhuma | — |
 | @fastify/rate-limit | 11.2.2 | 02/11/2026 | igual | Limites por IP e por identificador | não | sim / sim | nenhuma | Limitador próprio |
-| @fastify/swagger | 9.9.3 | 01/11/2026 | 9.9.5 (16/11, 3 dias) | Gera o OpenAPI 3.1 | não | sim / sim | nenhuma | — |
-| @fastify/swagger-ui | 6.1.3 | 03/11/2026 | 6.1.4 (14/11, 5 dias) | Página `/docs` (protegida em produção) | não | sim / sim | nenhuma | Servir só o JSON (sem página) |
+| @fastify/swagger | 9.9.5 | 16/11/2026 | igual | Gera o OpenAPI 3.1 | não | sim / sim | nenhuma | — |
+| @fastify/swagger-ui | 6.1.4 | 14/11/2026 | igual | Página `/docs` (protegida em produção) | não | sim / sim | nenhuma | Servir só o JSON (sem página) |
 | @prisma/client | 7.10.1 | 15/10/2026 | igual | ORM (stack obrigatória) | não | sim / sim | nenhuma | — (obrigatório) |
 | @prisma/adapter-pg | 7.10.1 | 15/10/2026 | igual | Driver do PostgreSQL para o Prisma 7 | não | sim / sim | nenhuma | — (exigido pelo Prisma 7) |
 | pg | 8.23.1 | 30/09/2026 | igual | Driver do PostgreSQL (usado pelo adaptador) | não | sim / não | nenhuma | — (exigido pelo adaptador). Um mantenedor só. |
@@ -42,12 +42,13 @@ Registro obrigatório da seção 5 do prompt. **Nenhum pacote entra sem uma linh
 | @vitest/coverage-v8 | 5.1.0 | 02/11/2026 | 5.1.1 (18/11, 1 dia) | Cobertura ≥ 90% | não | sim / sim | nenhuma |
 | testcontainers | 12.2.1 | 13/10/2026 | 12.2.2 (19/11, 0 dia) | PostgreSQL real nos testes (obrigatório) | não (indiretas: veja abaixo) | sim / não | nenhuma |
 | @testcontainers/postgresql | 12.2.1 | 13/10/2026 | 12.2.2 (19/11, 0 dia) | Módulo PostgreSQL do Testcontainers | não | sim / não | nenhuma |
-| eslint | 10.14.0 | 30/10/2026 | 10.15.0 (13/11, 6 dias) | Lint | não | sim / não | nenhuma |
-| typescript-eslint | 8.72.2 | 09/11/2026 | 8.73.0 (16/11, 3 dias) | Lint strict sem `any` | não | sim / sim | nenhuma |
+| eslint | 10.15.0 | 13/11/2026 | igual | Lint | não | sim / não | nenhuma |
+| typescript-eslint | 8.73.0 | 16/11/2026 | igual | Lint strict sem `any` | não | sim / sim | nenhuma |
 | eslint-plugin-security | 4.2.1 | 30/10/2026 | igual | Regras de segurança no lint | não | sim / sim | nenhuma |
 | @types/node | 26.6.6 | 28/10/2026 | igual | Tipos do Node 26 | não | sim / não | nenhuma |
 | @types/pg | 8.23.1 | 17/08/2026 | igual | Tipos do `pg` | não | sim / não | nenhuma |
-| lint-staged | 17.6.0 | 26/09/2026 | 17.6.1 (15/11, 4 dias) | Lint e formatação só no que vai para o commit | não | sim / sim | nenhuma |
+| effect (indireta, por `overrides`) | 3.22.4 | 22/10/2026 | 4.1.5 (outra linha) | Corrige o GHSA-7589-6fvf-x4pw no CLI do Prisma, que fixa a 3.20.0 vulnerável. **Sai quando o Prisma depender de uma versão corrigida.** | não | sim / sim | nenhuma |
+| lint-staged | 17.6.1 | 15/11/2026 | igual | Lint e formatação só no que vai para o commit | não | sim / sim | nenhuma |
 | openapi-typescript | 7.13.0 | 11/02/2026 | igual | Tipos do contrato em `contracts/` para o front | não | sim / sim | nenhuma |
 
 **Recusado:** `husky` 9.1.7 (sem versão há 24 meses; o repositório já ativa ganchos por `core.hooksPath`, decisão D10).
@@ -62,6 +63,32 @@ Lockfile gerado numa pasta temporária, sem instalar (`npm install --package-loc
 - **Desenvolvimento: 14 moderadas, 0 altas, 0 críticas.** Todas vêm de `minimatch` (GHSA-g3hv-75wg-m249, negação de serviço) e `glob` (GHSA-3g3m-2fjr-6pw4), por dentro do ESLint, do `typescript-eslint` e do Testcontainers. Só rodam na máquina de quem desenvolve e no CI, com entradas nossas. A correção está em `eslint` 10.15.0 e `typescript-eslint` 8.73.0, publicadas há menos de 7 dias: **atualizar a partir de 23/11/2026**, quando passarem no protocolo.
 
 **Scripts de instalação no conjunto:** `prisma` e `@prisma/engines` (liberados, motivo acima); `esbuild` (confere o binário; funciona sem o script); `cpu-features`, `ssh2` e `protobufjs` (indiretas do Testcontainers, opcionais); `fsevents` (só macOS). Fora `prisma` e `@prisma/engines`, nenhum é liberado.
+
+## Instalação de 23/11/2026 (T002)
+
+O protocolo foi refeito no momento da instalação, com o mesmo script.
+
+**Versões trocadas pela mais nova com 7 dias ou mais** (todas sem script de instalação e sem nada na OSV):
+
+| Pacote | De → para |
+|---|---|
+| @fastify/cors | 11.4.1 → 11.4.3 |
+| @fastify/swagger | 9.9.3 → 9.9.5 |
+| @fastify/swagger-ui | 6.1.3 → 6.1.4 |
+| eslint | 10.14.0 → 10.15.0 (corrige parte dos avisos moderados) |
+| lint-staged | 17.6.0 → 17.6.1 |
+| typescript-eslint | 8.72.2 → 8.73.0 (completou 7 dias em 23/11; corrige parte dos avisos moderados; o lint do site usa o mesmo pacote) |
+
+**Alerta novo, de 19/11/2026 (depois da verificação daquele dia):**
+- [GHSA-7589-6fvf-x4pw](https://github.com/advisories/GHSA-7589-6fvf-x4pw), **alta**: ReDoS no `effect` ≤ 3.22.0. O `effect` vem pelo `@prisma/config` (CLI do Prisma), que fixa a 3.20.0.
+- **Correção:** `overrides` no `package.json` da raiz, restrito a esse caminho (`"@prisma/config": { "effect": "3.22.4" }`). A 3.22.4 é de 22/10/2026, passou no `check-dep.sh` (sem script, sem OSV, com proveniência) e é da mesma linha 3.x.
+- **Conferido:** o `prisma validate` funciona com ela (aceita um schema certo e recusa um errado).
+- **Quando tirar:** remover o `override` quando o Prisma passar a depender de um `effect` corrigido.
+
+**Resultado:**
+- `npm audit --omit=dev`: **0 vulnerabilidades**;
+- `npm audit`: **0 altas e 0 críticas**. Com o `typescript-eslint` 8.73.0 (instalado no mesmo dia, ao completar 7 dias), ficam **7 moderadas**, só de desenvolvimento: `minimatch` e `glob` por dentro do Testcontainers (`archiver`). A correção depende de uma versão nova do Testcontainers; **revisar em 07/12/2026** ou quando o Dependabot abrir a atualização;
+- `npm audit signatures`: 856 pacotes com assinatura do registro verificada, 249 com proveniência.
 
 ## Fases seguintes (a verificar quando a fase começar)
 
