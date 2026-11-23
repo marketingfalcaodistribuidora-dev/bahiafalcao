@@ -81,7 +81,7 @@ Se a especificação e o prompt divergirem, **pare e pergunte**.
 | `npm run audit -w api` | `npm audit --audit-level=high` + `npm audit signatures` |
 | `npm run db:subir -w api` / `npm run db:descer -w api` | PostgreSQL 17 (porta 5433) + Mailpit (SMTP 1025, página 8025) locais; exige o `api/.env` |
 
-Os comandos acima passam a existir na Fase 0 (spec `specs/000-fundacao`).
+Os comandos acima existem desde a Fase 0 (spec `specs/000-fundacao`), menos `seed` e `seed:perf`, que chegam com os produtos (Fases 3 e 4). O `test:perf` só mede algo a partir da Fase 4, quando existir a busca.
 
 ## Fluxo por funcionalidade
 
