@@ -80,6 +80,18 @@ describe("logs sem dados sensíveis (CA3.2)", () => {
     expect(log).not.toMatch(/SEGREDO-DA-QUERY|SEGREDO-DO-TOKEN|SEGREDO-DO-COOKIE/);
   });
 
+  it("registram o molde da rota, e não o caminho com os valores (que podem ser tokens)", async () => {
+    const teste = await appDeTeste();
+    app = teste.app;
+    app.get("/teste/convite/:token", ROTA_PUBLICA_DE_TESTE, () => ({ ok: true }));
+
+    await app.inject({ method: "GET", url: "/teste/convite/SEGREDO-NO-CAMINHO" });
+
+    const log = teste.log();
+    expect(log).toContain('"rota":"/teste/convite/:token"');
+    expect(log).not.toContain("SEGREDO-NO-CAMINHO");
+  });
+
   it("o set-cookie da resposta não vai para o log", async () => {
     const teste = await appDeTeste();
     app = teste.app;

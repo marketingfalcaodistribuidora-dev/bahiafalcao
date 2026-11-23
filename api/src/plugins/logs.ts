@@ -1,5 +1,7 @@
 // Logs da API (spec 000, T008; CA3.2; RN4), com o pino nativo do Fastify.
-// - Requisição e resposta por lista permitida: método, rota SEM query string, id e IP; status.
+// - Requisição e resposta por lista permitida: método, rota, id e IP; status. A rota é o molde
+//   ("/convites/:token"), e não o caminho com os valores, que podem ser tokens; sem rota
+//   encontrada (404), vai o caminho SEM query string.
 //   Nada de cabeçalhos, corpo, cookie ou set-cookie.
 // - O que a própria API registra passa por um mascarador que percorre o objeto em qualquer
 //   profundidade e esconde as chaves de senha, token, cookie e authorization. (O "redact" do pino
@@ -39,6 +41,7 @@ export function mascarar(valor: unknown, vistos = new WeakSet<object>()): unknow
 interface PedidoParaLog {
   method: string;
   url: string;
+  routeOptions?: { url?: string | undefined };
   id: string;
   ip: string;
 }
@@ -54,7 +57,7 @@ export function opcoesDoLog(nivel: NivelDoLog, destino?: DestinationStream): Opc
     serializers: {
       req: (pedido: PedidoParaLog) => ({
         metodo: pedido.method,
-        rota: pedido.url.split("?")[0],
+        rota: pedido.routeOptions?.url ?? pedido.url.split("?")[0],
         id: pedido.id,
         ip: pedido.ip,
       }),
