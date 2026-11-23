@@ -3,7 +3,7 @@
 // token, cookie, authorization ou query string, nem em campos aninhados.
 import { afterEach, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
-import { appDeTeste } from "./apoio-app.js";
+import { appDeTeste, ROTA_PUBLICA_DE_TESTE } from "./apoio-app.js";
 
 let app: FastifyInstance | undefined;
 afterEach(() => app?.close());
@@ -83,7 +83,7 @@ describe("logs sem dados sensíveis (CA3.2)", () => {
   it("o set-cookie da resposta não vai para o log", async () => {
     const teste = await appDeTeste();
     app = teste.app;
-    app.get("/teste/sessao", (_pedido, resposta) => {
+    app.get("/teste/sessao", ROTA_PUBLICA_DE_TESTE, (_pedido, resposta) => {
       void resposta.header("set-cookie", "__Host-sessao=SEGREDO-DA-SESSAO; HttpOnly");
       return { ok: true };
     });
@@ -96,7 +96,7 @@ describe("logs sem dados sensíveis (CA3.2)", () => {
   it("o que a própria API registra é mascarado em qualquer nível (senha, token, cookie, authorization)", async () => {
     const teste = await appDeTeste();
     app = teste.app;
-    app.get("/teste/registro", (pedido) => {
+    app.get("/teste/registro", ROTA_PUBLICA_DE_TESTE, (pedido) => {
       pedido.log.info(
         { dados: { usuario: { nome: "Ana", senhaAtual: "SEGREDO-1", acesso: { tokenDeConvite: "SEGREDO-2" } } } },
         "cadastro",
@@ -114,7 +114,7 @@ describe("logs sem dados sensíveis (CA3.2)", () => {
   it("um erro inesperado é registrado com o tipo e o id, sem a mensagem (que pode ter dados)", async () => {
     const teste = await appDeTeste();
     app = teste.app;
-    app.get("/teste/quebra", () => {
+    app.get("/teste/quebra", ROTA_PUBLICA_DE_TESTE, () => {
       throw new TypeError("falhou para o e-mail ana@exemplo.com");
     });
 

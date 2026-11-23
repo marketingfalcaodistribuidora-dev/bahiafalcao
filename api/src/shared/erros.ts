@@ -28,6 +28,17 @@ export class ErroDeValidacao extends ErroDeDominio {
   }
 }
 
+/** Sem sessão válida para uma rota que não é pública: 401. */
+export class ErroNaoAutenticado extends ErroDeDominio {
+  override readonly name = "ErroNaoAutenticado";
+  readonly codigo = "nao_autenticado";
+  readonly status = 401;
+
+  constructor() {
+    super("Entre na sua conta para continuar.");
+  }
+}
+
 /** Rota ou recurso que não existe: 404. */
 export class ErroNaoEncontrado extends ErroDeDominio {
   override readonly name = "ErroNaoEncontrado";

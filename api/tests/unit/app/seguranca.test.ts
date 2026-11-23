@@ -4,7 +4,7 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { afterEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 import type { Configuracao } from "../../../src/config/env.js";
-import { appDeTeste } from "./apoio-app.js";
+import { appDeTeste, ROTA_PUBLICA_DE_TESTE } from "./apoio-app.js";
 
 let app: FastifyInstance | undefined;
 afterEach(() => app?.close());
@@ -18,7 +18,11 @@ async function appComRotaDeIp(ajustes: Partial<Configuracao> = {}): Promise<Fast
   const novo = (await appDeTeste(ajustes)).app;
   novo
     .withTypeProvider<ZodTypeProvider>()
-    .get("/teste/ip", { schema: { response: { 200: z.object({ ip: z.string() }) } } }, (pedido) => ({ ip: pedido.ip }));
+    .get(
+      "/teste/ip",
+      { config: { acesso: "publico" }, schema: { response: { 200: z.object({ ip: z.string() }) } } },
+      (pedido) => ({ ip: pedido.ip }),
+    );
   return novo;
 }
 
@@ -46,7 +50,7 @@ describe("cabeçalhos de segurança (CA4.1)", () => {
 
   it("a rota que declara o próprio cache mantém o dela (rotas públicas da Fase 4)", async () => {
     app = await appComRotaDeIp();
-    app.get("/teste/publica", (_pedido, resposta) => {
+    app.get("/teste/publica", ROTA_PUBLICA_DE_TESTE, (_pedido, resposta) => {
       void resposta.header("cache-control", "public, max-age=60");
       return { ok: true };
     });

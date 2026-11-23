@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 import { Prisma } from "../../../src/generated/prisma/client.js";
 import { ErroDeConflito, ErroIndisponivel } from "../../../src/shared/erros.js";
-import { appDeTeste } from "./apoio-app.js";
+import { appDeTeste, ROTA_PUBLICA_DE_TESTE } from "./apoio-app.js";
 
 let app: FastifyInstance;
 
@@ -17,6 +17,7 @@ beforeEach(async () => {
   rotas.post(
     "/teste/cadastro",
     {
+      config: { acesso: "publico" },
       schema: {
         body: z.strictObject({ email: z.email(), idade: z.number().int() }),
         response: { 200: z.object({ ok: z.boolean() }) },
@@ -24,16 +25,16 @@ beforeEach(async () => {
     },
     () => ({ ok: true }),
   );
-  rotas.get("/teste/quebra", () => {
+  rotas.get("/teste/quebra", ROTA_PUBLICA_DE_TESTE, () => {
     throw new Error('SELECT * FROM "Usuario" WHERE senha = $1');
   });
-  rotas.get("/teste/conflito", () => {
+  rotas.get("/teste/conflito", ROTA_PUBLICA_DE_TESTE, () => {
     throw new ErroDeConflito({ email: "Já existe um registro com este valor." });
   });
-  rotas.get("/teste/indisponivel", () => {
+  rotas.get("/teste/indisponivel", ROTA_PUBLICA_DE_TESTE, () => {
     throw new ErroIndisponivel();
   });
-  rotas.get("/teste/repetido-no-banco", () => {
+  rotas.get("/teste/repetido-no-banco", ROTA_PUBLICA_DE_TESTE, () => {
     throw new Prisma.PrismaClientKnownRequestError("detalhe interno", {
       code: "P2002",
       clientVersion: "7.10.1",

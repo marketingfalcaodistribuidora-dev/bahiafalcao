@@ -5,6 +5,7 @@ import { serializerCompiler, validatorCompiler } from "fastify-type-provider-zod
 import type { DestinationStream } from "pino";
 import { z } from "zod";
 import type { Configuracao } from "./config/env.js";
+import { registrarAcesso } from "./plugins/acesso.js";
 import { registrarErros } from "./plugins/erros.js";
 import { opcoesDoLog } from "./plugins/logs.js";
 import { geradorDeId } from "./plugins/request-id.js";
@@ -50,6 +51,8 @@ export async function montarApp({ configuracao, destinoDoLog }: DependenciasDaAp
   app.addHook("onRequest", async (pedido, resposta) => {
     void resposta.header("x-request-id", pedido.id);
   });
+  // Antes de qualquer plugin que crie rotas: a rota do CORS também passa pela conferência.
+  registrarAcesso(app);
   await registrarSeguranca(app, configuracao);
   registrarErros(app);
   return app;

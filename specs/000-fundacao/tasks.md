@@ -1,7 +1,7 @@
 # Tarefas 000: Fundação da API do catálogo
 
 - **Plano:** [plan.md](./plan.md)
-- **Progresso:** 9 de 12
+- **Progresso:** 10 de 12
 
 Regras:
 - o teste vem sempre antes do código, com a falha mostrada;
@@ -138,10 +138,15 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
       - o CORS mandava `Allow-Credentials` para origem recusada; agora não sai nenhum cabeçalho de CORS sem origem permitida;
     - mais um teste (rota com o próprio cache mantém o dela), escrito depois, para o ramo que a Fase 4 vai usar;
     - 127 testes da API, 100% das linhas e 94,6% dos ramos.
-- [ ] T010 Acesso obrigatório:
+- [x] T010 Acesso obrigatório:
   - teste antes: rota sem `acesso` ou sem schema de resposta → o servidor não sobe; lista fechada de exceções (CORS); rota não pública → 401; matriz de autorização (5 papéis × todas as rotas); campo fora do schema não sai;
   - plugin `acesso` (`onRoute` e `onRequest`) e o `serializerCompiler`.
   - Critérios: CA5.2, CA5.5, CA5.6.
+  - **Feito em 23/11/2026:**
+    - 12 testes antes (vermelhos: o módulo não existia), mais 1 para rota com vários métodos;
+    - ao ligar a regra, as 5 rotas dos testes anteriores sem `acesso` foram recusadas (a trava funcionou); elas passaram a declarar, com o auxiliar `ROTA_PUBLICA_DE_TESTE`;
+    - matriz de autorização criada; ganha as primeiras entradas na T011, com as rotas de saúde;
+    - 140 testes da API, 99,6% das linhas e 94% dos ramos.
 - [ ] T011 Saúde e servidor:
   - teste antes: `/health/live`; `/health/ready` (200, 503, cache de 2 s, uma consulta só para chamadas simultâneas); desligamento gracioso;
   - módulo `saude`, `server.ts` e o script `dev`;

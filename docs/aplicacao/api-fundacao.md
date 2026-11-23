@@ -252,3 +252,19 @@ Os containers só sobem com o `db:subir`. Eles não voltam sozinhos quando o Doc
 - **CORS exato:** um site parecido (`bahiafalcao.com.br.exemplo.com`) ou um documento local (`null`) não conseguem chamar a API com as credenciais de quem está logado. O plugin mandava `Allow-Credentials` mesmo para origem recusada; agora nenhum cabeçalho de CORS sai sem origem permitida.
 - **IP só do proxy confiável:** o limite de requisições (e, na Fase 1, o bloqueio de login e a auditoria) dependem do IP. Um `X-Forwarded-For` forjado não pode escolher o IP.
 - **`montarApp` passou a ser assíncrona:** os plugins do Fastify só alcançam as rotas registradas depois que eles carregam. Esperar o carregamento garante que nenhuma rota fique sem limite, CORS ou cabeçalhos.
+
+## Acesso obrigatório (T010)
+
+### O que existe (`api/src/plugins/acesso.ts`)
+
+- **Toda rota declara quem pode acessá-la** (`config: { acesso: "publico" | "logado" | "editor" | "admin" }`) **e o schema de resposta.** Faltando um dos dois, o servidor **não sobe**, e o erro cita a rota. Ex.: `Rota GET /teste/sem-acesso sem config.acesso`.
+- **Exceções só numa lista fechada** (`EXCECOES_DO_SCHEMA_DE_RESPOSTA`), por método e URL exatos. Hoje só a consulta prévia do CORS (`OPTIONS *`). Um teste falha se a lista crescer, para a mudança passar por revisão.
+- **Até a Fase 1 (login), rota que não é pública responde 401** `nao_autenticado`. A Fase 1 troca isso pela conferência da sessão e do papel.
+- **Só sai o que o schema de resposta declara:** um campo a mais devolvido pelo código (ex.: um hash de senha) não chega à resposta.
+- **Matriz de autorização** (`api/tests/unit/app/matriz-de-autorizacao.test.ts`): todas as rotas da API × os papéis (anônimo, editor, administrador, desativado, sessão expirada), com o status esperado. **Rota nova sem entrada na matriz faz o teste falhar.**
+
+### Por quê
+
+- **Segurança por padrão:** esquecer o controle de acesso numa rota nova é um erro comum e grave. Aqui o esquecimento impede o servidor de subir, em vez de abrir a rota.
+- **Prova na prática:** ao ligar a regra, as 5 rotas dos testes anteriores, que não declaravam acesso, foram recusadas citando cada uma. Elas passaram a declarar.
+- **O registro vem antes do CORS:** o plugin de CORS cria uma rota (`OPTIONS *`). Registrada antes dele, a conferência também a vê.
