@@ -26,8 +26,8 @@ export function geradorDeId(proxies: string[]): (pedido: IncomingMessage) => str
   return (pedido) => {
     const recebido = pedido.headers["x-request-id"];
     const endereco = pedido.socket.remoteAddress ?? "";
-    const versao = isIP(endereco);
-    const doProxy = versao !== 0 && confiaveis.check(endereco, versao === 6 ? "ipv6" : "ipv4");
+    // Endereço vazio ou que não é IP: o check devolve false (conferido no Node 26).
+    const doProxy = confiaveis.check(endereco, isIP(endereco) === 6 ? "ipv6" : "ipv4");
     return doProxy && typeof recebido === "string" && ID_SEGURO.test(recebido) ? recebido : randomUUID();
   };
 }

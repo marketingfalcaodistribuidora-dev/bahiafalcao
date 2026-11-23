@@ -1,7 +1,7 @@
 // Prontidão da API (spec 000, T011; CA1.3): "pronta" quando o banco responde em até 1 s.
 // O resultado vale por 2 s, e chamadas ao mesmo tempo esperam a MESMA verificação: uma rajada
 // no /health/ready não ocupa o pool de conexões.
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { criarProntidao } from "../../../../src/modules/saude/prontidao.js";
 
 /** Relógio que só anda quando o teste manda. */
@@ -39,11 +39,20 @@ describe("criarProntidao", () => {
     expect(await estaPronta()).toBe(false);
   });
 
-  it("não está pronta quando o banco não responde no limite", async () => {
+  it("não está pronta quando o banco não responde em 1 s (e decide exatamente aí)", async () => {
+    vi.useFakeTimers();
     const semResposta = () => new Promise<void>(() => undefined);
-    const estaPronta = criarProntidao({ verificarBanco: semResposta, relogio: relogioFixo(), limiteMs: 20 });
+    const estaPronta = criarProntidao({ verificarBanco: semResposta, relogio: relogioFixo() });
+    let resultado: boolean | undefined;
 
-    expect(await estaPronta()).toBe(false);
+    void estaPronta().then((pronta) => (resultado = pronta));
+    await vi.advanceTimersByTimeAsync(999);
+    const antesDoLimite = resultado;
+    await vi.advanceTimersByTimeAsync(1);
+    vi.useRealTimers();
+
+    expect(antesDoLimite).toBeUndefined();
+    expect(resultado).toBe(false);
   });
 
   it("reaproveita o resultado por 2 s, sem ir ao banco", async () => {
