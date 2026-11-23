@@ -1,8 +1,13 @@
 // Prontidão da API (spec 000, T011; CA1.3): "pronta" quando o banco responde em até 1 s.
 // O resultado vale por 2 s, e chamadas ao mesmo tempo esperam a MESMA verificação: uma rajada
 // no /health/ready não ocupa o pool de conexões.
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { criarProntidao } from "../../../../src/modules/saude/prontidao.js";
+
+// O teste do limite de 1 s liga o relógio falso do Vitest; ele sempre volta ao real.
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 /** Relógio que só anda quando o teste manda. */
 function relogioFixo(inicio = 0) {
@@ -49,7 +54,6 @@ describe("criarProntidao", () => {
     await vi.advanceTimersByTimeAsync(999);
     const antesDoLimite = resultado;
     await vi.advanceTimersByTimeAsync(1);
-    vi.useRealTimers();
 
     expect(antesDoLimite).toBeUndefined();
     expect(resultado).toBe(false);

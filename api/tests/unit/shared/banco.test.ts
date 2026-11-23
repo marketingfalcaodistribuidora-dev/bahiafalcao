@@ -1,4 +1,5 @@
-// Erro numa conexão ociosa do pool (spec 000, T007; review-gate da fundação). Sem ouvinte, o pg
+// Erro numa conexão ociosa do pool (spec 000, T007; CA1.3, a API segue de pé com o banco fora;
+// achado do review-gate da fundação). Sem ouvinte, o pg
 // lança o evento "error" como exceção e derruba o processo inteiro. O banco sempre ouve e avisa
 // quem pediu, só com o pool e o tipo do erro (a mensagem pode ter dados).
 // Não conecta: criar os pools e os clientes não abre conexão.

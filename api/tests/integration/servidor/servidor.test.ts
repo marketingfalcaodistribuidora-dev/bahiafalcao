@@ -38,7 +38,7 @@ describe("servidor (CA1.2 e CA1.3)", () => {
   });
 
   it("um erro numa conexão ociosa do banco vai para o log (só o tipo) e não derruba o processo", () => {
-    const registrarErro = vi.spyOn(servidor.app.log, "error");
+    const registrarErro = vi.spyOn(servidor.app.log, "error").mockImplementation(() => undefined);
 
     servidor.banco.pools.publico.emit("error", new TypeError("conexão caiu"));
 
@@ -77,7 +77,7 @@ describe("configuração inválida (CA1.1)", () => {
   });
 });
 
-describe("porta ocupada", () => {
+describe("porta ocupada (sem CA próprio: achado do review-gate da fundação)", () => {
   it("não sobe e fecha as conexões com o banco que já tinha aberto", async () => {
     const primeiro = await iniciarServidor(ambiente(doArquivo.url));
     const porta = new URL(primeiro.endereco).port;
@@ -115,13 +115,33 @@ describe("desligamento gracioso (CA1.4)", () => {
     return { servidor, chegou, liberar };
   }
 
-  it("termina a requisição em andamento e fecha as conexões com o banco", async () => {
+  /**
+   * Uma conexão nova durante o desligamento: recusada (ECONNREFUSED), cortada logo depois de
+   * aceita pelo sistema (ECONNRESET) ou, se chegar antes de a porta fechar, respondida com 503
+   * pelo Fastify. Nunca atendida normalmente.
+   */
+  async function conexaoNovaRecusada(endereco: string): Promise<string> {
+    try {
+      const resposta = await fetch(`${endereco}/health/live`);
+      return `atendida com ${String(resposta.status)}`;
+    } catch (erro) {
+      return (erro as { cause?: { code?: string } }).cause?.code ?? "erro sem código";
+    }
+  }
+
+  it("espera a requisição em andamento terminar e só então fecha as conexões com o banco", async () => {
     const { servidor, chegou, liberar } = await servidorComRotaPresa();
     const emAndamento = fetch(`${servidor.endereco}/teste/demorada`);
     await chegou;
 
     const encerrando = servidor.encerrar();
-    liberar();
+    try {
+      // A conexão nova recusada mostra que o desligamento já começou; o banco segue aberto.
+      await conexaoNovaRecusada(servidor.endereco);
+      expect(servidor.banco.pools.publico.ended).toBe(false);
+    } finally {
+      liberar();
+    }
     const resposta = await emAndamento;
     await encerrando;
 
@@ -136,10 +156,15 @@ describe("desligamento gracioso (CA1.4)", () => {
     await chegou;
 
     const encerrando = servidor.encerrar();
-    const nova = fetch(`${servidor.endereco}/health/live`);
-    await expect(nova).rejects.toThrow();
-    liberar();
-    await emAndamento;
-    await encerrando;
+    let resultado: string;
+    try {
+      resultado = await conexaoNovaRecusada(servidor.endereco);
+    } finally {
+      liberar();
+      await emAndamento;
+      await encerrando;
+    }
+
+    expect(["ECONNREFUSED", "ECONNRESET", "atendida com 503"]).toContain(resultado);
   });
 });
