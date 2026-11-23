@@ -1,12 +1,11 @@
 # Tarefas 000: Fundação da API do catálogo
 
 - **Plano:** [plan.md](./plan.md)
-- **Progresso:** 3 de 30
+- **Progresso:** 3 de 12
 
 Regras:
-- cada tarefa leva **até 2 h**;
-- o teste fica numa tarefa **antes** da do código;
-- `[P]` marca as que podem correr em paralelo.
+- o teste vem sempre antes do código, com a falha mostrada;
+- o `review-gate` roda no fim da fundação (T012).
 
 ## Preparação (configuração: sem lógica, coberta pelos testes de integração)
 
@@ -59,62 +58,77 @@ Regras:
     - fuso UTC, sem reinício automático e Mailpit sem consultar a internet;
     - senha do exemplo em branco (o compose recusa subir) e `.env.example` dizendo o que a API não lê;
     - conferido de novo com o ambiente no ar.
-- [ ] T004 `.githooks/pre-commit`: `lint-staged` + `gitleaks git --staged`; sem gitleaks, barra com a instrução (D17). O `lint-staged` está declarado em `api/`, mas o gancho roda na raiz: decidir onde ele fica e rodar o ESLint de cada workspace (o site usa o 9.39.5, a API o 10.15.0), conforme o review-gate da T002. Conferir a versão do gitleaks no `winget`. Varredura única do histórico inteiro do repositório com o gitleaks, com o resultado anexado aqui.
+## Fundação enxuta (reorganizada em 23/11/2026 a pedido do responsável)
+
+Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com a falha mostrada). O `review-gate` roda **uma vez, no fim** (T012), e não a cada tarefa. O que não é preciso antes da Fase 1 foi para a fase que o usa (seção seguinte).
+
+- [ ] T004 Esteira essencial:
+  - `.githooks/pre-commit` com `lint-staged` e `gitleaks git --staged`; sem gitleaks, barra com a instrução (D17). O `lint-staged` roda o ESLint de cada workspace (o site usa o 9.39.5, a API o 10.15.0);
+  - `check-lock.sh` para as dependências indiretas: compara dois lockfiles e confere idade, OSV e `hasInstallScript` de cada pacote novo ou alterado, sem `--ignore-scripts`;
+  - CI:
+    - Node 26 no job do site (D15);
+    - job `api` com conferência do `npm config`, `^`/`~` e flags proibidos, `check-lock.sh` quando o lockfile muda, lint, tipos, testes com cobertura, `npm audit --audit-level=high`, `npm audit signatures` e gitleaks;
+    - todas as actions por SHA, `permissions: contents: read` e `persist-credentials: false`;
+    - `.github/dependabot.yml` com espera de 7 dias;
+  - uma varredura única do histórico inteiro com o gitleaks, com o resultado anexado aqui.
+  - Critérios: CA4.4, CA7.1, CA7.2, CA7.4, CA7.5, CA7.6.
 - [ ] T005 Apoio de testes:
-  - `globalSetup` (container com `fsync=off`, locale fixo, as migrations no `falcao_modelo` e depois `IS_TEMPLATE true ALLOW_CONNECTIONS false`);
-  - banco por arquivo (`CREATE DATABASE … TEMPLATE`, `DROP … WITH (FORCE)`; medir `FILE_COPY` × `WAL_LOG`);
-  - pool de teste pequeno e `maxWorkers` calculado;
-  - **separar os testes que precisam de Docker** (integração) do `npm test`, com `test:integration` próprio, ou decidir que o `pre-push` exige o Docker ligado e registrar a decisão (review-gate da T002);
-  - `hookTimeout` e `teardownTimeout` medidos para o `globalSetup` e o `DROP … WITH (FORCE)`;
-  - confirmar que a cobertura reprova abaixo de 90% assim que houver código em `src/`;
-  - o Testcontainers usa a **mesma imagem (digest), os mesmos `POSTGRES_INITDB_ARGS` e o fuso UTC** do `api/docker-compose.yml`, com um teste que lê o compose e compara (review-gate da T003);
-  - `Clock` fixo, `IdGenerator` previsível e `montarApp`.
-- [ ] T006 [P] `check-lock.sh` para as dependências indiretas (compara dois lockfiles; idade, OSV e `hasInstallScript` de cada pacote novo ou alterado; sem `--ignore-scripts`; confirmar que `--package-lock-only` não roda scripts). Rodar sobre o lockfile da Fase 0 e anexar a saída. O `check-dep.sh` já foi corrigido em 19/11/2026: validação do nome e da versão, `--`, proveniência e paginação da OSV.
+  - Testcontainers com a **mesma imagem, os mesmos `POSTGRES_INITDB_ARGS` e o fuso UTC** do `api/docker-compose.yml`, mais um teste que lê o compose e compara;
+  - `fsync=off`, banco-modelo `falcao_modelo` (`IS_TEMPLATE`, `ALLOW_CONNECTIONS false`) e banco por arquivo (`CREATE DATABASE … TEMPLATE`, `DROP … WITH (FORCE)`);
+  - pool pequeno, `maxWorkers` calculado, `hookTimeout` e `teardownTimeout` medidos;
+  - **`test:integration` separado do `npm test`**: o push não exige Docker, e o CI roda os dois;
+  - `Clock` fixo, `IdGenerator` previsível, `montarApp` e `contarQueries`.
+- [ ] T006 Configuração (`config/env.ts`):
+  - teste antes: variável faltando ou inválida (inclusive `NODE_ENV`), lista só os nomes, CORS (`*`, `null`, `http`, origem não exata), `TRUST_PROXY` com `true` ou número recusado, `LIMITE_IGNORAR_IPS` e `DOCS_HABILITADO` recusados em produção;
+  - variáveis desconhecidas são ignoradas (ex.: `POSTGRES_USUARIO`/`POSTGRES_SENHA`, que são só do compose);
+  - um teste confere que toda chave do schema está no `api/.env.example`.
+  - Critérios: CA1.1, CA4.6, CA4.7.
+- [ ] T007 Banco (Prisma):
+  - teste antes: extensões e `f_unaccent` (`search_path` mínimo, `IMMUTABLE`, índice GIN numa tabela temporária, `SHOW lc_ctype`); P2002 → 409; pool esgotado → 503 em ~2 s, segurando a conexão com `pool.connect()`;
+  - migration `0001_extensoes` (skill `prisma-migration`);
+  - plugin `prisma` com os dois pools e o mapeamento dos erros;
+  - gerador `prisma-client` com `output = "../src/generated/prisma"`, `moduleFormat = "esm"` e `importFileExtension = "js"`;
+  - como o CLI e a API leem o `api/.env` (`process.loadEnvFile` ou `node --env-file`), sem o `NODE_ENV` de desenvolvimento vazar para os testes.
+  - Critérios: CA6.3, CA2.5, CA1.5.
+- [ ] T008 Erros e logs:
+  - teste antes: 404, 400 `validacao` com `campos`, campo extra, `__proto__`, 500 neutro, 413 e 415; `x-request-id`; logs por lista permitida, sem query, `set-cookie` nem campos aninhados em até 3 níveis;
+  - `shared/erros.ts` e os plugins `erros`, `request-id` e `logs`.
+  - Critérios: CA2.1–CA2.4, CA2.6, CA3.1, CA3.2.
+- [ ] T009 Segurança das respostas:
+  - teste antes: cabeçalhos e CSP do JSON, CORS (`null`, domínio parecido, `Vary`), 429 também no 404, `X-Forwarded-For` de origem confiável e não confiável;
+  - plugins `seguranca` (helmet), `cors`, `rate-limit` e `trustProxy`.
+  - Critérios: CA4.1–CA4.3, CA4.5.
+- [ ] T010 Acesso obrigatório:
+  - teste antes: rota sem `acesso` ou sem schema de resposta → o servidor não sobe; lista fechada de exceções (CORS); rota não pública → 401; matriz de autorização (5 papéis × todas as rotas); campo fora do schema não sai;
+  - plugin `acesso` (`onRoute` e `onRequest`) e o `serializerCompiler`.
+  - Critérios: CA5.2, CA5.5, CA5.6.
+- [ ] T011 Saúde e servidor:
+  - teste antes: `/health/live`; `/health/ready` (200, 503, cache de 2 s, uma consulta só para chamadas simultâneas); desligamento gracioso;
+  - módulo `saude`, `server.ts` e o script `dev`;
+  - `tsconfig.build.json` (`noEmit: false`, `rootDir: src`, `outDir: dist`, só `src/**`) e o script `build`.
+  - Critérios: CA1.2–CA1.4, CA8.3.
+- [ ] T012 Fechamento da fundação:
+  - `api/README.md` (comandos, pool, as duas opções de domínio com CORS, cookie e `TRUST_PROXY`, D1), `CHANGELOG.md` e `docs/aplicacao/api-fundacao.md`;
+  - passo a passo da proteção da `main` (D19), conferido com `gh api …/branches/main/protection`;
+  - **`review-gate` da fundação inteira**, com os quatro revisores, e correção de todo Crítico e Alto.
 
-## Testes que falham (Red) e implementação (Green)
+## Adiado para a fase que usa
 
-- [ ] T007 [P] Teste: `config/env` (CA1.1, CA4.6, CA4.7, `TRUST_PROXY=true` recusado).
-- [ ] T008 Implementar `config/env.ts` (faz passar T007). Ignora variáveis que não conhece (ex.: `POSTGRES_USUARIO`/`POSTGRES_SENHA`, que são só do compose), e um teste confere que toda chave do schema está no `api/.env.example` (review-gate da T003).
-- [ ] T009 [P] Testes: `normalizarCodigo`, `normalizarTexto` (CA6.1, CA6.2); `paginacao` com tetos e `pagina` máxima (CA6.4).
-- [ ] T010 Implementar `shared/normalizar.ts` e `shared/paginacao.ts` (faz passar T009).
-- [ ] T011 Testes: extensões, `f_unaccent` com `search_path` mínimo, `IMMUTABLE`, índice GIN numa tabela temporária e equivalência código × banco (CA6.3, CA6.5).
-- [ ] T012 Migration `0001_extensoes` (skill `prisma-migration`) e plugin `prisma` com os dois pools (faz passar T011). Gerador `prisma-client` com `output = "../src/generated/prisma"`, `moduleFormat = "esm"` e `importFileExtension = "js"`, coerentes com NodeNext (review-gate da T002). Decidir como o CLI do Prisma e a API leem o `api/.env` (`process.loadEnvFile` ou `node --env-file`; o Prisma 7 não carrega sozinho), sem o `NODE_ENV=development` vazar para os testes (review-gate da T003).
-- [ ] T013 Testes: formato único de erro: 404, 400 `validacao`, campo extra, `__proto__`, 500 neutro, 413, 415 (CA2.1–CA2.4, CA2.6).
-- [ ] T014 Implementar `shared/erros.ts` e o plugin `erros` (faz passar T013).
-- [ ] T015 Testes: P2002 → 409 (CA2.5); pool esgotado → 503 em ~2 s, segurando a conexão com `pool.connect()` (CA1.5).
-- [ ] T016 Mapear erros do Prisma e a falta de conexão para erros de domínio (faz passar T015).
-- [ ] T017 Testes: `x-request-id` (CA3.1) e logs por lista permitida, sem query, `set-cookie` nem campos aninhados em até 3 níveis (CA3.2).
-- [ ] T018 Plugins `request-id` e `logs` (faz passar T017).
-- [ ] T019 Testes: cabeçalhos e CSP do JSON, CORS (`null`, domínio parecido, `Vary`), 429 também no 404, `X-Forwarded-For` confiável e não confiável (CA4.1–CA4.3, CA4.5).
-- [ ] T020 Plugins `seguranca` (helmet), `cors`, `rate-limit` e `trustProxy` (faz passar T019).
-- [ ] T021 Testes: rota sem `acesso` ou sem schema → boot falha; lista fechada de exceções (CORS e `/docs`); rota não pública → 401; matriz de autorização; campo fora do schema não sai (CA5.2, CA5.5, CA5.6).
-- [ ] T022 Plugin `acesso` (`onRoute` e `onRequest`) e o `serializerCompiler` (faz passar T021).
-- [ ] T023 Testes: `/health/live`, `/health/ready` (200, 503, cache de 2 s e uma consulta só para chamadas simultâneas) e desligamento gracioso (CA1.2–CA1.4); `contarQueries` (CA8.3).
-- [ ] T024 Módulo `saude`, auxiliar `contarQueries` e `server.ts` com desligamento (faz passar T023). Junto com o script `build`: `tsconfig.build.json` herdando o `tsconfig.json`, com `noEmit: false`, `rootDir: src`, `outDir: dist` e só `src/**` (review-gate da T002).
-- [ ] T025 Testes: `/docs` ligado só com `development` ou `DOCS_HABILITADO`; respostas válidas contra o OpenAPI (CA5.1, CA5.3).
-- [ ] T026 Plugin `swagger` (+ `transformStaticCSP`) e geração de `contracts/` com `openapi-typescript` (faz passar T025 e CA5.4).
-
-## Medição, esteira e documentação
-
-- [ ] T027 Medidor `scripts/medir.ts` (API compilada num processo filho; carga noutro processo; 30 s; aborta em não 2xx; `pg_stat_statements` zerado e anexado) + `docs/perf/README.md` (modelo de registro) + `perf/saude.perf.ts`. Medir `/health` contra o `docker-compose` e registrar em `docs/perf/` (CA8.1, CA8.2). Antes de medir, conferir ou recriar a extensão em `medicao`; gravar no registro o `pg_settings` com `source <> 'default'`, mais CPUs e memória do Docker/WSL (review-gate da T003).
-- [ ] T028 CI:
-  - Node 26 no job do site (D15);
-  - job `api` (plano §9);
-  - todas as actions por SHA, `permissions: contents: read` e `persist-credentials: false`;
-  - `.github/dependabot.yml` com espera de 7 dias.
-  - Conferir CA4.4 e CA7.1–CA7.6 e anexar a saída aqui.
-- [ ] T029 Passo a passo da proteção da `main` (D19) para o responsável; conferir com `gh api …/branches/main/protection` e anexar a saída.
-- [ ] T030 Documentação:
-  - `api/README.md`: comandos, pool, as duas opções de domínio com CORS, cookie e `TRUST_PROXY` de cada uma (D1);
-  - `CHANGELOG.md`;
-  - `docs/aplicacao/api-fundacao.md` (o quê, como e por quê).
+| O que | Critérios | Vai para | Por quê |
+|---|---|---|---|
+| Normalização de códigos e texto, equivalência código × banco | CA6.1, CA6.2, CA6.5 | Fase 3 (produtos) | É usada pelos códigos e similares dos produtos |
+| Paginação com tetos (24 / 25) | CA6.4 | Fase 3 (primeira lista paginada) | Nenhuma rota lista nada antes disso |
+| `/docs`, OpenAPI e tipos em `contracts/` | CA5.1, CA5.3, CA5.4 | Fase 4 (catálogo público) | Ninguém consome o contrato antes do front. O schema de resposta obrigatório (CA5.2) fica na fundação. |
+| Medidor de performance e registro em `docs/perf/` | CA8.1, CA8.2 | Fase 4 | Só há o que medir quando existir a busca. As notas da revisão da T003 (`medicao`, `pg_settings`, CPUs) valem para lá. |
+| Semgrep, SBOM e gitleaks do histórico no CI | parte do CA7.3 | Fase 7 (endurecimento) | O gitleaks no commit e no CI, o audit e as assinaturas já cobrem o principal agora |
+| Senha na página do Mailpit | — | Antes da Fase 1 | As mensagens com links de convite e de senha começam na Fase 1 |
 
 ## Verificação
 
 - [ ] Cobertura ≥ 90% em `src/modules/**`, `src/plugins/**` e `src/shared/**`.
 - [ ] Matriz de autorização verde.
-- [ ] `review-gate` aprovado (sem Crítico nem Alto).
-- [ ] OpenAPI, `README`, `.env.example`, `docs/` e `CHANGELOG.md` atualizados.
+- [ ] `review-gate` da fundação aprovado (sem Crítico nem Alto).
+- [ ] `README`, `.env.example`, `docs/` e `CHANGELOG.md` atualizados.
 
 ## Desvios registrados
 
@@ -133,4 +147,5 @@ Regras:
 | T003 | Proteger a página do Mailpit com senha ficou para antes da Fase 1 | Hoje a caixa só tem mensagens de teste, e ela já fica só em 127.0.0.1. Na Fase 1, as mensagens terão links de convite e de senha (anotado no compose). |
 | T003 | Além do provedor `builtin`, o `--locale=C.UTF-8` | Sem ele, o `lc_collate`/`lc_ctype` do sistema vinham da imagem (`en_US.utf8`). Agora o banco não herda nada da máquina. |
 | T003 | Usuário e senha do banco são obrigatórios no `api/.env`, sem valor padrão no compose | Nenhuma senha, nem a de desenvolvimento, fica no repositório público. |
+| — | As 30 tarefas viraram 12; normalização, paginação, `/docs`, contratos, medidor de performance e parte do CI foram para as fases que os usam; o `review-gate` passa a rodar por bloco | Pedido do responsável em 23/11/2026: a fundação estava lenta para o que entrega, e esses itens não são usados antes da Fase 1. Os critérios adiados estão listados na seção "Adiado para a fase que usa". |
 | T001 | A sincronização do lockfile rodou uma vez com `--engine-strict=false` | O lockfile guardava o `24.x` antigo do `frontend/`, e o `engine-strict` recém-ligado barrava justamente a instalação que o corrige. Depois disso, `npm ci` passa com tudo ligado. |

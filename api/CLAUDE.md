@@ -87,7 +87,7 @@ Os comandos acima passam a existir na Fase 0 (spec `specs/000-fundacao`).
 2. `security-reviewer` faz o threat model e `performance-reviewer` revisa o plano de dados.
 3. **Resumo para o responsável e espera da aprovação.**
 4. Para cada tarefa: `test-writer` escreve o teste que falha, você implementa e depois refatora (`/tdd-cycle`).
-5. `/review-gate` com os quatro revisores. Corrija todo Crítico e Alto e rode de novo.
+5. `/review-gate` com os quatro revisores **ao fim de cada bloco de tarefas** (no mínimo, ao fim da funcionalidade), e não a cada tarefa. Corrija todo Crítico e Alto e rode de novo. (Decisão do responsável em 23/11/2026: revisar a cada tarefa pequena custava caro e achava pouco.)
 6. Atualize a documentação, o OpenAPI e o `CHANGELOG.md`.
 7. Commits pequenos (Conventional Commits) e um resumo curto do que foi entregue e do que ficou pendente.
 
@@ -97,7 +97,7 @@ Os comandos acima passam a existir na Fase 0 (spec `specs/000-fundacao`).
 - [ ] Teste escrito antes do código (visível no histórico).
 - [ ] Cobertura ≥ 90% no módulo; lint, format e `tsc --noEmit` limpos.
 - [ ] Matriz de autorização atualizada e verde.
-- [ ] `review-gate` aprovado (sem Crítico nem Alto).
+- [ ] `review-gate` do bloco aprovado (sem Crítico nem Alto).
 - [ ] Dependência nova registrada em `docs/dependencias.md`; `npm audit` sem alto nem crítico.
 - [ ] Queries novas com `EXPLAIN` revisado; metas de performance respeitadas.
 - [ ] OpenAPI, `README`, `.env.example` e `CHANGELOG.md` atualizados.

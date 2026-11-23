@@ -1,6 +1,6 @@
 ---
 name: review-gate
-description: Portão de revisão da API do catálogo. Roda em paralelo backend-reviewer, security-reviewer, performance-reviewer e quality-reviewer sobre a mudança, consolida os relatórios e só libera se todos aprovarem; senão lista o que corrigir e roda de novo. Use ao fim de cada tarefa ou funcionalidade, antes do commit (passo 5 do fluxo).
+description: Portão de revisão da API do catálogo. Roda em paralelo backend-reviewer, security-reviewer, performance-reviewer e quality-reviewer sobre a mudança, consolida os relatórios e só libera se todos aprovarem; senão lista o que corrigir e roda de novo. Use ao fim de cada bloco de tarefas ou funcionalidade (não a cada tarefa pequena), antes do commit (passo 5 do fluxo).
 argument-hint: "[spec NNN ou descrição da mudança]"
 ---
 

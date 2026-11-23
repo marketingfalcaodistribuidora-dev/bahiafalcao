@@ -1,7 +1,7 @@
 # Spec 000: Fundação da API do catálogo
 
 - **Status:** Aprovada (19/11/2026)
-- **Criada em:** 2026-11-19 · **Revisada em:** 2026-11-19, duas rodadas do `security-reviewer` e do `performance-reviewer` (veja o §8)
+- **Criada em:** 2026-11-19 · **Revisada em:** 2026-11-19, duas rodadas do `security-reviewer` e do `performance-reviewer` (veja o §9); reorganizada em 2026-11-23 (veja o §8)
 - **Fonte:** `PROMPT_BACKEND_FALCAO.md` (seções 3, 5, 6, 7 e 11, Fase 0) e `docs/especificacao.md` (seções "Modelo de dados e API" e "Requisitos não funcionais")
 
 > O **quê** e o **porquê**. O como fica no [plan.md](./plan.md).
@@ -149,10 +149,23 @@ Todas estão em `docs/decisoes-em-aberto.md`.
 - [x] Cada migration tem justificativa e rollback (no plano).
 - [x] STRIDE sem ameaça sem mitigação (no plano).
 - [x] Todo critério tem teste e tarefa.
-- [x] Revisores de segurança e de performance: **APROVADO** na segunda rodada (sem Crítico nem Alto); Médios e Baixos incorporados (§8).
+- [x] Revisores de segurança e de performance: **APROVADO** na segunda rodada (sem Crítico nem Alto); Médios e Baixos incorporados (§9).
 - [x] Aprovada pelo responsável (19/11/2026).
 
-## 8. Revisão de 19/11/2026
+## 8. Reorganização de 23/11/2026
+
+A pedido do responsável, a fundação ficou só com o que é preciso antes da Fase 1. Estes critérios continuam valendo, mas são cumpridos na fase que usa cada coisa (detalhes no [tasks.md](./tasks.md#adiado-para-a-fase-que-usa)):
+
+| Critérios | Vai para |
+|---|---|
+| CA6.1, CA6.2, CA6.4, CA6.5 (normalização, paginação, equivalência código × banco) | Fase 3 |
+| CA5.1, CA5.3, CA5.4 (`/docs`, contrato OpenAPI e tipos) | Fase 4 |
+| CA8.1, CA8.2 (medidor e metas de performance do `/health`) | Fase 4 |
+| Parte do CA7.3 (Semgrep, SBOM, gitleaks do histórico no CI) | Fase 7 |
+
+O `review-gate` passa a rodar por bloco de tarefas, e não a cada tarefa.
+
+## 9. Revisão de 19/11/2026
 
 | Revisor | Achado | Severidade | Onde foi tratado |
 |---|---|---|---|
