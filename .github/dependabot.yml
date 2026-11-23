@@ -1,0 +1,67 @@
+# Atualizações automáticas (PROMPT_BACKEND_FALCAO.md, seção 5.7; spec 000, T004).
+# - Espera de 7 dias (cooldown) antes de propor uma versão nova: a mesma regra do .npmrc.
+# - Agrupadas por assunto, para não chegar um PR por pacote.
+# - Cada PR passa pelo CI, que confere o lockfile pacote a pacote (check-lock) e as falhas conhecidas.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Bahia
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5
+    groups:
+      site:
+        patterns:
+          - "next"
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+          - "eslint-config-next"
+          - "tailwindcss"
+          - "@tailwindcss/*"
+          - "@testing-library/*"
+          - "jsdom"
+      api:
+        patterns:
+          - "fastify"
+          - "@fastify/*"
+          - "fastify-type-provider-zod"
+          - "zod"
+          - "prisma"
+          - "@prisma/*"
+          - "pg"
+          - "@types/pg"
+          - "testcontainers"
+          - "@testcontainers/*"
+          - "openapi-types"
+          - "openapi-typescript"
+      ferramentas:
+        patterns:
+          - "*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Bahia
+    cooldown:
+      default-days: 7
+
+  # Imagens do ambiente local (PostgreSQL e Mailpit em api/docker-compose.yml).
+  - package-ecosystem: docker-compose
+    directory: /api
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Bahia
+    cooldown:
+      default-days: 7

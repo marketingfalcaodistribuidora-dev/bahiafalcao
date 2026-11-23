@@ -19,7 +19,7 @@ Houve vários ataques recentes ao npm:
 2. **Verificação no momento, sem confiar na memória:**
    - `bash api/scripts/check-dep.sh <pacote>@<versão>`: idade, scripts de instalação, mantenedores, repositório, depreciação, assinatura, proveniência e OSV;
    - `npm audit` do conjunto: gere o lockfile numa pasta temporária com `npm install --package-lock-only` (só resolve versões, não roda scripts) e rode `npm audit` e `npm audit --omit=dev`;
-   - dependências indiretas: `bash api/scripts/check-lock.sh` compara o lockfile novo com o atual (idade, OSV e `hasInstallScript` de cada pacote novo ou alterado);
+   - dependências indiretas: `npx tsx api/scripts/check-lock.ts <lockfile-anterior> <lockfile-novo>` compara os dois lockfiles (recusa versão com menos de 7 dias, falha alta ou crítica, origem fora do registro e script fora do `allowScripts`; falha moderada vira aviso) (idade, OSV e `hasInstallScript` de cada pacote novo ou alterado);
    - se houver ferramenta de reputação (Socket), consulte: código ofuscado, acesso à rede ou ao disco, scripts de instalação.
 3. **Critérios de recusa** (qualquer um bloqueia):
    - versão com **menos de 7 dias**: use a anterior estável (o `.npmrc` tem `min-release-age=7`);

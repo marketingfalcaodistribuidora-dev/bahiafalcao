@@ -21,7 +21,7 @@ api/
   prisma/schema.prisma + migrations/   # só extensões e f_unaccent nesta fase
   tests/ (unit/, integration/, contract/, security/, perf/) + factories/ + apoio/
   contracts/               # tipos gerados do OpenAPI (openapi-typescript)
-  scripts/check-dep.sh, scripts/check-lock.sh, scripts/medir.ts
+  scripts/check-dep.sh, scripts/check-lock.ts, scripts/conferir-esteira.sh
   docker-compose.yml       # PostgreSQL 17 + Mailpit, por digest, portas só em 127.0.0.1
   vitest.config.ts, vitest.perf.config.ts
   .env.example, README.md, CHANGELOG.md
@@ -262,7 +262,7 @@ CREATE FUNCTION public.f_unaccent(text) RETURNS text
 ## 8. Dependências e ferramentas
 
 - **Pacotes da Fase 0:** os de [`docs/dependencias.md`](../../docs/dependencias.md), verificados em 19/11/2026. **Nada é instalado antes da aprovação.**
-- **Dependências indiretas:** `api/scripts/check-lock.sh` compara dois lockfiles (o da `main` e o atual, ou o atual e um gerado numa pasta temporária com `--package-lock-only`, que só resolve versões e não roda scripts, a confirmar na T006) e passa cada pacote novo ou alterado pela idade, pela OSV e pelo campo `hasInstallScript` do lockfile (que também pega `binding.gyp`, que o `check-dep.sh` sozinho não vê). Não usa `--ignore-scripts`, que o CI proíbe.
+- **Dependências indiretas:** `api/scripts/check-lock.ts` compara dois lockfiles (o da `main` e o atual, ou o atual e um gerado numa pasta temporária com `--package-lock-only`, que só resolve versões e não roda scripts, a confirmar na T006) e passa cada pacote novo ou alterado pela idade, pela OSV e pelo campo `hasInstallScript` do lockfile (que também pega `binding.gyp`, que o `check-dep.sh` sozinho não vê). Não usa `--ignore-scripts`, que o CI proíbe.
 - **Programas fora do npm:**
   - Docker Desktop (já instalado);
   - gitleaks, por `winget` na máquina local e como binário com checksum conferido no CI (a `gitleaks-action` exige licença em contas de organização), com a versão conferida na tarefa T004.
@@ -278,7 +278,7 @@ CREATE FUNCTION public.f_unaccent(text) RETURNS text
    - `npm config get strict-allow-scripts` = `true` e `min-release-age` = `7`;
    - nenhum `--ignore-scripts` nem `--dangerously-allow-all-scripts` nos scripts e workflows (`grep`);
    - nenhum `^` ou `~` nos três `package.json`.
-2. Se o PR altera o `package-lock.json`: `check-lock.sh` contra o lockfile da `main` (idade, scripts de instalação, OSV de cada pacote novo ou alterado), falhando no primeiro problema. É isso que faz o `min-release-age` valer também para lockfiles editados e PRs do Dependabot.
+2. Se o PR altera o `package-lock.json`: `check-lock.ts` contra o lockfile da `main` (idade, scripts de instalação, OSV de cada pacote novo ou alterado), falhando no primeiro problema. É isso que faz o `min-release-age` valer também para lockfiles editados e PRs do Dependabot.
 3. `npm ci`.
 4. `grep` por `$queryRawUnsafe`, `$executeRawUnsafe`, `Prisma.raw(`, `eval(` e `new Function`.
 5. Lint, tipos e testes com cobertura (90% em `src/modules/**`, `src/plugins/**` e `src/shared/**`).

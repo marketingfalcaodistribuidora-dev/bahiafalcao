@@ -90,6 +90,19 @@ O protocolo foi refeito no momento da instalação, com o mesmo script.
 - `npm audit`: **0 altas e 0 críticas**. Com o `typescript-eslint` 8.73.0 (instalado no mesmo dia, ao completar 7 dias), ficam **7 moderadas**, só de desenvolvimento: `minimatch` e `glob` por dentro do Testcontainers (`archiver`). A correção depende de uma versão nova do Testcontainers; **revisar em 07/12/2026** ou quando o Dependabot abrir a atualização;
 - `npm audit signatures`: 856 pacotes com assinatura do registro verificada, 249 com proveniência.
 
+## Ferramentas da esteira (T004, 23/11/2026)
+
+- **`lint-staged` 17.6.1 saiu da API e foi para a raiz.** É ferramenta do repositório inteiro: o gancho `pre-commit` roda na raiz e chama o ESLint de cada workspace.
+- **Actions do GitHub**, fixadas pelo SHA do commit, com 7 dias ou mais:
+
+| Action | Versão | Publicada | SHA |
+|---|---|---|---|
+| `actions/checkout` | v7.0.1 | 20/07/2026 | `3d3c42e5aac5ba805825da76410c181273ba90b1` |
+| `actions/setup-node` | v7.1.0 | 08/10/2026 | `949feb2413d6458794dcd2491c4babbbce0c15c1` |
+
+- **gitleaks no CI:** binário 8.30.1 (21/03/2026) baixado do release oficial e conferido pelo SHA-256 (`551f6fc8…f2470eb`, linux_x64) antes de rodar. Não usamos a `gitleaks-action`, que exige licença em contas de organização.
+- **Dependabot** (`.github/dependabot.yml`): npm, GitHub Actions e as imagens do `api/docker-compose.yml`, toda segunda, com espera de 7 dias e PRs agrupados.
+
 ## Imagens Docker do ambiente local (T003, 23/11/2026)
 
 Mesma regra dos pacotes: versão com 7 dias ou mais, fixada por digest (lista multiarquitetura do Docker Hub).

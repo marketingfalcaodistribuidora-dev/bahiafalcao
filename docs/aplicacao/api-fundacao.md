@@ -86,3 +86,34 @@ Os containers só sobem com o `db:subir`. Eles não voltam sozinhos quando o Doc
   - `shm_size: 256mb`: memória para consultas em paralelo.
 - **Fuso UTC no banco:** o mesmo dos testes. A API converte para o horário da Bahia ao mostrar datas.
 - **Banco de testes separado:** os testes automáticos não usam este banco. Cada execução cria um banco efêmero pelo Testcontainers (T005).
+
+## Esteira (T004)
+
+### O que existe
+
+| Onde | O que faz |
+|---|---|
+| `.githooks/pre-commit` | Antes de cada commit: **gitleaks** nos arquivos preparados (segredo barra o commit) e **lint-staged** (Prettier em tudo; ESLint do site ou da API, conforme a pasta). Sem o gitleaks instalado, o commit também é barrado, com a instrução de instalação. |
+| `.githooks/pre-push` | Antes de cada envio: o portão completo (`npm run check`). |
+| `api/scripts/conferir-esteira.sh` | No CI: npm ≥ 11.20, `.npmrc` ativo, nenhum `^`/`~`, nenhuma flag que desligue a proteção de scripts e nenhum SQL montado com texto nem `eslint-disable` em `api/src`. |
+| `api/scripts/check-lock.ts` | No CI, quando o lockfile muda: cada pacote novo ou alterado (inclusive os indiretos) passa pelo protocolo. Recusa versão com menos de 7 dias, falha alta, crítica ou de gravidade desconhecida, origem fora do registro do npm e script de instalação fora do `allowScripts`. Falha moderada ou baixa vira aviso. |
+| `.github/workflows/ci.yml` | Três jobs: **segurança** (conferência, check-lock, `npm audit --audit-level=high`, `npm audit signatures` e gitleaks no histórico inteiro); depois **qualidade** (`npm run check` e o build da Vercel) e **API** (testes com cobertura). |
+| `.github/dependabot.yml` | Atualizações semanais com espera de 7 dias, agrupadas. |
+
+### Como funciona e por quê
+
+- **Por que o `check-lock`:** o `npm ci` instala exatamente o lockfile e não confere a idade de nada. Sem esta etapa, um lockfile editado à mão, ou um PR do Dependabot com uma dependência indireta recém-publicada, passaria. Rodado sobre a instalação da API (415 pacotes), ele levou 17 segundos e não recusou nenhum. As duas falhas moderadas já conhecidas saíram como aviso.
+- **Por que segurança primeiro no CI:** os jobs de qualidade e da API rodam código dos pacotes (testes e build). Eles só começam depois que o job de segurança aprovou o lockfile.
+- **Por que actions por SHA e permissão mínima:** uma tag pode passar a apontar para outro código. O SHA é imutável. O workflow só lê o repositório e não guarda credenciais no checkout.
+- **Provas feitas:**
+  - um token falso no formato do GitHub foi barrado pelo `pre-commit`;
+  - sem o gitleaks, o commit foi barrado;
+  - o `conferir-esteira.sh` barrou um `^`, uma flag proibida e um `eslint-disable` em `api/src`, e trata como falha uma busca que não rodou.
+- **Histórico:** uma varredura única do histórico inteiro (23 commits) com o gitleaks não achou nenhum segredo.
+
+### Comandos
+
+| Comando | O que faz |
+|---|---|
+| `bash api/scripts/conferir-esteira.sh` | Confere as proteções da esteira (o mesmo que o CI roda) |
+| `npx tsx api/scripts/check-lock.ts <lock-anterior> <lock-novo>` | Confere os pacotes novos ou alterados entre dois lockfiles |

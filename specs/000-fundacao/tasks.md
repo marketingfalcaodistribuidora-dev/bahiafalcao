@@ -1,7 +1,7 @@
 # Tarefas 000: Fundação da API do catálogo
 
 - **Plano:** [plan.md](./plan.md)
-- **Progresso:** 3 de 12
+- **Progresso:** 4 de 12
 
 Regras:
 - o teste vem sempre antes do código, com a falha mostrada;
@@ -62,7 +62,7 @@ Regras:
 
 Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com a falha mostrada). O `review-gate` roda **uma vez, no fim** (T012), e não a cada tarefa. O que não é preciso antes da Fase 1 foi para a fase que o usa (seção seguinte).
 
-- [ ] T004 Esteira essencial:
+- [x] T004 Esteira essencial:
   - `.githooks/pre-commit` com `lint-staged` e `gitleaks git --staged`; sem gitleaks, barra com a instrução (D17). O `lint-staged` roda o ESLint de cada workspace (o site usa o 9.39.5, a API o 10.15.0);
   - `check-lock.sh` para as dependências indiretas: compara dois lockfiles e confere idade, OSV e `hasInstallScript` de cada pacote novo ou alterado, sem `--ignore-scripts`;
   - CI:
@@ -72,6 +72,14 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
     - `.github/dependabot.yml` com espera de 7 dias;
   - uma varredura única do histórico inteiro com o gitleaks, com o resultado anexado aqui.
   - Critérios: CA4.4, CA7.1, CA7.2, CA7.4, CA7.5, CA7.6.
+  - **Feito em 23/11/2026:**
+    - varredura do histórico inteiro com o gitleaks: 23 commits, nenhum segredo;
+    - `check-lock.ts` com as regras em `scripts/lockfile.ts`, testadas antes (13 casos: novos e alterados, escopo, aninhados, apelidos `npm:`, workspaces, idade, versão desconhecida, gravidade da falha, origem e `allowScripts`);
+    - rodado de verdade entre o lockfile da T001 e o atual: 415 pacotes, 0 recusados, 2 avisos (as moderadas já conhecidas);
+    - a primeira versão recusava qualquer falha (o protocolo só bloqueia alta e crítica) e confundia apelidos com o nome verdadeiro. Os dois casos viraram teste antes da correção;
+    - `pre-commit` provado: sem gitleaks, barrado; um token falso no formato do GitHub, barrado, sem mudar o histórico;
+    - `conferir-esteira.sh` provado: passa no repositório; barra `^`, flag proibida, `eslint-disable` em `api/src` e busca que não rodou. A primeira versão deixava passar a flag proibida por um erro no `grep`; corrigido e provado de novo;
+    - CI e Dependabot validados localmente (YAML bem formado, conferência verde). **A primeira execução real acontece no próximo push.**
 - [ ] T005 Apoio de testes:
   - Testcontainers com a **mesma imagem, os mesmos `POSTGRES_INITDB_ARGS` e o fuso UTC** do `api/docker-compose.yml`, mais um teste que lê o compose e compara;
   - `fsync=off`, banco-modelo `falcao_modelo` (`IS_TEMPLATE`, `ALLOW_CONNECTIONS false`) e banco por arquivo (`CREATE DATABASE … TEMPLATE`, `DROP … WITH (FORCE)`);

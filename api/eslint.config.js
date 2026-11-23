@@ -98,9 +98,10 @@ export default defineConfig(
     rules: { "no-restricted-syntax": "off" },
   },
   {
-    // Os testes passam strings e objetos de exemplo de propósito; as regras de segurança
-    // que procuram padrões suspeitos geram ruído ali, sem proteger nada.
-    files: ["tests/**/*.ts"],
+    // Testes e scripts de ferramenta (rodados à mão ou no CI, nunca na API): passam caminhos
+    // vindos da linha de comando e índices internos de propósito; as regras de segurança que
+    // procuram esses padrões geram ruído ali, sem proteger nada.
+    files: ["tests/**/*.ts", "scripts/**/*.ts"],
     rules: {
       "security/detect-object-injection": "off",
       "security/detect-non-literal-fs-filename": "off",
