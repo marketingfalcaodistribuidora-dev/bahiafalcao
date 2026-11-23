@@ -3,6 +3,7 @@
 // token, cookie, authorization ou query string, nem em campos aninhados.
 import { afterEach, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
+import { Prisma } from "../../../src/generated/prisma/client.js";
 import { appDeTeste, ROTA_PUBLICA_DE_TESTE } from "./apoio-app.js";
 
 let app: FastifyInstance | undefined;
@@ -150,5 +151,36 @@ describe("logs sem dados sensíveis (CA3.2)", () => {
     const log = teste.log();
     expect(log).toContain('"tipo":"Error"');
     expect(log).not.toMatch(/ana@exemplo\.com|hash-secreto/);
+  });
+
+  it('nem uma linha da mensagem disfarçada de linha da pilha (começando com "at") vai para o log', async () => {
+    const teste = await appDeTeste();
+    app = teste.app;
+    app.get("/teste/quebra-disfarcada", ROTA_PUBLICA_DE_TESTE, () => {
+      throw new Error("falhou para:\n    at ana@exemplo.com (dados.ts:1:1)");
+    });
+
+    await app.inject({ method: "GET", url: "/teste/quebra-disfarcada" });
+
+    expect(teste.log()).not.toContain("ana@exemplo.com");
+  });
+
+  it("um erro do banco não traduzido vai para o log com os códigos (não sensíveis), sem a mensagem", async () => {
+    const teste = await appDeTeste();
+    app = teste.app;
+    app.get("/teste/quebra-no-banco", ROTA_PUBLICA_DE_TESTE, () => {
+      throw new Prisma.PrismaClientKnownRequestError("tabela usuarios_secretos não existe", {
+        code: "P2010",
+        clientVersion: "7.10.1",
+        meta: { driverAdapterError: { cause: { originalCode: "42P01", originalMessage: "usuarios_secretos" } } },
+      });
+    });
+
+    await app.inject({ method: "GET", url: "/teste/quebra-no-banco" });
+
+    const log = teste.log();
+    expect(log).toContain('"codigo":"P2010"');
+    expect(log).toContain('"codigoDoBanco":"42P01"');
+    expect(log).not.toContain("usuarios_secretos");
   });
 });

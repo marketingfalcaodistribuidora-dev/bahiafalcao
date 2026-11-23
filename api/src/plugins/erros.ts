@@ -54,6 +54,32 @@ function comoErroDeDominio(erro: FastifyError): ErroDeDominio | null {
   return null;
 }
 
+/**
+ * Da pilha, só as linhas de localização no código. A mensagem pode ter várias linhas com dados
+ * (as do Prisma listam os argumentos, como e-mails), e uma delas pode até imitar uma linha da
+ * pilha: o cabeçalho "Nome: mensagem" é descartado inteiro antes de filtrar os "at ...".
+ */
+function pilhaSemMensagem(erro: Error): string {
+  const pilha = erro.stack ?? "";
+  const cabecalho = `${erro.name}: ${erro.message}`;
+  const quadros = pilha.startsWith(cabecalho) ? pilha.slice(cabecalho.length) : pilha;
+  return quadros
+    .split("\n")
+    .filter((linha) => /^\s+at /.test(linha))
+    .join("\n");
+}
+
+/** Os códigos do erro, que não são sensíveis e ajudam no diagnóstico (ex.: P2010 e 42P01). */
+function codigosDoErro(erro: FastifyError): { codigo?: string; codigoDoBanco?: string } {
+  const meta: unknown = (erro as { meta?: unknown }).meta;
+  const causa: unknown = (meta as { driverAdapterError?: { cause?: { originalCode?: unknown } } } | undefined)
+    ?.driverAdapterError?.cause?.originalCode;
+  return {
+    ...(typeof erro.code === "string" && { codigo: erro.code }),
+    ...(typeof causa === "string" && { codigoDoBanco: causa }),
+  };
+}
+
 export function registrarErros(app: FastifyInstance): void {
   // O limite de requisições vale também para rota que não existe (contra varredura de rotas).
   app.setNotFoundHandler({ preHandler: app.rateLimit() }, (_pedido, resposta) =>
@@ -64,13 +90,7 @@ export function registrarErros(app: FastifyInstance): void {
     const deDominio = comoErroDeDominio(erro);
     if (deDominio) return responder(resposta, deDominio);
 
-    // Da pilha, só as linhas de localização no código ("at ..."). A mensagem pode ter várias
-    // linhas com dados (as do Prisma listam os argumentos, como e-mails) e fica de fora.
-    const pilha = (erro.stack ?? "")
-      .split("\n")
-      .filter((linha) => /^\s+at /.test(linha))
-      .join("\n");
-    pedido.log.error({ tipo: erro.name, pilha }, "erro inesperado");
+    pedido.log.error({ tipo: erro.name, ...codigosDoErro(erro), pilha: pilhaSemMensagem(erro) }, "erro inesperado");
     return resposta
       .code(500)
       .type("application/json; charset=utf-8")
