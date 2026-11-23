@@ -5,6 +5,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { z } from "zod";
 import { iniciarServidor, type Servidor } from "../../../src/servidor.js";
+import type { Banco } from "../../../src/shared/banco.js";
 import { criarBancoDoArquivo, type BancoDoArquivo } from "../../apoio/banco.js";
 
 let doArquivo: BancoDoArquivo;
@@ -61,6 +62,23 @@ describe("banco fora do ar (CA1.3)", () => {
 describe("configuração inválida (CA1.1)", () => {
   it("não sobe, citando a variável", async () => {
     await expect(iniciarServidor({ NODE_ENV: "test" })).rejects.toThrow(/DATABASE_URL/);
+  });
+});
+
+describe("porta ocupada", () => {
+  it("não sobe e fecha as conexões com o banco que já tinha aberto", async () => {
+    const primeiro = await iniciarServidor(ambiente(doArquivo.url));
+    const porta = new URL(primeiro.endereco).port;
+    let bancoDoSegundo: Banco | undefined;
+
+    const segundo = iniciarServidor({ ...ambiente(doArquivo.url), PORTA: porta }, (_app, banco) => {
+      bancoDoSegundo = banco;
+    });
+    await expect(segundo).rejects.toThrow(/EADDRINUSE/);
+    await primeiro.encerrar();
+
+    expect(bancoDoSegundo?.pools.publico.ended).toBe(true);
+    expect(bancoDoSegundo?.pools.administracao.ended).toBe(true);
   });
 });
 

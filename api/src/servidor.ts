@@ -17,10 +17,11 @@ export interface Servidor {
 /**
  * Sobe a API. Com configuração inválida, rejeita com ErroDeConfiguracao (que cita só os nomes
  * das variáveis). `registrarExtras` é só para os testes acrescentarem rotas antes de abrir a porta.
+ * Se a porta não abrir (ocupada, sem permissão), fecha o que já abriu, inclusive o banco.
  */
 export async function iniciarServidor(
   env: Record<string, string | undefined>,
-  registrarExtras?: (app: FastifyInstance) => void,
+  registrarExtras?: (app: FastifyInstance, banco: Banco) => void,
 ): Promise<Servidor> {
   const configuracao = lerConfiguracao(env);
   const banco = criarBanco({ url: configuracao.urlDoBanco });
@@ -29,9 +30,14 @@ export async function iniciarServidor(
     verificarBanco: verificadorDoBanco(banco),
     aoFechar: () => banco.fechar(),
   });
-  registrarExtras?.(app);
+  registrarExtras?.(app, banco);
 
-  await app.listen({ host: configuracao.endereco, port: configuracao.porta });
+  try {
+    await app.listen({ host: configuracao.endereco, port: configuracao.porta });
+  } catch (erro) {
+    await app.close();
+    throw erro;
+  }
   // Com PORTA=0 o sistema escolhe a porta; ela é lida do servidor já aberto.
   const aberto = app.server.address();
   const porta = typeof aberto === "object" && aberto !== null ? aberto.port : configuracao.porta;
