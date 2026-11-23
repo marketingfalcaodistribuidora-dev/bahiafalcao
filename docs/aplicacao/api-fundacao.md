@@ -160,7 +160,7 @@ Os containers só sobem com o `db:subir`. Eles não voltam sozinhos quando o Doc
 | `NODE_ENV` | `development`, `test` ou `production` | obrigatória |
 | `DATABASE_URL` | URL `postgresql://` | obrigatória |
 | `CORS_ORIGENS` | origens exatas `https://` (sem barra no fim nem maiúsculas); `http://localhost` só em `development` | nenhuma |
-| `TRUST_PROXY` | IPs ou faixas CIDR (de `/8` no IPv4 e `/32` no IPv6 para cima: `0.0.0.0/0` confiaria na internet inteira); `true` e número de saltos recusados | nenhum (usa o IP da conexão) |
+| `TRUST_PROXY` | IPs ou faixas CIDR (de `/8` no IPv4, `/32` no IPv6 e `/104` no IPv4 mapeado para cima: `0.0.0.0/0` ou `::ffff:0:0/96` confiariam na internet inteira); `true` e número de saltos recusados | nenhum (usa o IP da conexão) |
 | `LIMITE_GERAL_POR_MIN` | inteiro de 10 a 10000 | 300 |
 | `LIMITE_IGNORAR_IPS` | IPs; **recusada em produção** | nenhum |
 | `DOCS_HABILITADO` | `true`/`false`; `true` **recusado em produção** até a Fase 1 | `false` |
@@ -300,7 +300,7 @@ Os containers só sobem com o `db:subir`. Eles não voltam sozinhos quando o Doc
 
 ## Review-gate da fundação (T012)
 
-A primeira rodada dos quatro revisores reprovou (backend e segurança), com dois achados Altos e vários Médios. Tudo foi corrigido com teste antes:
+A primeira rodada dos quatro revisores reprovou (backend e segurança), com dois achados Altos e vários Médios. Tudo foi corrigido com teste antes, menos um teste de caracterização (conexão nova recusada no desligamento), que passou de primeira porque o comportamento já existia (contagem na T012 do `tasks.md`):
 
 | Achado | Correção |
 |---|---|
@@ -310,6 +310,20 @@ A primeira rodada dos quatro revisores reprovou (backend e segurança), com dois
 | Mensagem de erro de várias linhas ia para o log junto com a pilha | Só as linhas `at …` da pilha vão para o log |
 | O desligamento não tinha limite de tempo e o teste usava esperas por tempo | `src/desligamento.ts`, com saída forçada em 8 s; teste com promessas controladas |
 | O README recomendava `Domain=` no cookie e "confiar nos IPs da Vercel" | `__Host-sessao` nas duas opções; a Vercel não tem IPs fixos, então o IP real depende de um cabeçalho secreto |
+
+A segunda rodada aprovou em desempenho, qualidade e backend, e reprovou em segurança: o revisor contornou o check-lock. Correções, um commit por achado:
+
+| Achado | Correção |
+|---|---|
+| Alto: uma entrada podia apontar para o tarball de **outro** pacote do registro (ou de outra versão do mesmo, escapando da idade mínima), com a integridade verdadeira dele | O `resolved` precisa ser exatamente `https://registry.npmjs.org/<nome>/-/<nome-sem-escopo>-<versão>.tgz` |
+| Médio: a marca `inBundle` do lockfile dispensava a conferência | A marca só vale para entrada sem `resolved` nem `integrity` cujo ancestral fora do bundle declare `bundleDependencies` |
+| Lockfile de outro formato, sem `packages` ou com chave estranha fora de `node_modules/` | Recusados com mensagem clara |
+| Banco reiniciando, cheio ou com a conexão caída ainda dava 500 | Viram 503: `P1008`, `P1017`, `P2037`, os tipos `ConnectionClosed`, `SocketTimeout` e `TooManyConnections`, os códigos `57P01`, `57P02`, `57P03`, `53300` e a classe `08`, e as quedas de conexão do `pg`. Provado no banco real com `pg_sleep`, banco inalcançável e `pg_terminate_backend` |
+| `TRUST_PROXY=::ffff:0:0/96` confiava em todo IPv4 | Faixa IPv6 que cubra o IPv4 mapeado precisa de `/104` |
+| O log do erro inesperado perdia o código; uma linha da mensagem podia imitar a pilha | O log leva `codigo` e `codigoDoBanco` (não sensíveis); o cabeçalho `Nome: mensagem` sai inteiro antes do filtro |
+| Testes de desligamento com corrida e sem limpeza garantida | Aceitam recusada, cortada ou 503; limpeza no `finally`; o teste prova que o banco segue aberto enquanto a requisição está presa |
+| Desligamento forçado em 10 s, igual ao prazo do `docker stop` | 8 s |
+| Conferência CA7.6 enganada por comentário; permissões de escrita fora do topo e gatilhos perigosos não conferidos | Comentários descartados; escrita recusada em qualquer nível; `pull_request_target` e `workflow_run` recusados |
 
 - **Prova por mutação:** cada ramo do `request-id` e do cache da prontidão foi quebrado de propósito, e algum teste ficou vermelho em todos. Uma mutação sobreviveu por ser equivalente (a guarda `versao !== 0` era redundante e saiu). Outra mostrou que nenhum teste conferia o limite de 1 s da prontidão, e o teste ganhou relógio controlado.
 - **Cobertura:** passou a incluir `src/app.ts`, `src/servidor.ts` e `src/desligamento.ts`. Linhas, comandos e funções estão em 100%, e ramos em 96%. Os ramos restantes são valores de reserva que o TypeScript estrito exige e que não acontecem na prática (ex.: erro sem `stack`).

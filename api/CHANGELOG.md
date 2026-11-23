@@ -21,8 +21,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). A
 ### Corrigido (review-gate da fundação)
 
 - O 401 das rotas não públicas passa pelos cabeçalhos de segurança, pelo CORS e pelo limite de requisições.
-- O check-lock confere o lockfile inteiro (registro, integridade sha512, versão) e pega o mesmo `nome@versão` com outro conteúdo.
-- Banco fora do ar e consulta cortada por tempo respondem 503, e não 500.
-- O log de erro inesperado não leva a mensagem, nem quando ela tem várias linhas. O log registra o molde da rota, e não os valores do caminho.
-- Rota sem resposta 2xx declarada e `TRUST_PROXY` com faixa larga demais impedem a API de subir.
+- O check-lock confere o lockfile inteiro (forma, registro, integridade sha512, versão), exige o tarball do próprio pacote, não confia na marca `inBundle` e pega o mesmo `nome@versão` com outro conteúdo.
+- Banco fora do ar, reiniciando, cheio, com a conexão caída ou com a consulta cortada por tempo responde 503, e não 500.
+- O log de erro inesperado leva os códigos do erro e não leva a mensagem, nem quando ela tem várias linhas ou imita a pilha. O log registra o molde da rota, e não os valores do caminho.
+- Rota sem resposta 2xx declarada e `TRUST_PROXY` com faixa larga demais (inclusive no IPv4 mapeado) impedem a API de subir.
+- A conferência dos workflows (CA7.6) ignora comentários, recusa permissão de escrita em qualquer nível e os gatilhos `pull_request_target` e `workflow_run`.
 - Conexões com o banco: sessão parada numa transação por 10 s é encerrada; erro numa conexão ociosa vai para o log em vez de derrubar o processo; porta ocupada fecha o banco.

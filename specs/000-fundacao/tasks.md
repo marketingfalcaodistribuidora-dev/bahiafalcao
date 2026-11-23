@@ -166,9 +166,17 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
   - **`review-gate` da fundação inteira**, com os quatro revisores, e correção de todo Crítico e Alto.
   - **Andamento em 23/11/2026:**
     - README, CHANGELOG e documentação escritos;
-    - **rodada 1 do review-gate:** desempenho e qualidade APROVADO; backend e segurança REPROVADO (2 Altos e 7 Médios). Todos os Altos, todos os Médios e os Baixos baratos foram corrigidos, com teste antes (lista em `docs/aplicacao/api-fundacao.md`, seção "Review-gate da fundação");
-    - 207 testes da API; linhas, comandos e funções em 100%, ramos em 96,2%;
-    - falta: a rodada 2 do review-gate e a proteção da `main` (D19), que depende do responsável.
+    - **rodada 1 do review-gate:** desempenho e qualidade APROVADO; backend e segurança REPROVADO (2 Altos e 7 Médios). Todos os Altos, todos os Médios e os Baixos baratos foram corrigidos (lista em `docs/aplicacao/api-fundacao.md`, seção "Review-gate da fundação"):
+      - 32 testes novos escritos antes e vistos vermelhos (401 com as proteções 3, erros do banco 5, check-lock 5, desligamento 7, porta ocupada 1, resposta 2xx 1, `TRUST_PROXY` 4, molde da rota 1, banco 4, mensagem de várias linhas 1);
+      - passaram de primeira, de propósito, os casos de aceitação que servem de controle (rotas com 201, 204 e 2xx; faixas no limite, `/8` e `/32`);
+      - passou de primeira **um teste de caracterização**: "recusa conexão nova enquanto desliga". O comportamento já existia e só não tinha teste;
+      - essas correções saíram num commit só (`e5c4ca9`), que mistura assuntos. A partir da rodada 2, um commit por achado;
+    - **rodada 2 do review-gate:** desempenho, qualidade e backend APROVADO; segurança REPROVADO (1 Alto e 1 Médio no check-lock). Corrigidos o Alto, o Médio e os Baixos baratos de todos os revisores, um commit por achado:
+      - vistos vermelhos antes: tarball de outro pacote ou de outra versão 2, marca `inBundle` 3, forma do lockfile 3, novos 503 do banco 14 unitários e 1 de integração (conexão derrubada, `57P01`), IPv4 mapeado no `TRUST_PROXY` 3, log com os códigos e sem a mensagem disfarçada 2, desligamento em 8 s 1;
+      - passaram de primeira, como caracterização no banco real de formatos já tratados: consulta cortada pelo limite de 2 s e banco inalcançável. Também os controles de aceitação (escopo e apelido no check-lock, IPv4 mapeado estreito);
+      - a conferência CA7.6 (`conferir-esteira.sh`) não tem teste automatizado: foi provada à mão nos dois sentidos, como na T004;
+    - 241 testes da API; linhas, comandos e funções em 100%, ramos em 96%;
+    - falta: a rodada 3 do review-gate e a proteção da `main` (D19), que depende do responsável.
 
 ## Adiado para a fase que usa
 
@@ -180,6 +188,8 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
 | Medidor de performance e registro em `docs/perf/` | CA8.1, CA8.2 | Fase 4 | Só há o que medir quando existir a busca. As notas da revisão da T003 (`medicao`, `pg_settings`, CPUs) valem para lá. |
 | Semgrep, SBOM e gitleaks do histórico no CI | parte do CA7.3 | Fase 7 (endurecimento) | O gitleaks no commit e no CI, o audit e as assinaturas já cobrem o principal agora |
 | Senha na página do Mailpit | — | Antes da Fase 1 | As mensagens com links de convite e de senha começam na Fase 1 |
+| CODEOWNERS em `.github/**`, `api/scripts/**`, `.npmrc` e `package.json`, e checks obrigatórios na `main` | CA7.6, D19 | Com a proteção da `main` (depende do responsável) | Hoje um PR pode mudar o próprio portão (`check-lock.ts`, `ci.yml`); a proteção da `main` com revisão obrigatória fecha isso (review-gate, rodada 2) |
+| Importação de planilha e imagens fora do ciclo da requisição | — | Fases da importação e das imagens | O desligamento força a saída em 8 s e o `requestTimeout` é de 30 s: trabalho longo dentro da requisição seria cortado (review-gate, rodada 2) |
 
 ## Verificação
 
@@ -216,6 +226,9 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
 | T003 | Além do provedor `builtin`, o `--locale=C.UTF-8` | Sem ele, o `lc_collate`/`lc_ctype` do sistema vinham da imagem (`en_US.utf8`). Agora o banco não herda nada da máquina. |
 | T003 | Usuário e senha do banco são obrigatórios no `api/.env`, sem valor padrão no compose | Nenhuma senha, nem a de desenvolvimento, fica no repositório público. |
 | — | As 30 tarefas viraram 12; normalização, paginação, `/docs`, contratos, medidor de performance e parte do CI foram para as fases que os usam; o `review-gate` passa a rodar por bloco | Pedido do responsável em 23/11/2026: a fundação estava lenta para o que entrega, e esses itens não são usados antes da Fase 1. Os critérios adiados estão listados na seção "Adiado para a fase que usa". |
+| T012 | `TRUST_PROXY` recusa faixa larga demais: menor que `/8` no IPv4, `/32` no IPv6 e `/104` no IPv4 mapeado (`::ffff:0:0/96`) | A spec pede só "IPs ou CIDR". Uma faixa como `0.0.0.0/0` ou `::ffff:0:0/96` confiaria na internet inteira, e qualquer um forjaria o IP do cliente (review-gate). |
+| T012 | O check-lock só aceita `resolved` igual ao endereço do tarball do próprio pacote no registro | Mais rígido que "vem do registro": fecha a troca pelo tarball de outro pacote ou de outra versão (Alto da rodada 2). Um pacote novo que venha em bundle (sem `resolved`) seria recusado pela origem: falha fechada, a revisar quando acontecer. |
+| T012 | A conferência CA7.6 lê os workflows linha a linha, sem parser de YAML | Um parser seria um pacote novo. As regras são as mais rígidas possíveis sem ele (comentários descartados, qualquer permissão de escrita recusada). |
 | T012 | O `IdGenerator` não é injetado: o `request-id` usa `randomUUID` direto | Nenhum teste precisa do valor exato do id; os testes conferem o formato (UUID) e quando o id do proxy é aceito. Vira dependência injetada se uma fase precisar. |
 | T012 | `campos` sai da resposta de erro quando está vazio | A RN1 diz "campos só quando há"; um objeto vazio não informa nada. |
 | T012 | A mensagem de conflito (409) é fixa ("Já existe um registro com este valor.") | Cada fase com unicidade (e-mail, código do produto) troca pela mensagem do campo, quando houver o caso real. |
