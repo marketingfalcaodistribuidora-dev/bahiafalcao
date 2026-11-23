@@ -1,6 +1,7 @@
 // Servidor de verdade, com PostgreSQL real (spec 000, T011; CA1.2–CA1.4): sobe com uma
-// configuração válida, responde pela rede, e desliga terminando a requisição em andamento e
-// fechando as conexões com o banco.
+// configuração válida, responde pela rede, e desliga terminando a requisição em andamento,
+// recusando conexão nova e fechando as conexões com o banco. Sem sleep: a requisição demorada
+// avisa quando chegou e só termina quando o teste libera.
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { z } from "zod";
 import { iniciarServidor, type Servidor } from "../../../src/servidor.js";
@@ -64,25 +65,51 @@ describe("configuração inválida (CA1.1)", () => {
 });
 
 describe("desligamento gracioso (CA1.4)", () => {
-  it("termina a requisição em andamento e fecha as conexões com o banco", async () => {
+  /** Sobe o servidor com uma rota que avisa quando chegou e só responde quando o teste libera. */
+  async function servidorComRotaPresa() {
+    let avisarChegada: () => void = () => undefined;
+    let liberar: () => void = () => undefined;
+    const chegou = new Promise<void>((pronto) => (avisarChegada = pronto));
+    const liberada = new Promise<void>((pronto) => (liberar = pronto));
     const servidor = await iniciarServidor(ambiente(doArquivo.url), (app) => {
       app.get(
         "/teste/demorada",
         { config: { acesso: "publico" }, schema: { response: { 200: z.object({ ok: z.boolean() }) } } },
         async () => {
-          await new Promise((pronto) => setTimeout(pronto, 300));
+          avisarChegada();
+          await liberada;
           return { ok: true };
         },
       );
     });
-    const emAndamento = fetch(`${servidor.endereco}/teste/demorada`);
-    await new Promise((pronto) => setTimeout(pronto, 50));
+    return { servidor, chegou, liberar };
+  }
 
-    await servidor.encerrar();
+  it("termina a requisição em andamento e fecha as conexões com o banco", async () => {
+    const { servidor, chegou, liberar } = await servidorComRotaPresa();
+    const emAndamento = fetch(`${servidor.endereco}/teste/demorada`);
+    await chegou;
+
+    const encerrando = servidor.encerrar();
+    liberar();
     const resposta = await emAndamento;
+    await encerrando;
 
     expect(resposta.status).toBe(200);
     expect(servidor.banco.pools.publico.ended).toBe(true);
     expect(servidor.banco.pools.administracao.ended).toBe(true);
+  });
+
+  it("recusa conexão nova enquanto desliga", async () => {
+    const { servidor, chegou, liberar } = await servidorComRotaPresa();
+    const emAndamento = fetch(`${servidor.endereco}/teste/demorada`);
+    await chegou;
+
+    const encerrando = servidor.encerrar();
+    const nova = fetch(`${servidor.endereco}/health/live`);
+    await expect(nova).rejects.toThrow();
+    liberar();
+    await emAndamento;
+    await encerrando;
   });
 });
