@@ -59,14 +59,22 @@ const lista = (texto: string | undefined): string[] =>
     .map((item) => item.trim())
     .filter(Boolean);
 
-/** "10.0.0.1" ou "172.16.0.0/12" (IPv4 ou IPv6). */
+/**
+ * Prefixo mínimo de uma faixa de proxies: uma faixa mais larga (como 0.0.0.0/0) confiaria em
+ * quase toda a internet, e qualquer um forjaria o IP do cliente.
+ */
+const PREFIXO_MINIMO_IPV4 = 8;
+const PREFIXO_MINIMO_IPV6 = 32;
+
+/** "10.0.0.1" ou "172.16.0.0/12" (IPv4 ou IPv6), sem faixa larga demais. */
 function ehIpOuFaixa(texto: string): boolean {
   const [ip = "", prefixo, ...resto] = texto.split("/");
   const versao = isIP(ip);
   if (!versao || resto.length) return false;
   if (prefixo === undefined) return true;
   const bits = Number(prefixo);
-  return /^\d{1,3}$/.test(prefixo) && bits <= (versao === 4 ? 32 : 128);
+  const [minimo, maximo] = versao === 4 ? [PREFIXO_MINIMO_IPV4, 32] : [PREFIXO_MINIMO_IPV6, 128];
+  return /^\d{1,3}$/.test(prefixo) && bits >= minimo && bits <= maximo;
 }
 
 /** Origem exata (sem caminho nem barra no fim, em minúsculas): https, ou http://localhost em desenvolvimento. */
@@ -92,7 +100,8 @@ const esquema = z.object({
     .string()
     .optional()
     .refine((valor) => lista(valor).every(ehIpOuFaixa), {
-      error: "só IPs ou faixas (CIDR), separados por vírgula; true e número de saltos são recusados",
+      error:
+        "só IPs ou faixas (CIDR, de /8 no IPv4 e /32 no IPv6 para cima), separados por vírgula; true e número de saltos são recusados",
     }),
   LIMITE_GERAL_POR_MIN: z
     .string()

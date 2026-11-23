@@ -126,6 +126,15 @@ describe("proxy confiável (CA4.5)", () => {
   it.each(["true", "1", "2", "qualquer", "10.0.0.1/40"])("recusa TRUST_PROXY=%s", (valor) => {
     expect(erroAoLer({ ...minimo, TRUST_PROXY: valor }).variaveis).toEqual(["TRUST_PROXY"]);
   });
+
+  // Uma faixa larga demais confiaria em quase toda a internet: qualquer um forjaria o IP.
+  it.each(["0.0.0.0/0", "10.0.0.0/7", "::/0", "2001:db8::/31"])("recusa a faixa larga demais %s", (valor) => {
+    expect(erroAoLer({ ...minimo, TRUST_PROXY: valor }).variaveis).toEqual(["TRUST_PROXY"]);
+  });
+
+  it.each(["10.0.0.0/8", "2001:db8::/32"])("aceita a faixa %s (no limite do permitido)", (valor) => {
+    expect(lerConfiguracao({ ...minimo, TRUST_PROXY: valor }).proxiesConfiaveis).toEqual([valor]);
+  });
 });
 
 describe("o que é proibido em produção (CA4.7 e D16)", () => {
