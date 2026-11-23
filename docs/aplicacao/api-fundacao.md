@@ -117,3 +117,34 @@ Os containers só sobem com o `db:subir`. Eles não voltam sozinhos quando o Doc
 |---|---|
 | `bash api/scripts/conferir-esteira.sh` | Confere as proteções da esteira (o mesmo que o CI roda) |
 | `npx tsx api/scripts/check-lock.ts <lock-anterior> <lock-novo>` | Confere os pacotes novos ou alterados entre dois lockfiles |
+
+## Testes com banco real (T005)
+
+### O que existe
+
+| Comando | O que roda | Precisa de Docker? |
+|---|---|---|
+| `npm test -w api` | Testes unitários (`tests/unit/`) | Não. É o que o `pre-push` roda |
+| `npm run test:integration -w api` | Testes de integração (`tests/integration/`) com PostgreSQL real | Sim |
+| `npm run test:coverage -w api` | Os dois, com cobertura mínima de 90% | Sim. É o que o CI roda |
+
+### Como funciona
+
+1. **Uma vez por execução** (`tests/apoio/global-setup.ts`):
+   - sobe um PostgreSQL pelo Testcontainers, com a **mesma imagem (digest), o mesmo initdb (locale) e as mesmas configurações** do `api/docker-compose.yml`. Esses valores são lidos do próprio arquivo, que é a única fonte;
+   - desliga a gravação garantida em disco (`fsync` e afins), porque este banco nunca mede performance;
+   - prepara o banco-modelo `falcao_modelo` e o fecha para conexões.
+2. **Cada arquivo de teste** cria o seu banco com `criarBancoDoArquivo()` (`tests/apoio/banco.ts`), copiado do modelo em cerca de 10 ms, e o apaga no fim (`DROP … WITH (FORCE)`).
+3. No fim, o container é desligado. Se o processo cair, o Ryuk (do próprio Testcontainers) apaga o que sobrar.
+
+### Por quê
+
+- **PostgreSQL real, nunca SQLite nem banco simulado:** as consultas são testadas no banco em que vão rodar (exigência do prompt, seção 3).
+- **Um banco por arquivo:** cada arquivo pode usar transações de verdade e criar o que quiser sem atrapalhar os outros, que rodam em paralelo.
+- **Cópia de um modelo:** as migrations rodam uma vez só. Cada cópia leva cerca de 10 ms. As duas formas de cópia do PostgreSQL 17 empataram nesse tamanho (mediana de 8 a 13 ms), e ficou a padrão.
+- **Modelo fechado para conexões:** uma conexão esquecida no modelo faria todas as cópias falharem.
+- **Integração fora do `npm test`:** o `pre-push` não exige o Docker ligado. O CI roda as duas.
+- **Provado pelos testes do próprio apoio:**
+  - o banco do arquivo tem locale `C.UTF-8` (provedor `builtin`), fuso UTC e `jit=off`;
+  - um arquivo não enxerga a tabela de outro;
+  - o modelo recusa conexões.

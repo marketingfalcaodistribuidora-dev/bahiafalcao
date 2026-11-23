@@ -90,6 +90,10 @@ O protocolo foi refeito no momento da instalação, com o mesmo script.
 - `npm audit`: **0 altas e 0 críticas**. Com o `typescript-eslint` 8.73.0 (instalado no mesmo dia, ao completar 7 dias), ficam **7 moderadas**, só de desenvolvimento: `minimatch` e `glob` por dentro do Testcontainers (`archiver`). A correção depende de uma versão nova do Testcontainers; **revisar em 07/12/2026** ou quando o Dependabot abrir a atualização;
 - `npm audit signatures`: 856 pacotes com assinatura do registro verificada, 249 com proveniência.
 
+## Imagem auxiliar dos testes (T005, 23/11/2026)
+
+- **`testcontainers/ryuk` 0.14.0:** baixada pelo próprio Testcontainers 12.2.1 (a versão vem fixada na biblioteca). Ela apaga os containers de teste quando a execução termina, inclusive se o processo cair. Conferido: depois dos testes, nenhum container ficou rodando. Muda só quando o Testcontainers for atualizado, e aí passa pelo protocolo junto com ele.
+
 ## Ferramentas da esteira (T004, 23/11/2026)
 
 - **`lint-staged` 17.6.1 saiu da API e foi para a raiz.** É ferramenta do repositório inteiro: o gancho `pre-commit` roda na raiz e chama o ESLint de cada workspace.

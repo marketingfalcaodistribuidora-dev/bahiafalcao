@@ -1,7 +1,7 @@
 # Tarefas 000: Fundação da API do catálogo
 
 - **Plano:** [plan.md](./plan.md)
-- **Progresso:** 4 de 12
+- **Progresso:** 5 de 12
 
 Regras:
 - o teste vem sempre antes do código, com a falha mostrada;
@@ -80,12 +80,18 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
     - `pre-commit` provado: sem gitleaks, barrado; um token falso no formato do GitHub, barrado, sem mudar o histórico;
     - `conferir-esteira.sh` provado: passa no repositório; barra `^`, flag proibida, `eslint-disable` em `api/src` e busca que não rodou. A primeira versão deixava passar a flag proibida por um erro no `grep`; corrigido e provado de novo;
     - CI e Dependabot validados localmente (YAML bem formado, conferência verde). **A primeira execução real acontece no próximo push.**
-- [ ] T005 Apoio de testes:
+- [x] T005 Apoio de testes:
   - Testcontainers com a **mesma imagem, os mesmos `POSTGRES_INITDB_ARGS` e o fuso UTC** do `api/docker-compose.yml`, mais um teste que lê o compose e compara;
   - `fsync=off`, banco-modelo `falcao_modelo` (`IS_TEMPLATE`, `ALLOW_CONNECTIONS false`) e banco por arquivo (`CREATE DATABASE … TEMPLATE`, `DROP … WITH (FORCE)`);
   - pool pequeno, `maxWorkers` calculado, `hookTimeout` e `teardownTimeout` medidos;
   - **`test:integration` separado do `npm test`**: o push não exige Docker, e o CI roda os dois;
   - `Clock` fixo, `IdGenerator` previsível, `montarApp` e `contarQueries`.
+  - **Feito em 23/11/2026:**
+    - a imagem, o initdb e as configurações do banco de teste são **lidos do `api/docker-compose.yml`** (`tests/apoio/postgres-do-compose.ts`, 4 testes unitários antes). Assim os dois bancos não têm como se separar, em vez de só um teste que compare;
+    - `global-setup.ts` (container com `fsync=off`, modelo `falcao_modelo` com `IS_TEMPLATE` e `ALLOW_CONNECTIONS false`) e `banco.ts` (`criarBancoDoArquivo`, `DROP … WITH (FORCE)`), com 5 testes de integração escritos antes;
+    - projetos do Vitest: `unit` (o `npm test`, sem Docker) e `integracao` (`test:integration`); `test:coverage` roda os dois;
+    - medido: a cópia do modelo leva de 8 a 13 ms (mediana), com `WAL_LOG` ≈ `FILE_COPY`; ficou o padrão;
+    - suíte de integração completa em ~13 s, com o container; nenhum container sobrou depois.
 - [ ] T006 Configuração (`config/env.ts`):
   - teste antes: variável faltando ou inválida (inclusive `NODE_ENV`), lista só os nomes, CORS (`*`, `null`, `http`, origem não exata), `TRUST_PROXY` com `true` ou número recusado, `LIMITE_IGNORAR_IPS` e `DOCS_HABILITADO` recusados em produção;
   - variáveis desconhecidas são ignoradas (ex.: `POSTGRES_USUARIO`/`POSTGRES_SENHA`, que são só do compose);
@@ -150,6 +156,8 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
 | T002 | Os scripts `lint`, `typecheck`, `test` e `test:coverage` da raiz passaram a rodar em todos os workspaces (site e API) | O portão local (`npm run check`, também no `pre-push`) cobre a API desde já. |
 | T002 | Os scripts `dev`, `build`, `db:*`, `seed*`, `audit` e `test:integration` da API ainda não existem | Cada um entra na tarefa que cria o que ele roda, para não haver comando quebrado. |
 | T002 | `vitest.perf.config.ts` com `passWithNoTests` | Até a T027 não há medições. |
+| T005 | `Clock`, `IdGenerator`, `montarApp` e `contarQueries` ficam para as tarefas que os usam primeiro (T007: `contarQueries`; T008: `IdGenerator` e `montarApp`; T011: `Clock`) | São código de produção ou dependem dele (Prisma, `app.ts`). Criá-los antes seria código sem uso nem teste de verdade. |
+| T005 | Em vez de um teste que compara o compose com o Testcontainers, o Testcontainers **lê** o compose | Uma fonte só elimina a divergência, em vez de só detectá-la. |
 | T003 | PostgreSQL 17.11 e Mailpit v1.33.1, e não as mais novas (17.12 de 21/11 e v1.34.0 de 17/11) | Regra dos 7 dias aplicada às imagens. A 17.12 entra a partir de 28/11/2026 (anotado no compose). |
 | T003 | Fuso do banco em UTC (o compose chegou a ter `TZ: America/Bahia`) | O mesmo fuso dos testes; datas guardadas sem ambiguidade, e a API converte para o horário da Bahia (review-gate). |
 | T003 | Proteger a página do Mailpit com senha ficou para antes da Fase 1 | Hoje a caixa só tem mensagens de teste, e ela já fica só em 127.0.0.1. Na Fase 1, as mensagens terão links de convite e de senha (anotado no compose). |

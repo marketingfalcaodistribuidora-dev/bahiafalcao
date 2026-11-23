@@ -69,10 +69,10 @@ Se a especificação e o prompt divergirem, **pare e pergunte**.
 | Comando | O que faz |
 |---|---|
 | `npm run dev -w api` | API em modo de desenvolvimento |
-| `npm test -w api` | todos os testes |
-| `npm run test:integration -w api` | só integração (PostgreSQL via Testcontainers) |
+| `npm test -w api` | testes unitários (sem Docker; é o que o `pre-push` roda) |
+| `npm run test:integration -w api` | integração com PostgreSQL real (Testcontainers; precisa do Docker ligado) |
 | `npm run test:perf -w api` | performance: API compilada num processo, carga noutro, contra o `docker-compose` (não roda no CI) |
-| `npm run test:coverage -w api` | cobertura (falha abaixo de 90% em `src/modules/**`, `src/plugins/**` e `src/shared/**`) |
+| `npm run test:coverage -w api` | unitários + integração, com cobertura (falha abaixo de 90% em `src/modules/**`, `src/plugins/**` e `src/shared/**`) |
 | `npm run lint -w api` / `npm run typecheck -w api` | ESLint strict + segurança / `tsc --noEmit` |
 | `npm run db:migrate -w api` | migrations do Prisma (desenvolvimento) |
 | `npm run seed -w api` / `npm run seed:perf -w api` | dados de exemplo / 10 mil produtos fictícios |
