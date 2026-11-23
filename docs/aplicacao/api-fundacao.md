@@ -286,7 +286,7 @@ Os containers só sobem com o `db:subir`. Eles não voltam sozinhos quando o Doc
 - **Prontidão** (`src/modules/saude/prontidao.ts`): o banco precisa responder em até 1 s. O resultado vale por 2 s, e chamadas ao mesmo tempo esperam a mesma verificação.
 - **`src/servidor.ts` (`iniciarServidor`):** lê a configuração, cria o banco, monta a API e abre a porta (`ENDERECO`, padrão `127.0.0.1`; `PORTA`, padrão 3333).
 - **`src/server.ts`:** a porta de entrada do processo. Com configuração inválida, mostra as variáveis e sai com código 1. Com SIGTERM ou SIGINT, desliga com calma.
-- **`src/desligamento.ts` (`criarDesligamento`):** espera o servidor terminar e sai com 0; se falhar, sai com 1; se passar de 10 s (uma requisição presa), força a saída com 1, para o gerenciador de processos reiniciar a API em vez de ela ficar pendurada. Um segundo sinal não encerra de novo.
+- **`src/desligamento.ts` (`criarDesligamento`):** espera o servidor terminar e sai com 0; se falhar, sai com 1; se passar de 8 s (uma requisição presa), força a saída com 1, para o gerenciador de processos reiniciar a API em vez de ela ficar pendurada. Os 8 s ficam abaixo dos 10 s que o Docker espera antes de matar o processo, então a saída forçada e o log dela acontecem antes. Um segundo sinal não encerra de novo.
 - **Porta ocupada:** se a porta não abrir, o servidor fecha o que já tinha aberto, inclusive as conexões com o banco.
 - **Comandos:** `npm run dev -w api` (desenvolvimento, lê o `api/.env`), `npm run build -w api` e `npm run start -w api` (versão compilada, em `api/dist/`).
 
@@ -308,7 +308,7 @@ A primeira rodada dos quatro revisores reprovou (backend e segurança), com dois
 | O check-lock só olhava os pacotes novos: um pacote antigo trocado por outro endereço passava | O lockfile inteiro é conferido sem rede (registro do npm, integridade sha512, versão), e o mesmo `nome@versão` com outro endereço ou integridade conta como alterado. O passo roda **antes** do `npm ci`, com o node puro |
 | Banco fora do ar ou consulta cortada por tempo viravam 500 | Viram 503 `indisponivel` (formatos conferidos no banco real) |
 | Mensagem de erro de várias linhas ia para o log junto com a pilha | Só as linhas `at …` da pilha vão para o log |
-| O desligamento não tinha limite de tempo e o teste usava esperas por tempo | `src/desligamento.ts`, com saída forçada em 10 s; teste com promessas controladas |
+| O desligamento não tinha limite de tempo e o teste usava esperas por tempo | `src/desligamento.ts`, com saída forçada em 8 s; teste com promessas controladas |
 | O README recomendava `Domain=` no cookie e "confiar nos IPs da Vercel" | `__Host-sessao` nas duas opções; a Vercel não tem IPs fixos, então o IP real depende de um cabeçalho secreto |
 
 - **Prova por mutação:** cada ramo do `request-id` e do cache da prontidão foi quebrado de propósito, e algum teste ficou vermelho em todos. Uma mutação sobreviveu por ser equivalente (a guarda `versao !== 0` era redundante e saiu). Outra mostrou que nenhum teste conferia o limite de 1 s da prontidão, e o teste ganhou relógio controlado.

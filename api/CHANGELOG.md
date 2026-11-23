@@ -16,7 +16,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). A
 - Rotas `GET /health/live` e `GET /health/ready`, servidor e desligamento gracioso.
 - Ambiente local em Docker (PostgreSQL e Mailpit), testes com PostgreSQL real (Testcontainers) e cobertura mínima de 90%.
 - Esteira: `pre-commit` com gitleaks e lint-staged; CI com conferência da cadeia de suprimentos (check-lock antes do `npm ci`, audit, assinaturas, gitleaks, workflows fixados por SHA); Dependabot com espera de 7 dias.
-- Desligamento com limite de 10 s (`src/desligamento.ts`) e o script `npm run audit -w api`.
+- Desligamento com limite de 8 s (`src/desligamento.ts`) e o script `npm run audit -w api`.
 
 ### Corrigido (review-gate da fundação)
 

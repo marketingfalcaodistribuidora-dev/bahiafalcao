@@ -129,14 +129,19 @@ describe("criarDesligamento", () => {
     expect(sair).toHaveBeenCalledExactlyOnceWith(0);
   });
 
-  it("usa 10 s como limite quando nenhum é informado", async () => {
+  // 8 s, abaixo dos 10 s que o Docker espera antes de matar o processo: a saída forçada e o log
+  // dela acontecem antes do SIGKILL.
+  it("usa 8 s como limite quando nenhum é informado", async () => {
     const { encerrar } = encerrarControlado();
     const sair = vi.fn();
     const desligar = criarDesligamento({ encerrar, sair, log: logDeTeste() });
 
     void desligar("SIGTERM");
-    await vi.advanceTimersByTimeAsync(10_000);
+    await vi.advanceTimersByTimeAsync(7_999);
+    const antesDoLimite = sair.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(1);
 
+    expect(antesDoLimite).toBe(0);
     expect(sair).toHaveBeenCalledExactlyOnceWith(1);
   });
 });

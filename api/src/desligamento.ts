@@ -4,7 +4,9 @@
 // de processos (systemd, Docker) reinicia, em vez de a API ficar pendurada sem atender.
 // Separado do server.ts, com a saída do processo injetada, para ser testado.
 
-const LIMITE_PADRAO_MS = 10_000;
+// Abaixo dos 10 s que o Docker (docker stop) espera antes do SIGKILL: a saída forçada e o log
+// dela acontecem antes. Se o gerenciador der menos tempo, ajuste aqui e no stop_grace_period.
+const LIMITE_PADRAO_MS = 8_000;
 
 export interface OpcoesDoDesligamento {
   /** Termina as requisições em andamento e fecha as conexões com o banco. */
