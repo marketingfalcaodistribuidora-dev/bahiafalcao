@@ -77,7 +77,7 @@ Se a especificação e o prompt divergirem, **pare e pergunte**.
 | `npm run db:migrate -w api` | migrations do Prisma (desenvolvimento) |
 | `npm run seed -w api` / `npm run seed:perf -w api` | dados de exemplo / 10 mil produtos fictícios |
 | `npm run audit -w api` | `npm audit --audit-level=high` + `npm audit signatures` |
-| `docker compose -f api/docker-compose.yml up -d` | PostgreSQL + Mailpit locais |
+| `npm run db:subir -w api` / `npm run db:descer -w api` | PostgreSQL 17 (porta 5433) + Mailpit (SMTP 1025, página 8025) locais; exige o `api/.env` |
 
 Os comandos acima passam a existir na Fase 0 (spec `specs/000-fundacao`).
 

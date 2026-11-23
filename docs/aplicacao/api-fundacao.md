@@ -50,3 +50,39 @@ As duas primeiras proteções foram provadas na prática: uma versão de 1 dia e
 - **O lint é testado:** `api/tests/unit/lint/regras-proibidas.test.ts` passa trechos proibidos (e as formas de escrita que tentariam escapar) pelo ESLint de verdade. Se alguém afrouxar uma regra, o teste falha. Os exemplos declaram o banco sem o nome proibido, para o teste provar que é o **uso** que dispara a regra.
 - **Só uma exceção:** o próprio `eslint.config.js` precisa escrever os nomes proibidos para barrá-los, então a regra dos nomes não vale nele.
 - **Cadeia de suprimentos:** ataques recentes ao npm vieram de versões maliciosas recém-publicadas e de scripts de instalação. As proteções do npm barram os dois sem depender de ninguém lembrar.
+
+## Ambiente local (T003)
+
+### O que existe
+
+`api/docker-compose.yml` sobe dois serviços, só acessíveis do próprio computador (`127.0.0.1`):
+
+| Serviço | Endereço | Para quê |
+|---|---|---|
+| PostgreSQL 17 | `127.0.0.1:5433`, banco `falcao_dev` | Desenvolvimento e medição de performance |
+| Mailpit | SMTP `127.0.0.1:1025`, página http://127.0.0.1:8025 | Recebe os e-mails que a API mandar (convites, senhas). Nada sai para a internet |
+
+### Como usar
+
+1. Copie `api/.env.example` para `api/.env`. Escolha uma senha só sua, com letras e números, e escreva-a em `POSTGRES_SENHA` e no lugar de `COLOQUE_A_SENHA` na `DATABASE_URL`. A senha vem em branco de propósito: sem ela o banco não sobe.
+2. Com o Docker Desktop aberto: `npm run db:subir -w api`.
+3. Para parar: `npm run db:descer -w api`. Os dados ficam no volume `falcao-api-pg`.
+4. **Para recomeçar do zero** (por exemplo, depois de mudar o locale ou o script de `api/docker/postgres/`, que só valem num volume novo): `docker compose down -v` dentro de `api/` apaga o volume, e todos os dados locais junto.
+
+Os containers só sobem com o `db:subir`. Eles não voltam sozinhos quando o Docker Desktop abre.
+
+### Como funciona e por quê
+
+- **Imagens fixadas por digest:** a mesma imagem, byte a byte, em qualquer máquina. Uma tag pode passar a apontar para outra imagem sem ninguém perceber.
+- **Senha obrigatória no `api/.env`:** sem ela o compose não sobe. Nenhuma senha, nem a de desenvolvimento, vai para o repositório público.
+- **Locale fixo (`C.UTF-8`, provedor `builtin` do PostgreSQL 17):** `lower()`, acentos e ordenação dão o mesmo resultado em qualquer máquina. A busca depende disso (CA6.5).
+- **`pg_stat_statements` e `track_io_timing`:** guardam o tempo de cada consulta para a medição de performance (T027).
+  - Contam só as consultas do nível de cima (`track=top`, como em produção).
+  - A extensão fica num schema próprio, `medicao`, criado por `api/docker/postgres/01-extensoes.sql` quando o volume nasce. Assim um reset das migrations do Prisma não a apaga.
+- **Parâmetros de desempenho** (espelham o que a VPS deve usar; revisar quando o tamanho dela for escolhido):
+  - `shared_buffers=256MB` e `effective_cache_size=1GB`: o catálogo inteiro cabe na memória;
+  - `random_page_cost=1.1` e `effective_io_concurrency=200`: disco SSD. Sem isso, o PostgreSQL acha que ler um índice é caro e varre a tabela inteira;
+  - `jit=off`: a compilação JIT custaria dezenas de milissegundos por busca;
+  - `shm_size: 256mb`: memória para consultas em paralelo.
+- **Fuso UTC no banco:** o mesmo dos testes. A API converte para o horário da Bahia ao mostrar datas.
+- **Banco de testes separado:** os testes automáticos não usam este banco. Cada execução cria um banco efêmero pelo Testcontainers (T005).

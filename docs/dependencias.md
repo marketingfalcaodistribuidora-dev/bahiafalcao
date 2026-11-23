@@ -90,6 +90,15 @@ O protocolo foi refeito no momento da instalação, com o mesmo script.
 - `npm audit`: **0 altas e 0 críticas**. Com o `typescript-eslint` 8.73.0 (instalado no mesmo dia, ao completar 7 dias), ficam **7 moderadas**, só de desenvolvimento: `minimatch` e `glob` por dentro do Testcontainers (`archiver`). A correção depende de uma versão nova do Testcontainers; **revisar em 07/12/2026** ou quando o Dependabot abrir a atualização;
 - `npm audit signatures`: 856 pacotes com assinatura do registro verificada, 249 com proveniência.
 
+## Imagens Docker do ambiente local (T003, 23/11/2026)
+
+Mesma regra dos pacotes: versão com 7 dias ou mais, fixada por digest (lista multiarquitetura do Docker Hub).
+
+| Imagem | Versão | Publicada | Mais nova | Motivo |
+|---|---|---|---|---|
+| `postgres` (oficial) | 17.11-alpine, `sha256:e5d2edd2…4700d0` | 11/11/2026 | 17.12-alpine (21/11): trocar a partir de 28/11/2026 | Banco local e da medição de performance |
+| `axllent/mailpit` | v1.33.1, `sha256:aef2aacc…7761ce` | 07/11/2026 | v1.34.0 (17/11): trocar a partir de 24/11/2026 | "Falso e-mail" local até a Fase 1 (decisão R8) |
+
 ## Fases seguintes (a verificar quando a fase começar)
 
 `argon2` (Fase 1), `@fastify/csrf-protection` (Fase 1), `sharp`, `file-type` e `@fastify/multipart` (Fase 3), `@fastify/compress` e `autocannon` ou k6 (Fase 4), leitor de planilha (`exceljs` ou a distribuição oficial do SheetJS, Fase 5), Stryker (Fase 7).

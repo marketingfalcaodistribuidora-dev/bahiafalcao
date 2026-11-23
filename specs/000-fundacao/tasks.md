@@ -1,7 +1,7 @@
 # Tarefas 000: Fundação da API do catálogo
 
 - **Plano:** [plan.md](./plan.md)
-- **Progresso:** 2 de 30
+- **Progresso:** 3 de 30
 
 Regras:
 - cada tarefa leva **até 2 h**;
@@ -41,7 +41,24 @@ Regras:
     - `pool: "forks"` explícito;
     - `hookTimeout` na configuração de performance;
     - `effect` na tabela de dependências.
-- [ ] T003 `api/docker-compose.yml` (PostgreSQL 17 com `pg_stat_statements` + Mailpit, por *digest*, portas em 127.0.0.1) e `api/.env.example` comentado (plano §3).
+- [x] T003 `api/docker-compose.yml` (PostgreSQL 17 com `pg_stat_statements` + Mailpit, por *digest*, portas em 127.0.0.1) e `api/.env.example` comentado (plano §3).
+  - **Feito em 23/11/2026:**
+    - PostgreSQL 17.11-alpine e Mailpit v1.33.1, por digest; comandos `db:subir` e `db:descer`;
+    - conferido com o ambiente no ar (usuário e senha temporários, passados só no comando):
+      - os dois serviços saudáveis, com portas só em 127.0.0.1;
+      - provedor `builtin` com `C.UTF-8`, e `lower('AÇÃO Ü')` = `ação ü`;
+      - `pg_stat_statements` 1.11 ativo e fuso America/Bahia;
+      - digests em execução iguais aos fixados;
+      - um e-mail enviado por SMTP chegou à página do Mailpit;
+      - sem `POSTGRES_USUARIO`/`POSTGRES_SENHA`, o compose se recusa a subir;
+    - volume temporário removido no fim.
+  - **Review-gate (23/11/2026): APROVADO pelos quatro revisores**, sem Crítico nem Alto. Corrigido na própria T003:
+    - o healthcheck agora usa a rede (`-h 127.0.0.1`), para o "pronto" não sair antes do servidor final;
+    - `pg_stat_statements` num schema próprio, `medicao`, com `track=top`;
+    - `jit=off`, `random_page_cost=1.1`, `effective_io_concurrency=200` e `shm_size` de 256 MB;
+    - fuso UTC, sem reinício automático e Mailpit sem consultar a internet;
+    - senha do exemplo em branco (o compose recusa subir) e `.env.example` dizendo o que a API não lê;
+    - conferido de novo com o ambiente no ar.
 - [ ] T004 `.githooks/pre-commit`: `lint-staged` + `gitleaks git --staged`; sem gitleaks, barra com a instrução (D17). O `lint-staged` está declarado em `api/`, mas o gancho roda na raiz: decidir onde ele fica e rodar o ESLint de cada workspace (o site usa o 9.39.5, a API o 10.15.0), conforme o review-gate da T002. Conferir a versão do gitleaks no `winget`. Varredura única do histórico inteiro do repositório com o gitleaks, com o resultado anexado aqui.
 - [ ] T005 Apoio de testes:
   - `globalSetup` (container com `fsync=off`, locale fixo, as migrations no `falcao_modelo` e depois `IS_TEMPLATE true ALLOW_CONNECTIONS false`);
@@ -50,17 +67,18 @@ Regras:
   - **separar os testes que precisam de Docker** (integração) do `npm test`, com `test:integration` próprio, ou decidir que o `pre-push` exige o Docker ligado e registrar a decisão (review-gate da T002);
   - `hookTimeout` e `teardownTimeout` medidos para o `globalSetup` e o `DROP … WITH (FORCE)`;
   - confirmar que a cobertura reprova abaixo de 90% assim que houver código em `src/`;
+  - o Testcontainers usa a **mesma imagem (digest), os mesmos `POSTGRES_INITDB_ARGS` e o fuso UTC** do `api/docker-compose.yml`, com um teste que lê o compose e compara (review-gate da T003);
   - `Clock` fixo, `IdGenerator` previsível e `montarApp`.
 - [ ] T006 [P] `check-lock.sh` para as dependências indiretas (compara dois lockfiles; idade, OSV e `hasInstallScript` de cada pacote novo ou alterado; sem `--ignore-scripts`; confirmar que `--package-lock-only` não roda scripts). Rodar sobre o lockfile da Fase 0 e anexar a saída. O `check-dep.sh` já foi corrigido em 19/11/2026: validação do nome e da versão, `--`, proveniência e paginação da OSV.
 
 ## Testes que falham (Red) e implementação (Green)
 
 - [ ] T007 [P] Teste: `config/env` (CA1.1, CA4.6, CA4.7, `TRUST_PROXY=true` recusado).
-- [ ] T008 Implementar `config/env.ts` (faz passar T007).
+- [ ] T008 Implementar `config/env.ts` (faz passar T007). Ignora variáveis que não conhece (ex.: `POSTGRES_USUARIO`/`POSTGRES_SENHA`, que são só do compose), e um teste confere que toda chave do schema está no `api/.env.example` (review-gate da T003).
 - [ ] T009 [P] Testes: `normalizarCodigo`, `normalizarTexto` (CA6.1, CA6.2); `paginacao` com tetos e `pagina` máxima (CA6.4).
 - [ ] T010 Implementar `shared/normalizar.ts` e `shared/paginacao.ts` (faz passar T009).
 - [ ] T011 Testes: extensões, `f_unaccent` com `search_path` mínimo, `IMMUTABLE`, índice GIN numa tabela temporária e equivalência código × banco (CA6.3, CA6.5).
-- [ ] T012 Migration `0001_extensoes` (skill `prisma-migration`) e plugin `prisma` com os dois pools (faz passar T011). Gerador `prisma-client` com `output = "../src/generated/prisma"`, `moduleFormat = "esm"` e `importFileExtension = "js"`, coerentes com NodeNext (review-gate da T002).
+- [ ] T012 Migration `0001_extensoes` (skill `prisma-migration`) e plugin `prisma` com os dois pools (faz passar T011). Gerador `prisma-client` com `output = "../src/generated/prisma"`, `moduleFormat = "esm"` e `importFileExtension = "js"`, coerentes com NodeNext (review-gate da T002). Decidir como o CLI do Prisma e a API leem o `api/.env` (`process.loadEnvFile` ou `node --env-file`; o Prisma 7 não carrega sozinho), sem o `NODE_ENV=development` vazar para os testes (review-gate da T003).
 - [ ] T013 Testes: formato único de erro: 404, 400 `validacao`, campo extra, `__proto__`, 500 neutro, 413, 415 (CA2.1–CA2.4, CA2.6).
 - [ ] T014 Implementar `shared/erros.ts` e o plugin `erros` (faz passar T013).
 - [ ] T015 Testes: P2002 → 409 (CA2.5); pool esgotado → 503 em ~2 s, segurando a conexão com `pool.connect()` (CA1.5).
@@ -78,7 +96,7 @@ Regras:
 
 ## Medição, esteira e documentação
 
-- [ ] T027 Medidor `scripts/medir.ts` (API compilada num processo filho; carga noutro processo; 30 s; aborta em não 2xx; `pg_stat_statements` zerado e anexado) + `docs/perf/README.md` (modelo de registro) + `perf/saude.perf.ts`. Medir `/health` contra o `docker-compose` e registrar em `docs/perf/` (CA8.1, CA8.2).
+- [ ] T027 Medidor `scripts/medir.ts` (API compilada num processo filho; carga noutro processo; 30 s; aborta em não 2xx; `pg_stat_statements` zerado e anexado) + `docs/perf/README.md` (modelo de registro) + `perf/saude.perf.ts`. Medir `/health` contra o `docker-compose` e registrar em `docs/perf/` (CA8.1, CA8.2). Antes de medir, conferir ou recriar a extensão em `medicao`; gravar no registro o `pg_settings` com `source <> 'default'`, mais CPUs e memória do Docker/WSL (review-gate da T003).
 - [ ] T028 CI:
   - Node 26 no job do site (D15);
   - job `api` (plano §9);
@@ -110,4 +128,9 @@ Regras:
 | T002 | Os scripts `lint`, `typecheck`, `test` e `test:coverage` da raiz passaram a rodar em todos os workspaces (site e API) | O portão local (`npm run check`, também no `pre-push`) cobre a API desde já. |
 | T002 | Os scripts `dev`, `build`, `db:*`, `seed*`, `audit` e `test:integration` da API ainda não existem | Cada um entra na tarefa que cria o que ele roda, para não haver comando quebrado. |
 | T002 | `vitest.perf.config.ts` com `passWithNoTests` | Até a T027 não há medições. |
+| T003 | PostgreSQL 17.11 e Mailpit v1.33.1, e não as mais novas (17.12 de 21/11 e v1.34.0 de 17/11) | Regra dos 7 dias aplicada às imagens. A 17.12 entra a partir de 28/11/2026 (anotado no compose). |
+| T003 | Fuso do banco em UTC (o compose chegou a ter `TZ: America/Bahia`) | O mesmo fuso dos testes; datas guardadas sem ambiguidade, e a API converte para o horário da Bahia (review-gate). |
+| T003 | Proteger a página do Mailpit com senha ficou para antes da Fase 1 | Hoje a caixa só tem mensagens de teste, e ela já fica só em 127.0.0.1. Na Fase 1, as mensagens terão links de convite e de senha (anotado no compose). |
+| T003 | Além do provedor `builtin`, o `--locale=C.UTF-8` | Sem ele, o `lc_collate`/`lc_ctype` do sistema vinham da imagem (`en_US.utf8`). Agora o banco não herda nada da máquina. |
+| T003 | Usuário e senha do banco são obrigatórios no `api/.env`, sem valor padrão no compose | Nenhuma senha, nem a de desenvolvimento, fica no repositório público. |
 | T001 | A sincronização do lockfile rodou uma vez com `--engine-strict=false` | O lockfile guardava o `24.x` antigo do `frontend/`, e o `engine-strict` recém-ligado barrava justamente a instalação que o corrige. Depois disso, `npm ci` passa com tudo ligado. |
