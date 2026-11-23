@@ -62,6 +62,31 @@ describe("traduzirErroDoBanco", () => {
     expect(traduzirErroDoBanco(original)).toBe(original);
   });
 
+  it("transforma banco inalcançável numa consulta direta (P2010, DatabaseNotReachable) em ErroIndisponivel", () => {
+    const meta = { driverAdapterError: { cause: { kind: "DatabaseNotReachable", host: "127.0.0.1", port: 1 } } };
+
+    expect(traduzirErroDoBanco(erroDoPrisma("P2010", meta))).toBeInstanceOf(ErroIndisponivel);
+  });
+
+  it("transforma consulta cortada pelo limite de tempo (57014) em ErroIndisponivel", () => {
+    const meta = { driverAdapterError: { cause: { originalCode: "57014", kind: "postgres" } } };
+
+    expect(traduzirErroDoBanco(erroDoPrisma("P2010", meta))).toBeInstanceOf(ErroIndisponivel);
+  });
+
+  it.each(["P1001", "P1002"])(
+    "transforma %s (banco inalcançável numa operação de modelo) em ErroIndisponivel",
+    (code) => {
+      expect(traduzirErroDoBanco(erroDoPrisma(code))).toBeInstanceOf(ErroIndisponivel);
+    },
+  );
+
+  it("transforma a falha ao iniciar a conexão em ErroIndisponivel", () => {
+    const erro = new Prisma.PrismaClientInitializationError("Can't reach database server", "7.10.1");
+
+    expect(traduzirErroDoBanco(erro)).toBeInstanceOf(ErroIndisponivel);
+  });
+
   it("transforma a espera esgotada por uma conexão do pool em ErroIndisponivel", () => {
     const traduzido = traduzirErroDoBanco(new Error("timeout exceeded when trying to connect"));
 
