@@ -19,7 +19,10 @@ const INTEGRIDADE = "sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 const OUTRA_INTEGRIDADE =
   "sha512-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB==";
 
-const lock = (pacotes: Lockfile["packages"]): Lockfile => ({ packages: { "": { name: "raiz" }, ...pacotes } });
+const lock = (pacotes: Lockfile["packages"]): Lockfile => ({
+  lockfileVersion: 3,
+  packages: { "": { name: "raiz", workspaces: ["api"] }, ...pacotes },
+});
 
 describe("problemasDoLock (conferência do lockfile inteiro, sem rede)", () => {
   it("aceita um lockfile em que tudo vem do registro do npm com integridade sha512", () => {
@@ -156,6 +159,24 @@ describe("problemasDoLock (conferência do lockfile inteiro, sem rede)", () => {
         "node_modules/empacota/node_modules/a: marcada como inBundle, mas traz resolved ou integrity",
       ]);
     });
+  });
+
+  it("recusa chave fora de node_modules que não é a raiz nem um workspace declarado", () => {
+    const intrusa = lock({ "outro/lugar": { version: "1.0.0" } });
+
+    expect(problemasDoLock(intrusa)).toEqual(["outro/lugar: fora de node_modules e não é um workspace declarado"]);
+  });
+
+  it("recusa lockfile em outro formato que não o 3", () => {
+    const antigo = { ...lock({}), lockfileVersion: 2 };
+
+    expect(problemasDoLock(antigo)).toEqual(["lockfileVersion 2: só o formato 3 é aceito"]);
+  });
+
+  it('recusa lockfile sem "packages", com uma mensagem clara', () => {
+    const semPacotes = { lockfileVersion: 3 } as unknown as Lockfile;
+
+    expect(problemasDoLock(semPacotes)).toEqual(['lockfile sem "packages"']);
   });
 
   it("recusa entrada de dependência sem versão", () => {

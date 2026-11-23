@@ -16,9 +16,12 @@ export interface EntradaDoLock {
   /** Os pacotes que vêm dentro do tarball deste. */
   bundleDependencies?: string[] | boolean;
   hasInstallScript?: boolean;
+  /** Só na raiz (""): as pastas dos workspaces. */
+  workspaces?: string[];
 }
 
 export interface Lockfile {
+  lockfileVersion?: number;
   packages: Record<string, EntradaDoLock>;
 }
 
@@ -93,9 +96,22 @@ function tarballNoRegistro(nome: string, versao: string): string {
 }
 
 export function problemasDoLock(lock: Lockfile): string[] {
+  // O lockfile vem de fora (de um PR): os tipos não garantem a forma dele.
+  const pacotes = lock.packages as Lockfile["packages"] | undefined;
+  if (!pacotes) return ['lockfile sem "packages"'];
+  if (lock.lockfileVersion !== 3) return [`lockfileVersion ${String(lock.lockfileVersion)}: só o formato 3 é aceito`];
+  const workspaces = new Set(pacotes[""]?.workspaces ?? []);
+
   const problemas: string[] = [];
-  for (const [chave, entrada] of Object.entries(lock.packages)) {
-    if (!nomeDaChave(chave) || entrada.link) continue;
+  for (const [chave, entrada] of Object.entries(pacotes)) {
+    if (!nomeDaChave(chave)) {
+      // Fora de node_modules/, só a raiz e os workspaces declarados nela (pastas exatas).
+      if (chave !== "" && !workspaces.has(chave)) {
+        problemas.push(`${chave}: fora de node_modules e não é um workspace declarado`);
+      }
+      continue;
+    }
+    if (entrada.link) continue;
     if (entrada.inBundle) {
       const problema = problemaDoBundle(lock, chave, entrada);
       if (problema) problemas.push(problema);
