@@ -27,6 +27,12 @@ describe("problemasDoLock (conferência do lockfile inteiro, sem rede)", () => {
       api: { name: "@falcao/api", version: "0.1.0" },
       "node_modules/@falcao/api": { resolved: "api", link: true },
       "node_modules/zod": { version: "4.6.7", resolved: `${REGISTRO}/zod/-/zod-4.6.7.tgz`, integrity: INTEGRIDADE },
+      "node_modules/npm": {
+        version: "11.20.0",
+        resolved: `${REGISTRO}/npm/-/npm-11.20.0.tgz`,
+        integrity: INTEGRIDADE,
+        bundleDependencies: ["abbrev"],
+      },
       "node_modules/npm/node_modules/abbrev": { version: "3.0.1", inBundle: true },
     });
 
@@ -93,6 +99,63 @@ describe("problemasDoLock (conferência do lockfile inteiro, sem rede)", () => {
       "node_modules/zod: sem integridade sha512",
       "node_modules/pg: sem integridade sha512",
     ]);
+  });
+
+  describe("marca inBundle (pacote que vem dentro do tarball de outro)", () => {
+    const empacotador = {
+      version: "4.3.5",
+      resolved: `${REGISTRO}/empacota/-/empacota-4.3.5.tgz`,
+      integrity: INTEGRIDADE,
+      bundleDependencies: ["a"],
+    };
+
+    it("aceita a dependência empacotada e as dependências dela, sem resolved nem integridade", () => {
+      const comBundle = lock({
+        "node_modules/empacota": empacotador,
+        "node_modules/empacota/node_modules/a": { version: "1.0.0", inBundle: true },
+        "node_modules/empacota/node_modules/a/node_modules/b": { version: "2.0.0", inBundle: true },
+      });
+
+      expect(problemasDoLock(comBundle)).toEqual([]);
+    });
+
+    it("recusa a marca numa entrada de primeiro nível, que nenhum pacote empacota", () => {
+      const falsa = lock({ "node_modules/zod": { version: "4.6.7", inBundle: true } });
+
+      expect(problemasDoLock(falsa)).toEqual([
+        "node_modules/zod: marcada como inBundle, mas nenhum pacote acima a empacota",
+      ]);
+    });
+
+    it("recusa a marca sob um pacote que não declara bundleDependencies", () => {
+      const semDeclarar = lock({
+        "node_modules/comum": {
+          version: "1.0.0",
+          resolved: `${REGISTRO}/comum/-/comum-1.0.0.tgz`,
+          integrity: INTEGRIDADE,
+        },
+        "node_modules/comum/node_modules/zod": { version: "4.6.7", inBundle: true },
+      });
+
+      expect(problemasDoLock(semDeclarar)).toEqual([
+        "node_modules/comum/node_modules/zod: marcada como inBundle, mas nenhum pacote acima a empacota",
+      ]);
+    });
+
+    it("recusa a marca numa entrada que traz resolved (ela seria baixada, sem conferência)", () => {
+      const baixavel = lock({
+        "node_modules/empacota": empacotador,
+        "node_modules/empacota/node_modules/a": {
+          version: "1.0.0",
+          inBundle: true,
+          resolved: `${REGISTRO}/a/-/a-1.0.0.tgz`,
+        },
+      });
+
+      expect(problemasDoLock(baixavel)).toEqual([
+        "node_modules/empacota/node_modules/a: marcada como inBundle, mas traz resolved ou integrity",
+      ]);
+    });
   });
 
   it("recusa entrada de dependência sem versão", () => {

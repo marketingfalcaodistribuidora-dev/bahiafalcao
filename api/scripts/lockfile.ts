@@ -13,6 +13,8 @@ export interface EntradaDoLock {
   link?: boolean;
   /** Vem dentro do tarball de outro pacote (bundleDependencies): sem resolved nem integrity. */
   inBundle?: boolean;
+  /** Os pacotes que vêm dentro do tarball deste. */
+  bundleDependencies?: string[] | boolean;
   hasInstallScript?: boolean;
 }
 
@@ -63,6 +65,27 @@ function nomeDaChave(chave: string): string | null {
  * (que escaparia da idade mínima), ou com outra integridade, não passa só por "não ser novo".
  * O `npm ci` confere só a integridade, que bateria com o tarball trocado. Devolve os problemas.
  */
+/** "node_modules/a/node_modules/b" → "node_modules/a"; null no primeiro nível. */
+function chaveDoPai(chave: string): string | null {
+  const posicao = chave.lastIndexOf("/node_modules/");
+  return posicao === -1 ? null : chave.slice(0, posicao);
+}
+
+/**
+ * A marca inBundle vem do próprio lockfile; o npm não confia nela, e nós também não. Ela só vale
+ * para uma entrada sem resolved nem integrity (senão o npm a baixaria) cujo ancestral mais
+ * próximo fora do bundle declare bundleDependencies (esse ancestral passa pela conferência
+ * normal, e a integridade dele cobre o que vem dentro).
+ */
+function problemaDoBundle(lock: Lockfile, chave: string, entrada: EntradaDoLock): string | null {
+  if (entrada.resolved || entrada.integrity) return `${chave}: marcada como inBundle, mas traz resolved ou integrity`;
+  let pai = chaveDoPai(chave);
+  while (pai && lock.packages[pai]?.inBundle) pai = chaveDoPai(pai);
+  const empacota = pai ? lock.packages[pai]?.bundleDependencies : undefined;
+  const declara = empacota === true || (Array.isArray(empacota) && empacota.length > 0);
+  return declara ? null : `${chave}: marcada como inBundle, mas nenhum pacote acima a empacota`;
+}
+
 /** "@fastify/cors", "11.4.3" → "https://registry.npmjs.org/@fastify/cors/-/cors-11.4.3.tgz" */
 function tarballNoRegistro(nome: string, versao: string): string {
   const semEscopo = nome.slice(nome.lastIndexOf("/") + 1);
@@ -72,7 +95,12 @@ function tarballNoRegistro(nome: string, versao: string): string {
 export function problemasDoLock(lock: Lockfile): string[] {
   const problemas: string[] = [];
   for (const [chave, entrada] of Object.entries(lock.packages)) {
-    if (!nomeDaChave(chave) || entrada.link || entrada.inBundle) continue;
+    if (!nomeDaChave(chave) || entrada.link) continue;
+    if (entrada.inBundle) {
+      const problema = problemaDoBundle(lock, chave, entrada);
+      if (problema) problemas.push(problema);
+      continue;
+    }
     if (!entrada.version) problemas.push(`${chave}: sem versão`);
     const nome = entrada.name ?? nomeDaChave(chave) ?? "";
     const esperado = tarballNoRegistro(nome, entrada.version ?? "");
