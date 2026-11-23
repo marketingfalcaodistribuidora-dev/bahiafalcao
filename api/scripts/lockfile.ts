@@ -9,7 +9,10 @@ export interface EntradaDoLock {
   name?: string;
   version?: string;
   resolved?: string;
+  integrity?: string;
   link?: boolean;
+  /** Vem dentro do tarball de outro pacote (bundleDependencies): sem resolved nem integrity. */
+  inBundle?: boolean;
   hasInstallScript?: boolean;
 }
 
@@ -21,6 +24,7 @@ export interface PacoteDoLock {
   nome: string;
   versao: string;
   resolved: string;
+  integrity: string;
   temScriptDeInstalacao: boolean;
 }
 
@@ -52,6 +56,22 @@ function nomeDaChave(chave: string): string | null {
   return posicao === -1 ? null : chave.slice(posicao + marca.length);
 }
 
+/**
+ * Confere o lockfile inteiro, sem rede, antes do `npm ci`: toda dependência tem versão, vem do
+ * registro do npm e traz integridade sha512. Assim, um pacote antigo trocado por um endereço
+ * de fora ou com outra integridade não passa só por "não ser novo". Devolve os problemas.
+ */
+export function problemasDoLock(lock: Lockfile): string[] {
+  const problemas: string[] = [];
+  for (const [chave, entrada] of Object.entries(lock.packages)) {
+    if (!nomeDaChave(chave) || entrada.link || entrada.inBundle) continue;
+    if (!entrada.version) problemas.push(`${chave}: sem versão`);
+    if (!entrada.resolved?.startsWith(REGISTRO_DO_NPM)) problemas.push(`${chave}: não vem do registro do npm`);
+    if (!entrada.integrity?.startsWith("sha512-")) problemas.push(`${chave}: sem integridade sha512`);
+  }
+  return problemas;
+}
+
 function pacotesDoLock(lock: Lockfile): PacoteDoLock[] {
   const pacotes: PacoteDoLock[] = [];
   for (const [chave, entrada] of Object.entries(lock.packages)) {
@@ -63,18 +83,22 @@ function pacotesDoLock(lock: Lockfile): PacoteDoLock[] {
       nome: entrada.name ?? nome,
       versao: entrada.version,
       resolved: entrada.resolved ?? "",
+      integrity: entrada.integrity ?? "",
       temScriptDeInstalacao: entrada.hasInstallScript === true,
     });
   }
   return pacotes;
 }
 
-/** Pacotes do lockfile novo cuja combinação nome@versão não existia no anterior. */
+/** O que identifica o conteúdo: o mesmo nome@versão de outro endereço ou integridade é outro pacote. */
+const identidade = (p: PacoteDoLock) => `${p.nome}@${p.versao} ${p.resolved} ${p.integrity}`;
+
+/** Pacotes do lockfile novo cuja combinação nome@versão, endereço e integridade não existia no anterior. */
 export function pacotesNovosOuAlterados(base: Lockfile, novo: Lockfile): PacoteDoLock[] {
-  const existentes = new Set(pacotesDoLock(base).map((p) => `${p.nome}@${p.versao}`));
+  const existentes = new Set(pacotesDoLock(base).map(identidade));
   const vistos = new Set<string>();
   return pacotesDoLock(novo).filter((p) => {
-    const chave = `${p.nome}@${p.versao}`;
+    const chave = identidade(p);
     if (existentes.has(chave) || vistos.has(chave)) return false;
     vistos.add(chave);
     return true;

@@ -1,23 +1,26 @@
 // check-lock (spec 000, CA7.1; plano §8 e §9): confere as dependências INDIRETAS.
-// Compara dois lockfiles e passa cada pacote novo ou alterado pelo protocolo: idade mínima,
+// Primeiro, sem rede, o lockfile novo inteiro: toda dependência tem versão, vem do registro do
+// npm e traz integridade sha512. Depois compara dois lockfiles e passa cada pacote novo ou alterado pelo protocolo: idade mínima,
 // OSV, origem (registro do npm) e script de instalação (allowScripts do package.json da raiz).
-// O `npm ci` instala o lockfile sem conferir a idade; é isto que fecha essa porta.
+// O `npm ci` instala o lockfile sem conferir a idade; é isto que fecha essa porta. Por isso roda
+// ANTES do `npm ci`, com o node puro (que executa TypeScript) e só módulos do próprio Node.
 //
-// Uso (na raiz): npx tsx api/scripts/check-lock.ts <lockfile-anterior> <lockfile-novo>
+// Uso (na raiz): node api/scripts/check-lock.ts <lockfile-anterior> <lockfile-novo>
 // Saída: a lista do que foi conferido e, se algo falhar, código 1 com os motivos.
 import { readFileSync } from "node:fs";
 import {
   avaliarPacote,
   pacotesNovosOuAlterados,
+  problemasDoLock,
   type Falha,
   type Gravidade,
   type Lockfile,
   type PacoteDoLock,
-} from "./lockfile.js";
+} from "./lockfile.ts";
 
 const [caminhoBase, caminhoNovo] = process.argv.slice(2);
 if (!caminhoBase || !caminhoNovo) {
-  console.error("Uso: npx tsx api/scripts/check-lock.ts <lockfile-anterior> <lockfile-novo>");
+  console.error("Uso: node api/scripts/check-lock.ts <lockfile-anterior> <lockfile-novo>");
   process.exit(2);
 }
 
@@ -26,6 +29,13 @@ const base = lerJson(caminhoBase) as Lockfile;
 const novo = lerJson(caminhoNovo) as Lockfile;
 const raiz = lerJson("package.json") as { allowScripts?: Record<string, boolean> };
 const allowScripts = raiz.allowScripts ?? {};
+
+const problemas = problemasDoLock(novo);
+if (problemas.length) {
+  for (const problema of problemas) console.log(`RECUSADO ${problema}`);
+  console.log(`check-lock: ${String(problemas.length)} problema(s) no lockfile; nada foi instalado.`);
+  process.exit(1);
+}
 
 const pacotes = pacotesNovosOuAlterados(base, novo);
 if (!pacotes.length) {

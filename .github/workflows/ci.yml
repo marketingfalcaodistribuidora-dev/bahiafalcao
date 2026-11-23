@@ -41,12 +41,9 @@ jobs:
       - name: Proteções da esteira (npm, .npmrc, versões exatas, flags proibidas)
         run: bash api/scripts/conferir-esteira.sh
 
-      # O .npmrc (strict-allow-scripts) só deixa rodar os scripts de instalação liberados.
-      - name: Instalar dependências (lockfile exato)
-        run: npm ci
-
-      # O npm ci instala o lockfile sem conferir a idade dos pacotes: aqui cada pacote novo ou
-      # alterado passa pelo protocolo (idade, OSV, origem e scripts).
+      # ANTES do npm ci, com o node puro (que executa TypeScript): o lockfile inteiro é conferido
+      # sem rede (registro do npm, integridade sha512, versão) e cada pacote novo ou alterado
+      # passa pelo protocolo (idade, OSV, origem e scripts). O npm ci não confere a idade.
       - name: Dependências novas ou alteradas no lockfile (check-lock)
         env:
           EVENTO: ${{ github.event_name }}
@@ -55,16 +52,16 @@ jobs:
         run: |
           if [ "$EVENTO" = "pull_request" ]; then base="origin/$RAMO_BASE"; else base="$ANTES"; fi
           if git cat-file -e "$base^{commit}" 2>/dev/null; then
-            if git diff --quiet "$base" HEAD -- package-lock.json; then
-              echo "check-lock: o lockfile não mudou."
-              exit 0
-            fi
             git show "$base:package-lock.json" > "$RUNNER_TEMP/lock-base.json"
           else
             echo "check-lock: sem commit de base; confere o lockfile inteiro."
             echo '{"packages":{}}' > "$RUNNER_TEMP/lock-base.json"
           fi
-          npx tsx api/scripts/check-lock.ts "$RUNNER_TEMP/lock-base.json" package-lock.json
+          node api/scripts/check-lock.ts "$RUNNER_TEMP/lock-base.json" package-lock.json
+
+      # O .npmrc (strict-allow-scripts) só deixa rodar os scripts de instalação liberados.
+      - name: Instalar dependências (lockfile exato)
+        run: npm ci
 
       - name: Vulnerabilidades altas ou críticas (npm audit)
         run: npm audit --audit-level=high

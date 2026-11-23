@@ -18,6 +18,7 @@
     "test:integration": "vitest run --project integracao",
     "test:coverage": "vitest run --coverage",
     "test:perf": "vitest run --config vitest.perf.config.ts",
+    "audit": "npm audit --audit-level=high && npm audit signatures",
     "db:subir": "docker compose up -d --wait",
     "db:descer": "docker compose down",
     "db:gerar": "prisma generate",

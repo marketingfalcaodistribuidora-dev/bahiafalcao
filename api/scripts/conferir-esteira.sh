@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Conferência da esteira (spec 000, T004; CA4.4, CA7.1 e CA7.2). Roda no CI, na raiz do repositório.
+# Conferência da esteira (spec 000, T004; CA4.4, CA7.1, CA7.2 e CA7.6). Roda no CI, na raiz do repositório.
 # Garante que as proteções da cadeia de suprimentos continuam ligadas e que ninguém as contornou.
 # Falha (código 1) no primeiro problema, dizendo qual é.
 set -euo pipefail
@@ -64,4 +64,33 @@ if [ -d api/src ]; then
     falha "SQL montado com texto ou lint desligado em api/src (acima)."
 fi
 
-echo "conferir-esteira: tudo certo (npm $versao_npm, .npmrc ativo, versões exatas, sem flags proibidas)."
+# 6) Workflows do GitHub (CA7.6): toda action fixada por SHA de 40 caracteres (uma tag pode ser
+#    movida para outro código), "permissions: contents: read" no topo e todo checkout sem
+#    guardar credenciais. PASTA_DOS_WORKFLOWS troca a pasta (para conferir esta própria regra).
+node -e '
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const pasta = process.argv[1];
+  const ruins = [];
+  for (const nome of fs.readdirSync(pasta).filter((arquivo) => /\.ya?ml$/.test(arquivo))) {
+    const texto = fs.readFileSync(path.join(pasta, nome), "utf8");
+    texto.split("\n").forEach((linha, i) => {
+      const uso = linha.match(/^\s*(?:-\s*)?uses:\s*(\S+)/);
+      if (uso && !uso[1].startsWith("./") && !/@[0-9a-f]{40}$/.test(uso[1])) {
+        ruins.push(`${nome}:${i + 1}: action sem SHA: ${uso[1]}`);
+      }
+    });
+    if (!/^permissions:[ \t]*\r?\n[ \t]+contents:[ \t]*read\b/m.test(texto)) {
+      ruins.push(`${nome}: sem "permissions: contents: read" no topo`);
+    }
+    const checkouts = (texto.match(/uses:\s*actions\/checkout@/g) ?? []).length;
+    const semCredenciais = (texto.match(/persist-credentials:\s*false/g) ?? []).length;
+    if (checkouts !== semCredenciais) ruins.push(`${nome}: checkout sem persist-credentials: false`);
+  }
+  if (ruins.length) {
+    console.error(ruins.join("\n"));
+    process.exit(1);
+  }
+' "${PASTA_DOS_WORKFLOWS:-.github/workflows}" || falha "workflow fora da regra (acima)."
+
+echo "conferir-esteira: tudo certo (npm $versao_npm, .npmrc ativo, versões exatas, sem flags proibidas, workflows fixados)."

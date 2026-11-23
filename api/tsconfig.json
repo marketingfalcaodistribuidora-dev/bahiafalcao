@@ -17,6 +17,8 @@
     "useUnknownInCatchVariables": true,
 
     "verbatimModuleSyntax": true,
+    // Os scripts da esteira rodam no node puro (antes do npm ci), que exige import com ".ts".
+    "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
