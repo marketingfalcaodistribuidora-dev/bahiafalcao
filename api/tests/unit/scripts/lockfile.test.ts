@@ -41,6 +41,48 @@ describe("problemasDoLock (conferência do lockfile inteiro, sem rede)", () => {
     expect(problemasDoLock(deFora)).toEqual(["node_modules/zod: não vem do registro do npm"]);
   });
 
+  it("recusa o tarball de OUTRO pacote do próprio registro, mesmo com a integridade verdadeira dele", () => {
+    const trocado = lock({
+      "node_modules/zod": {
+        version: "4.6.7",
+        resolved: `${REGISTRO}/is-number/-/is-number-7.0.0.tgz`,
+        integrity: INTEGRIDADE,
+      },
+    });
+
+    expect(problemasDoLock(trocado)).toEqual([
+      `node_modules/zod: aponta para outro tarball (o de zod@4.6.7 é ${REGISTRO}/zod/-/zod-4.6.7.tgz)`,
+    ]);
+  });
+
+  it("recusa o tarball de outra versão do mesmo pacote (escaparia da idade mínima)", () => {
+    const outraVersao = lock({
+      "node_modules/zod": { version: "4.6.7", resolved: `${REGISTRO}/zod/-/zod-4.6.8.tgz`, integrity: INTEGRIDADE },
+    });
+
+    expect(problemasDoLock(outraVersao)).toEqual([
+      `node_modules/zod: aponta para outro tarball (o de zod@4.6.7 é ${REGISTRO}/zod/-/zod-4.6.7.tgz)`,
+    ]);
+  });
+
+  it("aceita o tarball de pacote com escopo e de pacote instalado com apelido (npm:nome@versão)", () => {
+    const certos = lock({
+      "node_modules/@fastify/cors": {
+        version: "11.4.3",
+        resolved: `${REGISTRO}/@fastify/cors/-/cors-11.4.3.tgz`,
+        integrity: INTEGRIDADE,
+      },
+      "node_modules/string-width-cjs": {
+        name: "string-width",
+        version: "4.2.3",
+        resolved: `${REGISTRO}/string-width/-/string-width-4.2.3.tgz`,
+        integrity: INTEGRIDADE,
+      },
+    });
+
+    expect(problemasDoLock(certos)).toEqual([]);
+  });
+
   it("recusa pacote sem integridade ou com integridade que não é sha512", () => {
     const fracos = lock({
       "node_modules/zod": { version: "4.6.7", resolved: `${REGISTRO}/zod/-/zod-4.6.7.tgz` },

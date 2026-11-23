@@ -57,16 +57,29 @@ function nomeDaChave(chave: string): string | null {
 }
 
 /**
- * Confere o lockfile inteiro, sem rede, antes do `npm ci`: toda dependência tem versão, vem do
- * registro do npm e traz integridade sha512. Assim, um pacote antigo trocado por um endereço
- * de fora ou com outra integridade não passa só por "não ser novo". Devolve os problemas.
+ * Confere o lockfile inteiro, sem rede, antes do `npm ci`: toda dependência tem versão, aponta
+ * para o tarball DELA no registro do npm (nome e versão) e traz integridade sha512. Assim, um
+ * pacote antigo trocado por um endereço de fora, pelo tarball de outro pacote ou de outra versão
+ * (que escaparia da idade mínima), ou com outra integridade, não passa só por "não ser novo".
+ * O `npm ci` confere só a integridade, que bateria com o tarball trocado. Devolve os problemas.
  */
+/** "@fastify/cors", "11.4.3" → "https://registry.npmjs.org/@fastify/cors/-/cors-11.4.3.tgz" */
+function tarballNoRegistro(nome: string, versao: string): string {
+  const semEscopo = nome.slice(nome.lastIndexOf("/") + 1);
+  return `${REGISTRO_DO_NPM}${nome}/-/${semEscopo}-${versao}.tgz`;
+}
+
 export function problemasDoLock(lock: Lockfile): string[] {
   const problemas: string[] = [];
   for (const [chave, entrada] of Object.entries(lock.packages)) {
     if (!nomeDaChave(chave) || entrada.link || entrada.inBundle) continue;
     if (!entrada.version) problemas.push(`${chave}: sem versão`);
+    const nome = entrada.name ?? nomeDaChave(chave) ?? "";
+    const esperado = tarballNoRegistro(nome, entrada.version ?? "");
     if (!entrada.resolved?.startsWith(REGISTRO_DO_NPM)) problemas.push(`${chave}: não vem do registro do npm`);
+    else if (entrada.version && entrada.resolved !== esperado) {
+      problemas.push(`${chave}: aponta para outro tarball (o de ${nome}@${entrada.version ?? "?"} é ${esperado})`);
+    }
     if (!entrada.integrity?.startsWith("sha512-")) problemas.push(`${chave}: sem integridade sha512`);
   }
   return problemas;
