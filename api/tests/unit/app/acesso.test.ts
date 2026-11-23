@@ -115,6 +115,47 @@ describe("rota não pública antes da Fase 1 (CA5.5)", () => {
   });
 });
 
+describe("o 401 passa pelas mesmas proteções das outras respostas (review-gate da fundação)", () => {
+  const SITE = "https://bahiafalcao.com.br";
+
+  async function appComRotaRestrita(ajustes: Parameters<typeof appDeTeste>[0] = {}) {
+    const novo = (await appDeTeste({ origensDoCors: [SITE], ...ajustes })).app;
+    novo.get("/teste/restrita", { config: { acesso: "admin" }, schema: { response: RESPOSTA_OK } }, () => ({
+      ok: true,
+    }));
+    return novo;
+  }
+
+  it("leva os cabeçalhos de segurança (CA4.1)", async () => {
+    app = await appComRotaRestrita();
+
+    const resposta = await app.inject({ method: "GET", url: "/teste/restrita" });
+
+    expect(resposta.statusCode).toBe(401);
+    expect(resposta.headers["strict-transport-security"]).toBeDefined();
+    expect(resposta.headers["x-content-type-options"]).toBe("nosniff");
+    expect(resposta.headers["content-security-policy"]).toMatch(/default-src 'none'/);
+    expect(resposta.headers["cache-control"]).toBe("no-store");
+  });
+
+  it("leva o CORS da origem permitida, para o site conseguir ler o 401 (CA4.2)", async () => {
+    app = await appComRotaRestrita();
+
+    const resposta = await app.inject({ method: "GET", url: "/teste/restrita", headers: { origin: SITE } });
+
+    expect(resposta.headers["access-control-allow-origin"]).toBe(SITE);
+  });
+
+  it("conta no limite de requisições: depois do limite, 429 (CA4.3)", async () => {
+    app = await appComRotaRestrita({ limiteGeralPorMinuto: 10 });
+    for (let vez = 0; vez < 10; vez++) await app.inject({ method: "GET", url: "/teste/restrita" });
+
+    const resposta = await app.inject({ method: "GET", url: "/teste/restrita" });
+
+    expect(resposta.statusCode).toBe(429);
+  });
+});
+
 describe("só sai o que o schema de resposta declara (CA5.6)", () => {
   it("um campo a mais devolvido pelo código não chega à resposta", async () => {
     ({ app } = await appDeTeste());

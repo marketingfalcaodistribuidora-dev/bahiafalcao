@@ -3,8 +3,8 @@
 //   Faltou um dos dois: o servidor não sobe, e o erro cita a rota.
 // - Exceções só nesta lista fechada, por método e URL exatos (rotas criadas por plugins que não
 //   têm schema de resposta). Elas recebem acesso "publico".
-// - Até a Fase 1 (login), qualquer rota que não seja "publico" responde 401. A Fase 1 troca esta
-//   regra pela conferência da sessão e do papel.
+// - Até a Fase 1 (login), qualquer rota que não seja "publico" responde 401 (com as mesmas
+//   proteções das outras respostas). A Fase 1 troca esta regra pela conferência da sessão e do papel.
 // - A lista das rotas registradas alimenta a matriz de autorização dos testes.
 import type { FastifyInstance, HTTPMethods } from "fastify";
 import { ErroNaoAutenticado } from "../shared/erros.js";
@@ -61,9 +61,16 @@ export function registrarAcesso(app: FastifyInstance): void {
     }
   });
 
-  app.addHook("onRequest", (pedido, _resposta, pronto) => {
+  // A recusa roda no preParsing: DEPOIS de todos os onRequest (cabeçalhos de segurança, CORS e
+  // limite de requisições, que assim valem também para o 401) e ANTES de ler o corpo (quem não
+  // tem acesso não gasta a leitura). No onRequest, ela cortava esses plugins (review-gate).
+  app.addHook("preParsing", (pedido, _resposta, carga, pronto) => {
     const acesso = pedido.routeOptions.config.acesso;
-    pronto(acesso && acesso !== "publico" ? new ErroNaoAutenticado() : undefined);
+    if (acesso && acesso !== "publico") {
+      pronto(new ErroNaoAutenticado());
+      return;
+    }
+    pronto(null, carga);
   });
 }
 
