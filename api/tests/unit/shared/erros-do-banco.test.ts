@@ -81,6 +81,40 @@ describe("traduzirErroDoBanco", () => {
     },
   );
 
+  // Formatos do adaptador do PostgreSQL e do runtime do Prisma 7.10.1 para "o banco caiu, reiniciou
+  // ou está cheio" (review-gate da fundação, rodada 2): todos são passageiros, e a resposta é 503.
+  it.each(["P1008", "P1017", "P2037"])(
+    "transforma %s (tempo esgotado, conexão fechada, conexões demais) em ErroIndisponivel",
+    (code) => {
+      expect(traduzirErroDoBanco(erroDoPrisma(code))).toBeInstanceOf(ErroIndisponivel);
+    },
+  );
+
+  it.each(["ConnectionClosed", "SocketTimeout", "TooManyConnections"])(
+    "transforma P2010 com kind %s em ErroIndisponivel",
+    (kind) => {
+      const meta = { driverAdapterError: { cause: { kind } } };
+
+      expect(traduzirErroDoBanco(erroDoPrisma("P2010", meta))).toBeInstanceOf(ErroIndisponivel);
+    },
+  );
+
+  it.each(["57P01", "57P02", "57P03", "53300", "08006", "08001"])(
+    "transforma o código %s do PostgreSQL (banco desligando, reiniciando, cheio ou conexão perdida) em ErroIndisponivel",
+    (originalCode) => {
+      const meta = { driverAdapterError: { cause: { originalCode, kind: "postgres" } } };
+
+      expect(traduzirErroDoBanco(erroDoPrisma("P2039", meta))).toBeInstanceOf(ErroIndisponivel);
+    },
+  );
+
+  it.each(["Connection terminated unexpectedly", "Connection terminated due to connection timeout"])(
+    'transforma o erro do pg "%s" em ErroIndisponivel',
+    (mensagem) => {
+      expect(traduzirErroDoBanco(new Error(mensagem))).toBeInstanceOf(ErroIndisponivel);
+    },
+  );
+
   it("transforma a falha ao iniciar a conexão em ErroIndisponivel", () => {
     const erro = new Prisma.PrismaClientInitializationError("Can't reach database server", "7.10.1");
 

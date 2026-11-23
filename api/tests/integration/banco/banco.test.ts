@@ -31,6 +31,16 @@ interface Linha {
 
 const valor = async (sql: string): Promise<unknown> => (await cliente.query<{ valor: unknown }>(sql)).rows[0]?.valor;
 
+/** Espera a consulta aparecer como ativa no banco (sem sleep: pergunta até ela aparecer). */
+async function esperarConsultaNoBanco(sql: string): Promise<void> {
+  for (;;) {
+    const { rowCount } = await cliente.query("SELECT 1 FROM pg_stat_activity WHERE query = $1 AND state = 'active'", [
+      sql,
+    ]);
+    if (rowCount) return;
+  }
+}
+
 /** O erro que a promessa rejeitou, já traduzido para erro de domínio. */
 async function erroTraduzido(promessa: Promise<unknown>): Promise<unknown> {
   try {
@@ -107,6 +117,32 @@ describe("tradução dos erros do banco", () => {
     );
 
     expect(erro).toBeInstanceOf(ErroDeConflito);
+  });
+
+  it("consulta cortada pelo limite de 2 s do público vira ErroIndisponivel (plano, ameaças)", async () => {
+    const erro = await erroTraduzido(banco.publico.$queryRaw`SELECT pg_sleep(3)`);
+
+    expect(erro).toBeInstanceOf(ErroIndisponivel);
+  });
+
+  it("banco inalcançável vira ErroIndisponivel", async () => {
+    const semBanco = criarBanco({ url: "postgresql://ninguem:x@127.0.0.1:1/nada" });
+
+    const erro = await erroTraduzido(semBanco.publico.$queryRaw`SELECT 1`);
+
+    await semBanco.fechar();
+    expect(erro).toBeInstanceOf(ErroIndisponivel);
+  });
+
+  it("conexão derrubada no meio da consulta (banco reiniciando) vira ErroIndisponivel", async () => {
+    const consulta = erroTraduzido(banco.administracao.$queryRaw`SELECT pg_sleep(4.5)`);
+    await esperarConsultaNoBanco("SELECT pg_sleep(4.5)");
+
+    await cliente.query(
+      "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE query = 'SELECT pg_sleep(4.5)' AND pid <> pg_backend_pid()",
+    );
+
+    expect(await consulta).toBeInstanceOf(ErroIndisponivel);
   });
 
   it("pool sem conexão livre por 2 s vira ErroIndisponivel, sem esperar além disso (CA1.5)", async () => {
