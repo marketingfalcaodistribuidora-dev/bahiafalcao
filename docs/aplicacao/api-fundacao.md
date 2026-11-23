@@ -204,3 +204,31 @@ Os containers só sobem com o `db:subir`. Eles não voltam sozinhos quando o Doc
 - **Tamanho dos pools:** conexões ≈ requisições simultâneas × tempo da consulta ÷ tempo da requisição. Para 20 simultâneas, dá cerca de 7; 10 dá folga. Revisto na Fase 4 com o teste de carga.
 - **Formatos de erro conferidos no banco real**, não supostos: a unicidade numa consulta direta chega como P2010 (e não P2002), e o pool esgotado chega como um erro do `pg`. Os dois viraram testes antes do código.
 - **Contagem de consultas (`tests/apoio/contar-consultas.ts`):** base dos testes de N+1 das próximas fases. Ela só funciona com `registrarConsultas: true`, que fica desligado na API porque custa caro.
+
+## Servidor, erros e logs (T008)
+
+### O que existe
+
+- **`api/src/app.ts` (`montarApp`):** monta o Fastify com os plugins, sem abrir a porta (isso fica para o `server.ts`, na T011). Os testes usam `app.inject`, sem rede.
+- **Formato único de erro** (`src/plugins/erros.ts` e `src/shared/erros.ts`):
+
+| Situação | Status | `erro` |
+|---|---|---|
+| Campo inválido, campo que o schema não conhece, JSON quebrado, `__proto__` no corpo | 400 | `validacao` (com `campos`, em português) |
+| Rota ou recurso inexistente | 404 | `nao_encontrado` |
+| Valor repetido | 409 | `conflito` (com o campo, quando se sabe) |
+| Corpo acima de 100 KB | 413 | `muito_grande` |
+| Corpo que não é JSON | 415 | `tipo_nao_suportado` |
+| Banco indisponível | 503 | `indisponivel` |
+| Qualquer outro | 500 | `erro_interno`, com mensagem neutra |
+
+- **Identificador da requisição** (`src/plugins/request-id.ts`): toda resposta traz `x-request-id`. Um id recebido só é aceito se a conexão vier de um proxy de `TRUST_PROXY` e o valor for seguro; senão, é gerado um UUID.
+- **Logs** (`src/plugins/logs.ts`): método, rota **sem** query string, id, IP, status e tempo. Nunca cabeçalhos, corpo, cookie ou `set-cookie`. Nos objetos que a própria API registra, as chaves de senha, token, cookie e authorization viram `[ESCONDIDO]`, em qualquer profundidade.
+
+### Por quê
+
+- **Sem detalhe interno na resposta:** stack trace, SQL ou nome de tabela ajudam quem ataca, não quem usa.
+- **Erro inesperado no log com tipo, id e pilha, mas sem a mensagem:** a mensagem de um erro do banco pode trazer e-mails e outros dados pessoais (LGPD). O id liga o log à reclamação de quem viu o erro.
+- **Só JSON:** o Fastify aceita texto puro por padrão. Esse leitor foi removido, e outro formato recebe 415. Os envios de arquivo das próximas fases registram o próprio leitor.
+- **Mensagens de validação em português** (`z.config(z.locales.ptBR())`): a tela mostra o erro de cada campo como veio da API.
+- **Um defeito encontrado pelos testes:** o pino roda o mascarador *antes* dos serializadores. Copiar a requisição do Fastify perdia o `url` (um getter da classe), o serializador quebrava e a requisição ficava sem resposta. Agora o mascarador percorre só objetos simples e listas, e há um teste para o caso.

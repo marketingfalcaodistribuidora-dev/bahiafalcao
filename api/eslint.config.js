@@ -105,6 +105,8 @@ export default defineConfig(
     rules: {
       "security/detect-object-injection": "off",
       "security/detect-non-literal-fs-filename": "off",
+      // expect.any() e afins do Vitest têm tipo any; nos testes isso é o normal.
+      "@typescript-eslint/no-unsafe-assignment": "off",
     },
   },
 );

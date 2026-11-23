@@ -1,7 +1,7 @@
 # Tarefas 000: Fundação da API do catálogo
 
 - **Plano:** [plan.md](./plan.md)
-- **Progresso:** 7 de 12
+- **Progresso:** 8 de 12
 
 Regras:
 - o teste vem sempre antes do código, com a falha mostrada;
@@ -116,10 +116,17 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
     - `npm ci` gera o cliente do Prisma sozinho (`postinstall`), com as proteções de scripts ligadas;
     - o `global-setup` aplica as migrations no banco-modelo com `prisma migrate deploy`;
     - 82 testes da API, 100% das linhas e 94% dos ramos.
-- [ ] T008 Erros e logs:
+- [x] T008 Erros e logs:
   - teste antes: 404, 400 `validacao` com `campos`, campo extra, `__proto__`, 500 neutro, 413 e 415; `x-request-id`; logs por lista permitida, sem query, `set-cookie` nem campos aninhados em até 3 níveis;
   - `shared/erros.ts` e os plugins `erros`, `request-id` e `logs`.
   - Critérios: CA2.1–CA2.4, CA2.6, CA3.1, CA3.2.
+  - **Feito em 23/11/2026:**
+    - testes antes: 12 do formato de erro e 8 de logs e `x-request-id`, todos vermelhos (o servidor não existia);
+    - dois defeitos achados pelos testes e corrigidos com teste antes:
+      - o mascarador copiava a requisição do Fastify e perdia o `url`, e toda requisição ficava sem resposta;
+      - o Fastify aceitava texto puro, que virava 400 em vez de 415;
+    - 4 testes do `request-id` (IP único, IPv6, vizinho fora da lista, sem endereço) escritos **depois** do código, como rede de segurança dos ramos (passaram de primeira);
+    - 110 testes da API, 100% das linhas e 94% dos ramos.
 - [ ] T009 Segurança das respostas:
   - teste antes: cabeçalhos e CSP do JSON, CORS (`null`, domínio parecido, `Vary`), 429 também no 404, `X-Forwarded-For` de origem confiável e não confiável;
   - plugins `seguranca` (helmet), `cors`, `rate-limit` e `trustProxy`.
@@ -168,6 +175,9 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
 | T002 | Os scripts `lint`, `typecheck`, `test` e `test:coverage` da raiz passaram a rodar em todos os workspaces (site e API) | O portão local (`npm run check`, também no `pre-push`) cobre a API desde já. |
 | T002 | Os scripts `dev`, `build`, `db:*`, `seed*`, `audit` e `test:integration` da API ainda não existem | Cada um entra na tarefa que cria o que ele roda, para não haver comando quebrado. |
 | T002 | `vitest.perf.config.ts` com `passWithNoTests` | Até a T027 não há medições. |
+| T008 | O `serializerCompiler` do Zod entrou na T008, e não na T010 | O formato único de erro já usa rotas com schema de resposta. A T010 continua com a regra de que toda rota declare o schema. |
+| T008 | Removido o leitor de `text/plain` do Fastify | A API só aceita JSON (RN6); sem isso, texto puro virava 400 em vez de 415. |
+| T008 | Nos testes, a regra `no-unsafe-assignment` do lint fica desligada | O `expect.any()` do Vitest tem tipo `any`; no código da API a regra continua valendo. |
 | T007 | O banco é o módulo `src/shared/banco.ts`; o registro no Fastify fica para a T011 (quando existir o `app.ts`) | Ainda não há servidor. Sem `fastify-plugin` (não está na lista aprovada): os plugins serão registrados direto na raiz. |
 | T007 | `contarQueries` virou `contarConsultas`, em `tests/apoio/`, e soma os dois clientes | Fica junto do resto do apoio de testes; nome em português. |
 | T005 | `Clock`, `IdGenerator`, `montarApp` e `contarQueries` ficam para as tarefas que os usam primeiro (T007: `contarQueries`; T008: `IdGenerator` e `montarApp`; T011: `Clock`) | São código de produção ou dependem dele (Prisma, `app.ts`). Criá-los antes seria código sem uso nem teste de verdade. |
