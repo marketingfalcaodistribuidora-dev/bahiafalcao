@@ -36,7 +36,16 @@ export default defineConfig({
     ],
     coverage: {
       provider: "v8",
-      include: ["src/config/**", "src/modules/**", "src/plugins/**", "src/shared/**"],
+      // O server.ts (porta de entrada do processo) fica de fora: só liga as peças, testadas aqui.
+      include: [
+        "src/app.ts",
+        "src/servidor.ts",
+        "src/desligamento.ts",
+        "src/config/**",
+        "src/modules/**",
+        "src/plugins/**",
+        "src/shared/**",
+      ],
       exclude: ["src/generated/**"],
       reporter: ["text", "html"],
       thresholds: { lines: 90, branches: 90, functions: 90, statements: 90 },
