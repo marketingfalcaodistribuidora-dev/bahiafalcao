@@ -48,6 +48,11 @@ function criarCliente(pool: pg.Pool, registrarConsultas: boolean): PrismaClient 
     : new PrismaClient({ adapter });
 }
 
+/** Confere se o banco responde (para o /health/ready). */
+export const verificadorDoBanco = (banco: Banco) => async (): Promise<void> => {
+  await banco.publico.$queryRaw`SELECT 1`;
+};
+
 export function criarBanco(opcoes: OpcoesDoBanco): Banco {
   const conexoes = opcoes.conexoes ?? CONEXOES_PADRAO;
   const registrar = opcoes.registrarConsultas ?? false;

@@ -12,7 +12,19 @@ const PAPEIS = ["anonimo", "editor", "administrador", "desativado", "sessao_expi
 type Papel = (typeof PAPEIS)[number];
 
 /** Status esperado de cada rota para cada papel. Toda rota registrada precisa estar aqui. */
-const MATRIZ: (EntradaDaMatriz & { esperado: Record<Papel, number> })[] = [];
+const TODOS_200: Record<Papel, number> = {
+  anonimo: 200,
+  editor: 200,
+  administrador: 200,
+  desativado: 200,
+  sessao_expirada: 200,
+};
+
+const MATRIZ: (EntradaDaMatriz & { esperado: Record<Papel, number> })[] = [
+  // Saúde (T011): públicas, para o monitor e o proxy.
+  { metodo: "GET", url: "/health/live", esperado: TODOS_200 },
+  { metodo: "GET", url: "/health/ready", esperado: TODOS_200 },
+];
 
 /** Cabeçalhos de quem faz a requisição. Fase 0: ninguém tem sessão; a Fase 1 põe o cookie de cada papel. */
 const CABECALHOS_DO_PAPEL: Record<Papel, Record<string, string>> = {
@@ -56,7 +68,7 @@ describe("rotasSemEntrada", () => {
     outra.get("/rota-nova", { config: { acesso: "publico" }, schema: { response: { 200: z.object({}) } } }, () => ({}));
     await outra.ready();
 
-    expect(rotasSemEntrada(outra, [])).toEqual(["GET /rota-nova"]);
+    expect(rotasSemEntrada(outra, MATRIZ)).toEqual(["GET /rota-nova"]);
     await outra.close();
   });
 });

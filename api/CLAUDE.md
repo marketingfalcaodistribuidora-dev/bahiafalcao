@@ -68,7 +68,8 @@ Se a especificação e o prompt divergirem, **pare e pergunte**.
 
 | Comando | O que faz |
 |---|---|
-| `npm run dev -w api` | API em modo de desenvolvimento |
+| `npm run dev -w api` | API em modo de desenvolvimento (lê o `api/.env`; reinicia ao salvar) |
+| `npm run build -w api` / `npm run start -w api` | compila para `api/dist` / roda a versão compilada |
 | `npm test -w api` | testes unitários (sem Docker; é o que o `pre-push` roda) |
 | `npm run test:integration -w api` | integração com PostgreSQL real (Testcontainers; precisa do Docker ligado) |
 | `npm run test:perf -w api` | performance: API compilada num processo, carga noutro, contra o `docker-compose` (não roda no CI) |

@@ -3,7 +3,7 @@
 import { Writable } from "node:stream";
 import { z } from "zod";
 import type { Configuracao } from "../../../src/config/env.js";
-import { montarApp } from "../../../src/app.js";
+import { montarApp, type DependenciasDaApp } from "../../../src/app.js";
 
 export const configuracaoDeTeste = (ajustes: Partial<Configuracao> = {}): Configuracao => ({
   ambiente: "test",
@@ -14,6 +14,8 @@ export const configuracaoDeTeste = (ajustes: Partial<Configuracao> = {}): Config
   ipsForaDoLimite: [],
   docsHabilitado: false,
   nivelDoLog: "info",
+  endereco: "127.0.0.1",
+  porta: 0,
   ...ajustes,
 });
 
@@ -24,7 +26,10 @@ export const ROTA_PUBLICA_DE_TESTE = {
 };
 
 /** A API de teste e o texto de tudo o que ela registrou no log. */
-export async function appDeTeste(ajustes: Partial<Configuracao> = {}) {
+export async function appDeTeste(
+  ajustes: Partial<Configuracao> = {},
+  dependencias: Partial<Omit<DependenciasDaApp, "configuracao" | "destinoDoLog">> = {},
+) {
   const linhas: string[] = [];
   const destinoDoLog = new Writable({
     write(pedaco: Buffer, _codificacao, pronto) {
@@ -32,6 +37,12 @@ export async function appDeTeste(ajustes: Partial<Configuracao> = {}) {
       pronto();
     },
   });
-  const app = await montarApp({ configuracao: configuracaoDeTeste(ajustes), destinoDoLog });
+  const app = await montarApp({
+    configuracao: configuracaoDeTeste(ajustes),
+    destinoDoLog,
+    // Padrão: banco que responde. Os testes do /health/ready passam o que precisam.
+    verificarBanco: () => Promise.resolve(),
+    ...dependencias,
+  });
   return { app, log: () => linhas.join("") };
 }

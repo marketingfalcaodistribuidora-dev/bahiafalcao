@@ -32,6 +32,8 @@ describe("configuração válida", () => {
       ipsForaDoLimite: [],
       docsHabilitado: false,
       nivelDoLog: "info",
+      endereco: "127.0.0.1",
+      porta: 3333,
     });
   });
 
@@ -82,6 +84,24 @@ describe("configuração inválida: a API não sobe (CA1.1)", () => {
 
   it("recusa nível de log desconhecido", () => {
     expect(erroAoLer({ ...minimo, LOG_NIVEL: "verbose" }).variaveis).toEqual(["LOG_NIVEL"]);
+  });
+});
+
+describe("onde a API escuta", () => {
+  it("lê o endereço e a porta", () => {
+    const configuracao = lerConfiguracao({ ...minimo, ENDERECO: "0.0.0.0", PORTA: "8080" });
+
+    expect(configuracao.endereco).toBe("0.0.0.0");
+    expect(configuracao.porta).toBe(8080);
+  });
+
+  it("aceita a porta 0 (o sistema escolhe uma livre; usado nos testes)", () => {
+    expect(lerConfiguracao({ ...minimo, PORTA: "0" }).porta).toBe(0);
+  });
+
+  it("recusa porta fora de 0 a 65535 e endereço que não é IP", () => {
+    expect(erroAoLer({ ...minimo, PORTA: "70000" }).variaveis).toEqual(["PORTA"]);
+    expect(erroAoLer({ ...minimo, ENDERECO: "localhost" }).variaveis).toEqual(["ENDERECO"]);
   });
 });
 

@@ -1,7 +1,7 @@
 # Tarefas 000: Fundação da API do catálogo
 
 - **Plano:** [plan.md](./plan.md)
-- **Progresso:** 10 de 12
+- **Progresso:** 11 de 12
 
 Regras:
 - o teste vem sempre antes do código, com a falha mostrada;
@@ -147,11 +147,17 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
     - ao ligar a regra, as 5 rotas dos testes anteriores sem `acesso` foram recusadas (a trava funcionou); elas passaram a declarar, com o auxiliar `ROTA_PUBLICA_DE_TESTE`;
     - matriz de autorização criada; ganha as primeiras entradas na T011, com as rotas de saúde;
     - 140 testes da API, 99,6% das linhas e 94% dos ramos.
-- [ ] T011 Saúde e servidor:
+- [x] T011 Saúde e servidor:
   - teste antes: `/health/live`; `/health/ready` (200, 503, cache de 2 s, uma consulta só para chamadas simultâneas); desligamento gracioso;
   - módulo `saude`, `server.ts` e o script `dev`;
   - `tsconfig.build.json` (`noEmit: false`, `rootDir: src`, `outDir: dist`, só `src/**`) e o script `build`.
   - Critérios: CA1.2–CA1.4, CA8.3.
+  - **Feito em 23/11/2026:**
+    - testes antes: 6 da prontidão, 5 das rotas, 5 do servidor real e 4 de `PORTA`/`ENDERECO`, todos vermelhos;
+    - o teste do desligamento travava: a conexão mantida pelo cliente segurava o fim. Corrigido com `Connection: close` durante o desligamento;
+    - a matriz de autorização reclamou das 2 rotas novas e ganhou as entradas (2 rotas × 5 papéis);
+    - `build`, `start` e `dev` conferidos à mão: a versão compilada recusa configuração inválida (código 1) e responde pela rede com os cabeçalhos de segurança;
+    - 169 testes da API, 100% das linhas e 95,7% dos ramos.
 - [ ] T012 Fechamento da fundação:
   - `api/README.md` (comandos, pool, as duas opções de domínio com CORS, cookie e `TRUST_PROXY`, D1), `CHANGELOG.md` e `docs/aplicacao/api-fundacao.md`;
   - passo a passo da proteção da `main` (D19), conferido com `gh api …/branches/main/protection`;
@@ -187,6 +193,8 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
 | T002 | Os scripts `lint`, `typecheck`, `test` e `test:coverage` da raiz passaram a rodar em todos os workspaces (site e API) | O portão local (`npm run check`, também no `pre-push`) cobre a API desde já. |
 | T002 | Os scripts `dev`, `build`, `db:*`, `seed*`, `audit` e `test:integration` da API ainda não existem | Cada um entra na tarefa que cria o que ele roda, para não haver comando quebrado. |
 | T002 | `vitest.perf.config.ts` com `passWithNoTests` | Até a T027 não há medições. |
+| T011 | Duas variáveis novas: `ENDERECO` (padrão `127.0.0.1`) e `PORTA` (padrão 3333) | O plano não dizia onde a API escuta. O padrão fechado (só a própria máquina) atende ao revisor de segurança (S2: na VPS, só o Caddy fala com a internet). |
+| T011 | `src/servidor.ts` (`iniciarServidor`) separado do `src/server.ts` | O `server.ts` só cuida do processo (sinais, saída); o resto fica testável. |
 | T009 | `montarApp` ficou assíncrona | Os plugins (limite, CORS, cabeçalhos) só alcançam as rotas registradas depois que carregam; esperar o carregamento evita rota sem proteção. |
 | T008 | O `serializerCompiler` do Zod entrou na T008, e não na T010 | O formato único de erro já usa rotas com schema de resposta. A T010 continua com a regra de que toda rota declare o schema. |
 | T008 | Removido o leitor de `text/plain` do Fastify | A API só aceita JSON (RN6); sem isso, texto puro virava 400 em vez de 415. |

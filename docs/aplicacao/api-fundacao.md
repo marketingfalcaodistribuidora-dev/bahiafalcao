@@ -268,3 +268,25 @@ Os containers só sobem com o `db:subir`. Eles não voltam sozinhos quando o Doc
 - **Segurança por padrão:** esquecer o controle de acesso numa rota nova é um erro comum e grave. Aqui o esquecimento impede o servidor de subir, em vez de abrir a rota.
 - **Prova na prática:** ao ligar a regra, as 5 rotas dos testes anteriores, que não declaravam acesso, foram recusadas citando cada uma. Elas passaram a declarar.
 - **O registro vem antes do CORS:** o plugin de CORS cria uma rota (`OPTIONS *`). Registrada antes dele, a conferência também a vê.
+
+## Saúde e servidor (T011)
+
+### O que existe
+
+| Rota | Para quê | Acesso | Limite de requisições |
+|---|---|---|---|
+| `GET /health/live` | O processo está de pé (não toca no banco) | público | fora (o monitor chama sempre) |
+| `GET /health/ready` | O banco responde: 200 `{ status: "ok", banco: "ok" }`, ou 503 `indisponivel` | público | dentro |
+
+- **Prontidão** (`src/modules/saude/prontidao.ts`): o banco precisa responder em até 1 s. O resultado vale por 2 s, e chamadas ao mesmo tempo esperam a mesma verificação.
+- **`src/servidor.ts` (`iniciarServidor`):** lê a configuração, cria o banco, monta a API e abre a porta (`ENDERECO`, padrão `127.0.0.1`; `PORTA`, padrão 3333).
+- **`src/server.ts`:** a porta de entrada do processo. Com configuração inválida, mostra as variáveis e sai com código 1. Com SIGTERM ou SIGINT, desliga com calma.
+- **Comandos:** `npm run dev -w api` (desenvolvimento, lê o `api/.env`), `npm run build -w api` e `npm run start -w api` (versão compilada, em `api/dist/`).
+
+### Por quê
+
+- **Duas rotas de saúde:** o proxy e o monitor precisam saber se o processo está vivo (live) e se ele consegue atender (ready). Separar evita reiniciar a API só porque o banco caiu por um instante.
+- **Prontidão guardada por 2 s, com uma verificação só por vez:** uma rajada no `/health/ready` não ocupa o pool de conexões, que é das pessoas.
+- **Endereço padrão `127.0.0.1`:** na VPS, só o Caddy fala com a internet. A API não fica exposta por engano, e isso também protege o `X-Forwarded-For` (o IP real só vem do proxy).
+- **Desligamento gracioso:** ao desligar, as requisições em andamento terminam e as conexões com o banco são fechadas. As respostas desse momento saem com `Connection: close`; sem isso, a conexão mantida aberta pelo cliente (keep-alive) segurava o desligamento até expirar.
+- **Provado:** o teste de integração sobe o servidor de verdade, chama as rotas pela rede e desliga no meio de uma requisição lenta (ela termina com 200 e o banco é fechado). A versão compilada também foi conferida à mão: sem configuração, sai com código 1 citando as variáveis; com configuração, responde com todos os cabeçalhos de segurança.

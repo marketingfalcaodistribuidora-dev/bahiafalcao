@@ -21,6 +21,10 @@ export interface Configuracao {
   ipsForaDoLimite: string[];
   docsHabilitado: boolean;
   nivelDoLog: NivelDoLog;
+  /** IP em que a API escuta. Padrão 127.0.0.1: só a própria máquina (o Caddy, na VPS). */
+  endereco: string;
+  /** Porta em que a API escuta (0: o sistema escolhe uma livre, usado nos testes). */
+  porta: number;
 }
 
 /** As variáveis que a API lê, na ordem em que os erros são listados. */
@@ -33,6 +37,8 @@ export const VARIAVEIS_DA_API = [
   "LIMITE_IGNORAR_IPS",
   "DOCS_HABILITADO",
   "LOG_NIVEL",
+  "ENDERECO",
+  "PORTA",
 ] as const;
 type Variavel = (typeof VARIAVEIS_DA_API)[number];
 
@@ -102,6 +108,16 @@ const esquema = z.object({
   LOG_NIVEL: z
     .enum(["fatal", "error", "warn", "info", "debug"], { error: "use fatal, error, warn, info ou debug" })
     .optional(),
+  ENDERECO: z
+    .string()
+    .optional()
+    .refine((valor) => valor === undefined || isIP(valor) !== 0, { error: "um IP (ex.: 127.0.0.1)" }),
+  PORTA: z
+    .string()
+    .optional()
+    .refine((valor) => valor === undefined || (/^\d{1,5}$/.test(valor) && Number(valor) <= 65_535), {
+      error: "um número de 0 a 65535",
+    }),
 });
 
 export function lerConfiguracao(env: Record<string, string | undefined>): Configuracao {
@@ -154,5 +170,7 @@ export function lerConfiguracao(env: Record<string, string | undefined>): Config
     ipsForaDoLimite: lista(dados.LIMITE_IGNORAR_IPS),
     docsHabilitado: dados.DOCS_HABILITADO === "true",
     nivelDoLog: dados.LOG_NIVEL ?? "info",
+    endereco: dados.ENDERECO ?? "127.0.0.1",
+    porta: dados.PORTA === undefined ? 3333 : Number(dados.PORTA),
   };
 }
