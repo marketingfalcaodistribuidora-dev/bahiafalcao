@@ -2,7 +2,7 @@
 // configuração válida, responde pela rede, e desliga terminando a requisição em andamento,
 // recusando conexão nova e fechando as conexões com o banco. Sem sleep: a requisição demorada
 // avisa quando chegou e só termina quando o teste libera.
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { iniciarServidor, type Servidor } from "../../../src/servidor.js";
 import type { Banco } from "../../../src/shared/banco.js";
@@ -35,6 +35,18 @@ describe("servidor (CA1.2 e CA1.3)", () => {
 
     expect(resposta.status).toBe(200);
     expect(await resposta.json()).toEqual({ status: "ok" });
+  });
+
+  it("um erro numa conexão ociosa do banco vai para o log (só o tipo) e não derruba o processo", () => {
+    const registrarErro = vi.spyOn(servidor.app.log, "error");
+
+    servidor.banco.pools.publico.emit("error", new TypeError("conexão caiu"));
+
+    expect(registrarErro).toHaveBeenCalledWith(
+      { pool: "publico", tipo: "TypeError" },
+      "erro numa conexão ociosa do banco",
+    );
+    registrarErro.mockRestore();
   });
 
   it("/health/ready responde 200 com o banco no ar", async () => {

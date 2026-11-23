@@ -1,6 +1,6 @@
 // Liga a API de verdade (spec 000, T011; CA1.1–CA1.4): lê a configuração, cria o banco, monta a
 // API e abre a porta. Separado do server.ts (a porta de entrada do processo) para ser testado.
-import type { FastifyInstance } from "fastify";
+import type { FastifyBaseLogger, FastifyInstance } from "fastify";
 import { montarApp } from "./app.js";
 import { lerConfiguracao } from "./config/env.js";
 import { criarBanco, verificadorDoBanco, type Banco } from "./shared/banco.js";
@@ -24,12 +24,20 @@ export async function iniciarServidor(
   registrarExtras?: (app: FastifyInstance, banco: Banco) => void,
 ): Promise<Servidor> {
   const configuracao = lerConfiguracao(env);
-  const banco = criarBanco({ url: configuracao.urlDoBanco });
+  // O log nasce com o app, depois do banco: o aviso de erro no pool usa o app quando existir.
+  const destino: { log?: FastifyBaseLogger } = {};
+  const banco = criarBanco({
+    url: configuracao.urlDoBanco,
+    aoErroNoPool: (dados) => {
+      destino.log?.error(dados, "erro numa conexão ociosa do banco");
+    },
+  });
   const app = await montarApp({
     configuracao,
     verificarBanco: verificadorDoBanco(banco),
     aoFechar: () => banco.fechar(),
   });
+  destino.log = app.log;
   registrarExtras?.(app, banco);
 
   try {

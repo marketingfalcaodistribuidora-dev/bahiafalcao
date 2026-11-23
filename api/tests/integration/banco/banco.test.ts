@@ -25,6 +25,10 @@ afterAll(async () => {
   await doArquivo.apagar();
 });
 
+interface Linha {
+  idle_in_transaction_session_timeout: string;
+}
+
 const valor = async (sql: string): Promise<unknown> => (await cliente.query<{ valor: unknown }>(sql)).rows[0]?.valor;
 
 /** O erro que a promessa rejeitou, já traduzido para erro de domínio. */
@@ -76,6 +80,14 @@ describe("dois pools com limites próprios (plano §4)", () => {
 
     expect(publico?.statement_timeout).toBe("2s");
     expect(administracao?.statement_timeout).toBe("5s");
+  });
+
+  it("os dois encerram a sessão parada no meio de uma transação há 10 s", async () => {
+    const [publico] = await banco.publico.$queryRaw<Linha[]>`SHOW idle_in_transaction_session_timeout`;
+    const [administracao] = await banco.administracao.$queryRaw<Linha[]>`SHOW idle_in_transaction_session_timeout`;
+
+    expect(publico?.idle_in_transaction_session_timeout).toBe("10s");
+    expect(administracao?.idle_in_transaction_session_timeout).toBe("10s");
   });
 
   it("os dois usam o fuso UTC", async () => {
