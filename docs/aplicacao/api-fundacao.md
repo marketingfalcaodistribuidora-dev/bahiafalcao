@@ -148,3 +148,29 @@ Os containers só sobem com o `db:subir`. Eles não voltam sozinhos quando o Doc
   - o banco do arquivo tem locale `C.UTF-8` (provedor `builtin`), fuso UTC e `jit=off`;
   - um arquivo não enxerga a tabela de outro;
   - o modelo recusa conexões.
+
+## Configuração (T006)
+
+### O que existe
+
+`api/src/config/env.ts` lê as variáveis de ambiente uma vez, no início (`lerConfiguracao`), e devolve a configuração já tratada. Com qualquer variável faltando ou inválida, lança `ErroDeConfiguracao` e a API não sobe.
+
+| Variável | Regra | Padrão |
+|---|---|---|
+| `NODE_ENV` | `development`, `test` ou `production` | obrigatória |
+| `DATABASE_URL` | URL `postgresql://` | obrigatória |
+| `CORS_ORIGENS` | origens exatas `https://` (sem barra no fim nem maiúsculas); `http://localhost` só em `development` | nenhuma |
+| `TRUST_PROXY` | IPs ou faixas CIDR; `true` e número de saltos recusados | nenhum (usa o IP da conexão) |
+| `LIMITE_GERAL_POR_MIN` | inteiro de 10 a 10000 | 300 |
+| `LIMITE_IGNORAR_IPS` | IPs; **recusada em produção** | nenhum |
+| `DOCS_HABILITADO` | `true`/`false`; `true` **recusado em produção** até a Fase 1 | `false` |
+| `LOG_NIVEL` | `fatal`, `error`, `warn`, `info` ou `debug` | `info` |
+
+### Como funciona e por quê
+
+- **A mensagem de erro cita o nome e o motivo, nunca o valor.** Ex.: `DATABASE_URL (precisa ser uma URL postgresql://…)`. O valor pode ser uma senha, e a mensagem vai para o log.
+- **Duas camadas:** o Zod valida cada variável sozinha. As regras que dependem do ambiente ("`localhost` só em desenvolvimento", "proibido em produção") rodam depois. Todos os erros saem juntos, para corrigir tudo de uma vez.
+- **Padrão mais fechado:** sem configurar, não há CORS, não se confia em proxy nenhum, o `/docs` fica fechado e o limite de requisições fica ligado.
+- **Variáveis desconhecidas são ignoradas:** o `api/.env` também guarda as do `docker-compose` (`POSTGRES_USUARIO`, `POSTGRES_SENHA`), que a API não usa.
+- **O `api/.env.example` não fica para trás:** um teste confere que ele documenta todas as variáveis que a API lê.
+- **Cobertura:** `src/config/` entrou na exigência de 90%. Ficou com 100% das linhas e 91% dos ramos. Também foi provado que a cobertura reprova abaixo do mínimo.

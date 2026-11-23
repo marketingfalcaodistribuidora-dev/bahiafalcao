@@ -36,7 +36,7 @@ export default defineConfig({
     ],
     coverage: {
       provider: "v8",
-      include: ["src/modules/**", "src/plugins/**", "src/shared/**"],
+      include: ["src/config/**", "src/modules/**", "src/plugins/**", "src/shared/**"],
       exclude: ["src/generated/**"],
       reporter: ["text", "html"],
       thresholds: { lines: 90, branches: 90, functions: 90, statements: 90 },

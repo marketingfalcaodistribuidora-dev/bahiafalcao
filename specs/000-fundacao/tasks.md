@@ -1,7 +1,7 @@
 # Tarefas 000: Fundação da API do catálogo
 
 - **Plano:** [plan.md](./plan.md)
-- **Progresso:** 5 de 12
+- **Progresso:** 6 de 12
 
 Regras:
 - o teste vem sempre antes do código, com a falha mostrada;
@@ -92,11 +92,16 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
     - projetos do Vitest: `unit` (o `npm test`, sem Docker) e `integracao` (`test:integration`); `test:coverage` roda os dois;
     - medido: a cópia do modelo leva de 8 a 13 ms (mediana), com `WAL_LOG` ≈ `FILE_COPY`; ficou o padrão;
     - suíte de integração completa em ~13 s, com o container; nenhum container sobrou depois.
-- [ ] T006 Configuração (`config/env.ts`):
+- [x] T006 Configuração (`config/env.ts`):
   - teste antes: variável faltando ou inválida (inclusive `NODE_ENV`), lista só os nomes, CORS (`*`, `null`, `http`, origem não exata), `TRUST_PROXY` com `true` ou número recusado, `LIMITE_IGNORAR_IPS` e `DOCS_HABILITADO` recusados em produção;
   - variáveis desconhecidas são ignoradas (ex.: `POSTGRES_USUARIO`/`POSTGRES_SENHA`, que são só do compose);
   - um teste confere que toda chave do schema está no `api/.env.example`.
   - Critérios: CA1.1, CA4.6, CA4.7.
+  - **Feito em 23/11/2026:**
+    - 24 testes escritos antes (vermelho: o módulo não existia);
+    - `src/config/env.ts` passou nos 24 de primeira; tipos e lint limpos;
+    - `src/config/**` entrou na cobertura de 90%: 100% das linhas e 91% dos ramos;
+    - provado que a cobertura reprova abaixo do mínimo (só a integração rodando: 0%, saída 1), item que a T005 deixou anotado.
 - [ ] T007 Banco (Prisma):
   - teste antes: extensões e `f_unaccent` (`search_path` mínimo, `IMMUTABLE`, índice GIN numa tabela temporária, `SHOW lc_ctype`); P2002 → 409; pool esgotado → 503 em ~2 s, segurando a conexão com `pool.connect()`;
   - migration `0001_extensoes` (skill `prisma-migration`);
