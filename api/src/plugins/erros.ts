@@ -64,8 +64,12 @@ export function registrarErros(app: FastifyInstance): void {
     const deDominio = comoErroDeDominio(erro);
     if (deDominio) return responder(resposta, deDominio);
 
-    // A pilha sem a primeira linha (que repete a mensagem).
-    const pilha = (erro.stack ?? "").split("\n").slice(1).join("\n");
+    // Da pilha, só as linhas de localização no código ("at ..."). A mensagem pode ter várias
+    // linhas com dados (as do Prisma listam os argumentos, como e-mails) e fica de fora.
+    const pilha = (erro.stack ?? "")
+      .split("\n")
+      .filter((linha) => /^\s+at /.test(linha))
+      .join("\n");
     pedido.log.error({ tipo: erro.name, pilha }, "erro inesperado");
     return resposta
       .code(500)

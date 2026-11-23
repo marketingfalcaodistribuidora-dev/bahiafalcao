@@ -125,4 +125,18 @@ describe("logs sem dados sensíveis (CA3.2)", () => {
     expect(log).toContain(String(resposta.headers["x-request-id"]));
     expect(log).not.toContain("ana@exemplo.com");
   });
+
+  it("nem uma mensagem de várias linhas (como as do Prisma, que listam os argumentos) vai para o log", async () => {
+    const teste = await appDeTeste();
+    app = teste.app;
+    app.get("/teste/quebra-longa", ROTA_PUBLICA_DE_TESTE, () => {
+      throw new Error("Argumento inválido em create:\n  email: 'ana@exemplo.com'\n  senhaHash: 'hash-secreto'");
+    });
+
+    await app.inject({ method: "GET", url: "/teste/quebra-longa" });
+
+    const log = teste.log();
+    expect(log).toContain('"tipo":"Error"');
+    expect(log).not.toMatch(/ana@exemplo\.com|hash-secreto/);
+  });
 });
