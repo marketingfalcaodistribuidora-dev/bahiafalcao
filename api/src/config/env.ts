@@ -3,7 +3,7 @@
 // ErroDeConfiguracao e a API não sobe. A mensagem cita só os NOMES das variáveis e o motivo,
 // nunca o valor (que pode ser uma senha). Na dúvida, o padrão é o mais fechado.
 // Variáveis que a API não conhece (ex.: as do docker-compose) são ignoradas.
-import { isIP } from "node:net";
+import { BlockList, isIP } from "node:net";
 import { z } from "zod";
 
 export type Ambiente = "development" | "test" | "production";
@@ -65,8 +65,24 @@ const lista = (texto: string | undefined): string[] =>
  */
 const PREFIXO_MINIMO_IPV4 = 8;
 const PREFIXO_MINIMO_IPV6 = 32;
+/**
+ * O IPv4 também aparece dentro do IPv6 (::ffff:a.b.c.d, o espaço ::ffff:0:0/96). Uma faixa IPv6
+ * que cubra esse espaço, ou parte larga dele, confiaria em todo IPv4: ali, o mínimo é /104 (o /8
+ * do IPv4 somado aos 96 bits do prefixo).
+ */
+const PREFIXO_MINIMO_NO_IPV4_MAPEADO = 104;
+const IPV4_MAPEADO = new BlockList();
+IPV4_MAPEADO.addSubnet("::ffff:0:0", 96, "ipv6");
 
-/** "10.0.0.1" ou "172.16.0.0/12" (IPv4 ou IPv6), sem faixa larga demais. */
+/** A faixa IPv6 cobre o espaço do IPv4 mapeado, ou fica dentro dele, larga demais? */
+function cobreIpv4Demais(rede: string, bits: number): boolean {
+  if (bits >= PREFIXO_MINIMO_NO_IPV4_MAPEADO) return false;
+  const faixa = new BlockList();
+  faixa.addSubnet(rede, bits, "ipv6");
+  return faixa.check("::ffff:0:0", "ipv6") || IPV4_MAPEADO.check(rede, "ipv6");
+}
+
+/** "10.0.0.1" ou "172.16.0.0/12" (IPv4 ou IPv6), sem faixa larga demais (nem no IPv4 mapeado). */
 function ehIpOuFaixa(texto: string): boolean {
   const [ip = "", prefixo, ...resto] = texto.split("/");
   const versao = isIP(ip);
@@ -74,7 +90,8 @@ function ehIpOuFaixa(texto: string): boolean {
   if (prefixo === undefined) return true;
   const bits = Number(prefixo);
   const [minimo, maximo] = versao === 4 ? [PREFIXO_MINIMO_IPV4, 32] : [PREFIXO_MINIMO_IPV6, 128];
-  return /^\d{1,3}$/.test(prefixo) && bits >= minimo && bits <= maximo;
+  if (!/^\d{1,3}$/.test(prefixo) || bits < minimo || bits > maximo) return false;
+  return versao === 4 || !cobreIpv4Demais(ip, bits);
 }
 
 /** Origem exata (sem caminho nem barra no fim, em minúsculas): https, ou http://localhost em desenvolvimento. */
@@ -101,7 +118,7 @@ const esquema = z.object({
     .optional()
     .refine((valor) => lista(valor).every(ehIpOuFaixa), {
       error:
-        "só IPs ou faixas (CIDR, de /8 no IPv4 e /32 no IPv6 para cima), separados por vírgula; true e número de saltos são recusados",
+        "só IPs ou faixas (CIDR, de /8 no IPv4, /32 no IPv6 e /104 no IPv4 mapeado para cima), separados por vírgula; true e número de saltos são recusados",
     }),
   LIMITE_GERAL_POR_MIN: z
     .string()

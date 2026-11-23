@@ -132,6 +132,16 @@ describe("proxy confiável (CA4.5)", () => {
     expect(erroAoLer({ ...minimo, TRUST_PROXY: valor }).variaveis).toEqual(["TRUST_PROXY"]);
   });
 
+  // O IPv4 também aparece dentro do IPv6 (::ffff:a.b.c.d): uma faixa IPv6 que cubra esse espaço
+  // confia em todo IPv4. Ali, o mínimo é o equivalente ao /8 do IPv4 (/104).
+  it.each(["::ffff:0:0/96", "::ffff:0.0.0.0/100", "::/32"])("recusa a faixa %s, que cobre IPv4 demais", (valor) => {
+    expect(erroAoLer({ ...minimo, TRUST_PROXY: valor }).variaveis).toEqual(["TRUST_PROXY"]);
+  });
+
+  it.each(["::ffff:10.0.0.0/104", "::ffff:10.0.0.1"])("aceita o IPv4 mapeado %s, estreito o bastante", (valor) => {
+    expect(lerConfiguracao({ ...minimo, TRUST_PROXY: valor }).proxiesConfiaveis).toEqual([valor]);
+  });
+
   it.each(["10.0.0.0/8", "2001:db8::/32"])("aceita a faixa %s (no limite do permitido)", (valor) => {
     expect(lerConfiguracao({ ...minimo, TRUST_PROXY: valor }).proxiesConfiaveis).toEqual([valor]);
   });
