@@ -48,18 +48,17 @@ describe("matriz de autorização", () => {
     expect(rotasSemEntrada(app, MATRIZ)).toEqual([]);
   });
 
-  it.each(MATRIZ.flatMap((entrada) => PAPEIS.map((papel) => [entrada, papel] as const)))(
-    "%o como %s",
-    async (entrada, papel) => {
-      const resposta = await app.inject({
-        method: entrada.metodo,
-        url: entrada.url,
-        headers: CABECALHOS_DO_PAPEL[papel],
-      });
+  it.each(
+    MATRIZ.flatMap((entrada) => PAPEIS.map((papel) => ({ rota: `${entrada.metodo} ${entrada.url}`, entrada, papel }))),
+  )("$rota como $papel", async ({ entrada, papel }) => {
+    const resposta = await app.inject({
+      method: entrada.metodo,
+      url: entrada.url,
+      headers: CABECALHOS_DO_PAPEL[papel],
+    });
 
-      expect(resposta.statusCode).toBe(entrada.esperado[papel]);
-    },
-  );
+    expect(resposta.statusCode).toBe(entrada.esperado[papel]);
+  });
 });
 
 describe("rotasSemEntrada", () => {
