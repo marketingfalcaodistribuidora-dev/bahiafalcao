@@ -25,6 +25,39 @@ const lock = (pacotes: Lockfile["packages"]): Lockfile => ({
 });
 
 describe("problemasDoLock (conferência do lockfile inteiro, sem rede)", () => {
+  // Link (rodada 5): o npm segue um link do lockfile e põe o código do alvo na pasta. Só vale
+  // apontar para um workspace do repositório, com a pasta igual ao nome dele.
+  describe("links", () => {
+    const workspace = { name: "@falcao/api", version: "0.1.0" };
+    const evil = {
+      version: "2.1.3",
+      resolved: `${REGISTRO}/evil-pkg/-/evil-pkg-2.1.3.tgz`,
+      integrity: INTEGRIDADE,
+    };
+
+    it("aceita o link do workspace, com a pasta igual ao nome dele", () => {
+      const certo = lock({ api: workspace, "node_modules/@falcao/api": { resolved: "api", link: true } });
+
+      expect(problemasDoLock(certo)).toEqual([]);
+    });
+
+    it.each([
+      ["para outro pacote de node_modules", "node_modules/ms", "node_modules/evil-pkg"],
+      ["aninhado, para outro pacote", "node_modules/a/node_modules/ms", "node_modules/evil-pkg"],
+      ["para o workspace, mas noutra pasta", "node_modules/ms", "api"],
+      ["para uma pasta que não é workspace", "node_modules/ms", "outra-pasta"],
+      ["para fora do repositório", "node_modules/ms", "../fora"],
+    ])("recusa o link %s", (_caso, chave, alvo) => {
+      const trocado = lock({
+        api: workspace,
+        "node_modules/evil-pkg": evil,
+        [chave]: { resolved: alvo, link: true },
+      });
+
+      expect(problemasDoLock(trocado)).toContain(`${chave}: link que não aponta para um workspace do repositório`);
+    });
+  });
+
   it("aceita um lockfile em que tudo vem do registro do npm com integridade sha512", () => {
     const tudoCerto = lock({
       api: { name: "@falcao/api", version: "0.1.0" },

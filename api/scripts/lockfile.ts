@@ -149,7 +149,27 @@ function problemaDoBundle(lock: Lockfile, chave: string, entrada: EntradaDoLock)
   return declarada ? null : `${chave}: marcada como inBundle, mas ninguém no bundle a declara`;
 }
 
-/** "@fastify/cors", "11.4.3" → "https://registry.npmjs.org/@fastify/cors/-/cors-11.4.3.tgz" */
+/**
+ * O npm segue um link do lockfile e põe na pasta o código do alvo, conferindo só a versão. Por
+ * isso um link só vale do jeito que o npm cria para os workspaces: em node_modules/<nome>, na
+ * raiz, apontando exatamente para a pasta de um workspace declarado cujo name é <nome>, e sem
+ * nenhum outro campo.
+ */
+function linkDeWorkspace(
+  pacotes: Lockfile["packages"],
+  workspaces: Set<string>,
+  chave: string,
+  entrada: EntradaDoLock,
+): boolean {
+  const alvo = entrada.resolved ?? "";
+  const nome = nomeDaChave(chave);
+  const soLink = Object.keys(entrada).every((campo) => campo === "resolved" || campo === "link");
+  return (
+    soLink && nome !== null && chave === `node_modules/${nome}` && workspaces.has(alvo) && pacotes[alvo]?.name === nome
+  );
+}
+
+/** "@fastify/cors", "11.4.3" →"https://registry.npmjs.org/@fastify/cors/-/cors-11.4.3.tgz" */
 function tarballNoRegistro(nome: string, versao: string): string {
   const semEscopo = nome.slice(nome.lastIndexOf("/") + 1);
   return `${REGISTRO_DO_NPM}${nome}/-/${semEscopo}-${versao}.tgz`;
@@ -172,7 +192,12 @@ export function problemasDoLock(lock: Lockfile, confianca: Confianca = {}): stri
       }
       continue;
     }
-    if (entrada.link) continue;
+    if (entrada.link) {
+      if (!linkDeWorkspace(pacotes, workspaces, chave, entrada)) {
+        problemas.push(`${chave}: link que não aponta para um workspace do repositório`);
+      }
+      continue;
+    }
     if (entrada.inBundle) {
       const problema = problemaDoBundle(lock, chave, entrada);
       if (problema) problemas.push(problema);
