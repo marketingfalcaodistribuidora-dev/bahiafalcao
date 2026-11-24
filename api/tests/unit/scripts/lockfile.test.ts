@@ -74,64 +74,88 @@ describe("problemasDoLock (conferência do lockfile inteiro, sem rede)", () => {
     ]);
   });
 
-  it("aceita o tarball de pacote com escopo e de apelido declarado por quem depende (npm:nome@faixa)", () => {
-    const certos = lock({
-      "node_modules/@fastify/cors": {
-        version: "11.4.3",
-        resolved: `${REGISTRO}/@fastify/cors/-/cors-11.4.3.tgz`,
-        integrity: INTEGRIDADE,
-      },
-      "node_modules/@isaacs/cliui": {
-        version: "8.0.2",
-        resolved: `${REGISTRO}/@isaacs/cliui/-/cliui-8.0.2.tgz`,
-        integrity: INTEGRIDADE,
-        dependencies: { "string-width-cjs": "npm:string-width@^4.2.0" },
-      },
-      "node_modules/string-width-cjs": {
-        name: "string-width",
-        version: "4.2.3",
-        resolved: `${REGISTRO}/string-width/-/string-width-4.2.3.tgz`,
-        integrity: INTEGRIDADE,
-      },
+  // Apelido (npm:nome@faixa): o lockfile guarda o nome verdadeiro em "name". Como o lockfile vem
+  // de fora, nem o "name" nem uma declaração npm: dentro dele provam nada; o npm instala na pasta
+  // sem conferir o nome. Só vale o par (pasta, nome) que já existia no lockfile da base (a main) ou
+  // que está na lista allowAliases do package.json da raiz, que aparece num diff pequeno e revisado.
+  describe("apelidos (name diferente da pasta)", () => {
+    const apelido = {
+      name: "string-width",
+      version: "4.2.3",
+      resolved: `${REGISTRO}/string-width/-/string-width-4.2.3.tgz`,
+      integrity: INTEGRIDADE,
+    };
+    const forjado = {
+      name: "evil-pkg",
+      version: "1.0.0",
+      resolved: `${REGISTRO}/evil-pkg/-/evil-pkg-1.0.0.tgz`,
+      integrity: INTEGRIDADE,
+    };
+    const PROBLEMA_DO_FORJADO =
+      'node_modules/ms: name "evil-pkg" diferente da pasta, e o apelido não está na base nem em allowAliases';
+
+    it("aceita o tarball de pacote com escopo", () => {
+      const comEscopo = lock({
+        "node_modules/@fastify/cors": {
+          version: "11.4.3",
+          resolved: `${REGISTRO}/@fastify/cors/-/cors-11.4.3.tgz`,
+          integrity: INTEGRIDADE,
+        },
+      });
+
+      expect(problemasDoLock(comEscopo)).toEqual([]);
     });
 
-    expect(problemasDoLock(certos)).toEqual([]);
-  });
+    it("aceita o apelido que já existia no lockfile da base", () => {
+      const base = lock({ "node_modules/string-width-cjs": apelido });
+      const novo = lock({
+        "node_modules/string-width-cjs": {
+          ...apelido,
+          version: "4.2.4",
+          resolved: `${REGISTRO}/string-width/-/string-width-4.2.4.tgz`,
+        },
+      });
 
-  it("recusa name diferente da pasta que nenhum pacote declara como apelido (name forjado)", () => {
-    const forjado = lock({
-      "node_modules/atomic-sleep": {
-        name: "left-pad",
-        version: "1.0.0",
-        resolved: `${REGISTRO}/left-pad/-/left-pad-1.0.0.tgz`,
-        integrity: INTEGRIDADE,
-      },
+      expect(problemasDoLock(novo, { base })).toEqual([]);
     });
 
-    expect(problemasDoLock(forjado)).toEqual([
-      'node_modules/atomic-sleep: name "left-pad" diferente da pasta, e nenhum pacote declara npm:left-pad@',
-    ]);
-  });
+    it("aceita o apelido da lista allowAliases do package.json da raiz", () => {
+      const novo = lock({ "node_modules/string-width-cjs": apelido });
 
-  it("recusa apelido declarado para OUTRO pacote", () => {
-    const outroAlvo = lock({
-      "node_modules/quem-depende": {
-        version: "1.0.0",
-        resolved: `${REGISTRO}/quem-depende/-/quem-depende-1.0.0.tgz`,
-        integrity: INTEGRIDADE,
-        dependencies: { "atomic-sleep": "npm:atomic-sleep-oficial@^1.0.0" },
-      },
-      "node_modules/atomic-sleep": {
-        name: "left-pad",
-        version: "1.0.0",
-        resolved: `${REGISTRO}/left-pad/-/left-pad-1.0.0.tgz`,
-        integrity: INTEGRIDADE,
-      },
+      expect(problemasDoLock(novo, { apelidosPermitidos: { "string-width-cjs": "string-width" } })).toEqual([]);
     });
 
-    expect(problemasDoLock(outroAlvo)).toEqual([
-      'node_modules/atomic-sleep: name "left-pad" diferente da pasta, e nenhum pacote declara npm:left-pad@',
-    ]);
+    it("recusa o name forjado que não está na base nem na lista", () => {
+      const novo = lock({ "node_modules/ms": forjado });
+
+      expect(problemasDoLock(novo)).toEqual([PROBLEMA_DO_FORJADO]);
+    });
+
+    it("recusa o apelido da lista quando ele aponta para outro nome", () => {
+      const novo = lock({ "node_modules/ms": forjado });
+
+      expect(problemasDoLock(novo, { apelidosPermitidos: { ms: "ms-oficial" } })).toEqual([PROBLEMA_DO_FORJADO]);
+    });
+
+    // Contornos da rodada 4: a declaração npm: escrita no próprio lockfile não autoriza nada.
+    it.each([
+      ["nas dependencies de um pacote sem relação", "node_modules/zod", "dependencies", "npm:evil-pkg@^1.0.0"],
+      ["nas peerDependencies", "node_modules/zod", "peerDependencies", "npm:evil-pkg@^1.0.0"],
+      ["na entrada do workspace (o npm lê o package.json do disco)", "api", "dependencies", "npm:evil-pkg@^1.0.0"],
+      ["sem versão", "node_modules/zod", "dependencies", "npm:evil-pkg"],
+    ])("recusa o name forjado mesmo com o apelido declarado %s", (_caso, onde, mapa, faixa) => {
+      const novo = lock({
+        [onde]: {
+          version: "4.6.7",
+          resolved: `${REGISTRO}/zod/-/zod-4.6.7.tgz`,
+          integrity: INTEGRIDADE,
+          [mapa]: { ms: faixa },
+        },
+        "node_modules/ms": forjado,
+      });
+
+      expect(problemasDoLock(novo)).toContain(PROBLEMA_DO_FORJADO);
+    });
   });
 
   it.each([

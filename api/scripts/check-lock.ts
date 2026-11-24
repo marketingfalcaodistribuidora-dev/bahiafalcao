@@ -27,10 +27,14 @@ if (!caminhoBase || !caminhoNovo) {
 const lerJson = (caminho: string): unknown => JSON.parse(readFileSync(caminho, "utf8"));
 const base = lerJson(caminhoBase) as Lockfile;
 const novo = lerJson(caminhoNovo) as Lockfile;
-const raiz = lerJson("package.json") as { allowScripts?: Record<string, boolean> };
+const raiz = lerJson("package.json") as {
+  allowScripts?: Record<string, boolean>;
+  allowAliases?: Record<string, string>;
+};
 const allowScripts = raiz.allowScripts ?? {};
 
-const problemas = problemasDoLock(novo);
+// Apelidos (npm:nome@faixa) só valem se já estavam na base ou na lista allowAliases revisada.
+const problemas = problemasDoLock(novo, { base, apelidosPermitidos: raiz.allowAliases ?? {} });
 if (problemas.length) {
   for (const problema of problemas) console.log(`RECUSADO ${problema}`);
   console.log(`check-lock: ${String(problemas.length)} problema(s) no lockfile; nada foi instalado.`);

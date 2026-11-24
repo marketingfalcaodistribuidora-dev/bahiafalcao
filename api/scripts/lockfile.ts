@@ -42,26 +42,24 @@ function ehSemverEstrito(versao: string): boolean {
   return /^\d+\.\d+\.\d+$/.test(nucleo) && (preLancamento === null || /^[0-9A-Za-z.-]+$/.test(preLancamento));
 }
 
+/** No que o check-lock confia além do lockfile novo, que vem de fora (de um PR). */
+export interface Confianca {
+  /** O lockfile da base (a main): o que já estava lá foi revisado. */
+  base?: Lockfile;
+  /** O allowAliases do package.json da raiz: { pasta: nome-verdadeiro }, num diff pequeno e revisado. */
+  apelidosPermitidos?: Record<string, string>;
+}
+
 /**
- * Os apelidos que algum pacote do lockfile declara ("pasta": "npm:nome-verdadeiro@faixa"), como
- * "pasta\0nome". Só eles autorizam um `name` diferente da pasta: o `name` vem do próprio lockfile,
- * e o npm instala na pasta sem conferir se o tarball é do pacote que a pasta diz ser.
+ * Os apelidos (npm:nome@faixa) confiáveis, como "pasta\0nome": os da base e os da lista revisada.
+ * Nem o `name` nem uma declaração npm: dentro do lockfile novo provam nada (ele vem de fora), e o
+ * npm instala na pasta sem conferir se o tarball é do pacote que a pasta diz ser.
  */
-function apelidosDeclarados(pacotes: Lockfile["packages"]): Set<string> {
-  const apelidos = new Set<string>();
-  for (const entrada of Object.values(pacotes)) {
-    const mapas = [
-      entrada.dependencies,
-      entrada.devDependencies,
-      entrada.optionalDependencies,
-      entrada.peerDependencies,
-    ];
-    for (const [pasta, faixa] of mapas.flatMap((mapa) => Object.entries(mapa ?? {}))) {
-      if (typeof faixa !== "string" || !faixa.startsWith("npm:")) continue;
-      const alvo = faixa.slice("npm:".length);
-      const arroba = alvo.lastIndexOf("@");
-      apelidos.add(`${pasta}\0${arroba > 0 ? alvo.slice(0, arroba) : alvo}`);
-    }
+function apelidosConfiaveis({ base, apelidosPermitidos = {} }: Confianca): Set<string> {
+  const apelidos = new Set(Object.entries(apelidosPermitidos).map(([pasta, nome]) => `${pasta}\0${nome}`));
+  for (const [chave, entrada] of Object.entries(base?.packages ?? {})) {
+    const pasta = nomeDaChave(chave);
+    if (pasta && entrada.name && entrada.name !== pasta) apelidos.add(`${pasta}\0${entrada.name}`);
   }
   return apelidos;
 }
@@ -153,13 +151,13 @@ function tarballNoRegistro(nome: string, versao: string): string {
   return `${REGISTRO_DO_NPM}${nome}/-/${semEscopo}-${versao}.tgz`;
 }
 
-export function problemasDoLock(lock: Lockfile): string[] {
+export function problemasDoLock(lock: Lockfile, confianca: Confianca = {}): string[] {
   // O lockfile vem de fora (de um PR): os tipos não garantem a forma dele.
   const pacotes = lock.packages as Lockfile["packages"] | undefined;
   if (!pacotes) return ['lockfile sem "packages"'];
   if (lock.lockfileVersion !== 3) return [`lockfileVersion ${String(lock.lockfileVersion)}: só o formato 3 é aceito`];
   const workspaces = new Set(pacotes[""]?.workspaces ?? []);
-  const apelidos = apelidosDeclarados(pacotes);
+  const apelidos = apelidosConfiaveis(confianca);
 
   const problemas: string[] = [];
   for (const [chave, entrada] of Object.entries(pacotes)) {
@@ -184,7 +182,7 @@ export function problemasDoLock(lock: Lockfile): string[] {
     const nome = entrada.name ?? pasta;
     if (!ehNomeDoNpm(nome)) problemas.push(`${chave}: name fora das regras do npm: ${JSON.stringify(nome)}`);
     else if (nome !== pasta && !apelidos.has(`${pasta}\0${nome}`)) {
-      problemas.push(`${chave}: name "${nome}" diferente da pasta, e nenhum pacote declara npm:${nome}@`);
+      problemas.push(`${chave}: name "${nome}" diferente da pasta, e o apelido não está na base nem em allowAliases`);
     }
     const esperado = tarballNoRegistro(nome, entrada.version ?? "");
     if (!entrada.resolved?.startsWith(REGISTRO_DO_NPM)) problemas.push(`${chave}: não vem do registro do npm`);
