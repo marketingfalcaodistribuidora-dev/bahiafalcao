@@ -185,7 +185,10 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
       - passaram de primeira os dois testes positivos da pilha (caso comum e erro sem mensagem), que caracterizam um comportamento existente sem teste;
       - o teste da conexão nova no desligamento voltou à lista exata de saídas;
     - a branch foi enviada ao GitHub em 24/11/2026 (o CI roda no pull request);
-    - falta: a rodada 5 do review-gate e a proteção da `main` (D19). A proteção precisa do responsável: o `gh` não está instalado, e o uso da credencial guardada pelo Git foi bloqueado pelas permissões do Claude Code.
+    - **rodada 5 do review-gate:** desempenho, qualidade e backend APROVADO; segurança REPROVADO (1 Alto: uma entrada `link` no lockfile punha o código de outro pacote na pasta, provado com o npm 11.20.0). Corrigidos o Alto, o Médio (quebra de linha dentro de aspas na CA7.6) e os Baixos, um commit por achado:
+      - vistos vermelhos antes: link só para workspace 5, `allowAliases` com valor que não é texto 1, CA7.6 10 (quebra de linha em aspas 3, `Write` 1, `Actions/checkout` 1, `persist-credentials` no próprio passo 2, e 3 testes antigos que passaram a esperar a linha na mensagem);
+      - o check-lock destaca "APELIDO NOVO" para cada apelido aceito só pelo `allowAliases`;
+    - falta: a rodada 6 do review-gate e a proteção da `main` (D19). A proteção precisa do responsável: o `gh` não está instalado, e o uso da credencial guardada pelo Git foi bloqueado pelas permissões do Claude Code.
 
 ## Adiado para a fase que usa
 
@@ -198,6 +201,8 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
 | Semgrep, SBOM e gitleaks do histórico no CI | parte do CA7.3 | Fase 7 (endurecimento) | O gitleaks no commit e no CI, o audit e as assinaturas já cobrem o principal agora |
 | Senha na página do Mailpit | — | Antes da Fase 1 | As mensagens com links de convite e de senha começam na Fase 1 |
 | CODEOWNERS em `.github/**`, `api/scripts/**`, `.npmrc` e `package.json`, e checks obrigatórios na `main` | CA7.6, D19 | Com a proteção da `main` (depende do responsável) | Hoje um PR pode mudar o próprio portão (`check-lock.ts`, `ci.yml`); a proteção da `main` com revisão obrigatória fecha isso (review-gate, rodada 2) |
+| Pilha de erro cuja mensagem foi encurtada depois de lida e que trazia uma linha falsa no formato `at x (arquivo:1:2)` | — | Quando houver caso real | Cenário improvável (review-gate, rodada 5, backend). Fechar de vez exigiria trocar a montagem da pilha do Node (`Error.prepareStackTrace`) em toda a API |
+| `allowAliases` e o próprio check-lock podem ser mudados no mesmo PR | CA7.1, D19 | Com a proteção da `main` (D19) e um CODEOWNERS | O check-lock destaca o apelido novo para quem revisa, mas só a revisão obrigatória na `main` barra um PR mal-intencionado (review-gate, rodada 5) |
 | Importação de planilha e imagens fora do ciclo da requisição | — | Fases da importação e das imagens | O desligamento força a saída em 8 s e o `requestTimeout` é de 30 s: trabalho longo dentro da requisição seria cortado (review-gate, rodada 2) |
 
 ## Verificação

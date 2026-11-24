@@ -352,3 +352,12 @@ A quarta rodada aprovou em desempenho, qualidade e backend, e reprovou em segura
 | `bundleDependencies: true` aceito, mas o npm só entende lista | `true` conta como "não empacota"; entrada em bundle com `name` trocado é recusada |
 | Teste de desligamento que aceitava qualquer saída menos 2xx | Lista exata: `ECONNREFUSED`, `ECONNRESET`, `UND_ERR_SOCKET` ou 503 |
 
+A quinta rodada aprovou em desempenho, qualidade e backend, e reprovou em segurança por um caminho novo para a mesma troca de pacote: o link. Correções, um commit por achado:
+
+| Achado | Correção |
+|---|---|
+| Alto: o check-lock pulava toda entrada `link`; com duas linhas no lockfile, o `npm ci` punha o código de outro pacote na pasta | Um link só vale do jeito que o npm cria para os workspaces: em `node_modules/<nome>`, na raiz, apontando para a pasta de um workspace declarado cujo `name` é `<nome>`, sem outros campos |
+| Dentro de aspas duplas, uma barra invertida no fim da linha juntava duas linhas e escondia `write` ou um gatilho proibido | Barra invertida dentro de aspas duplas e texto entre aspas em várias linhas são recusados |
+| `persist-credentials: false` conferido por contagem (valia em outro passo ou num bloco `run`) | Precisa estar no passo do próprio checkout, reconhecido com qualquer caixa |
+| `allowAliases` aceitava valor que não é texto; `Write` com maiúscula passava | Só pares de nomes do npm em texto; a escrita é procurada sem diferenciar maiúsculas. O check-lock destaca cada apelido novo vindo da lista |
+
