@@ -188,7 +188,10 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
     - **rodada 5 do review-gate:** desempenho, qualidade e backend APROVADO; segurança REPROVADO (1 Alto: uma entrada `link` no lockfile punha o código de outro pacote na pasta, provado com o npm 11.20.0). Corrigidos o Alto, o Médio (quebra de linha dentro de aspas na CA7.6) e os Baixos, um commit por achado:
       - vistos vermelhos antes: link só para workspace 5, `allowAliases` com valor que não é texto 1, CA7.6 10 (quebra de linha em aspas 3, `Write` 1, `Actions/checkout` 1, `persist-credentials` no próprio passo 2, e 3 testes antigos que passaram a esperar a linha na mensagem);
       - o check-lock destaca "APELIDO NOVO" para cada apelido aceito só pelo `allowAliases`;
-    - falta: a rodada 6 do review-gate e a proteção da `main` (D19). A proteção precisa do responsável: o `gh` não está instalado, e o uso da credencial guardada pelo Git foi bloqueado pelas permissões do Claude Code.
+    - **rodada 6 do review-gate: os quatro revisores APROVARAM, sem Crítico nem Alto.** Corrigidos o Médio e os Baixos baratos, um commit por achado:
+      - vistos vermelhos antes: workspaces vindos do `package.json` da raiz 5 (o lockfile declarava uma pasta qualquer, inclusive fora do repositório), aviso de apelido novo 3, escape com a lista exata 1, checkout fora de um passo 1;
+      - o CI rodou pela primeira vez no pull request #1 (rascunho) e os três jobs passaram (segurança, qualidade e API);
+    - falta: a proteção da `main` (D19). A proteção precisa do responsável: o `gh` não está instalado, e o uso da credencial guardada pelo Git foi bloqueado pelas permissões do Claude Code.
 
 ## Adiado para a fase que usa
 
@@ -202,6 +205,9 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
 | Senha na página do Mailpit | — | Antes da Fase 1 | As mensagens com links de convite e de senha começam na Fase 1 |
 | CODEOWNERS em `.github/**`, `api/scripts/**`, `.npmrc` e `package.json`, e checks obrigatórios na `main` | CA7.6, D19 | Com a proteção da `main` (depende do responsável) | Hoje um PR pode mudar o próprio portão (`check-lock.ts`, `ci.yml`); a proteção da `main` com revisão obrigatória fecha isso (review-gate, rodada 2) |
 | Pilha de erro cuja mensagem foi encurtada depois de lida e que trazia uma linha falsa no formato `at x (arquivo:1:2)` | — | Quando houver caso real | Cenário improvável (review-gate, rodada 5, backend). Fechar de vez exigiria trocar a montagem da pilha do Node (`Error.prepareStackTrace`) em toda a API |
+| `persist-credentials: false` aceito em qualquer linha recuada do passo do checkout (`env:`, bloco literal de outro input), e não só como filho direto de `with:` | CA7.6 | Com a D19 | Baixo (review-gate, rodada 6): o `GITHUB_TOKEN` é só de leitura, e qualquer `write` é recusado. A revisão obrigatória da `main` cobre o resto |
+| Quadros da pilha sem posição no código (`at new Promise (<anonymous>)`) saem do log | — | Quando alguém sentir falta | Aceito de propósito (review-gate, rodadas 5 e 6): só reduz um pouco o diagnóstico e não afeta a segurança |
+| O `package-lock.json` não entra num CODEOWNERS | D19 | Com a proteção da `main` | A D19 sozinha não cobre um diff de lockfile que ninguém lê; o check-lock cobre a troca de pacote, e o CODEOWNERS deve incluir `package-lock.json`, `package.json`, `.github/` e `api/scripts/` |
 | `allowAliases` e o próprio check-lock podem ser mudados no mesmo PR | CA7.1, D19 | Com a proteção da `main` (D19) e um CODEOWNERS | O check-lock destaca o apelido novo para quem revisa, mas só a revisão obrigatória na `main` barra um PR mal-intencionado (review-gate, rodada 5) |
 | Importação de planilha e imagens fora do ciclo da requisição | — | Fases da importação e das imagens | O desligamento força a saída em 8 s e o `requestTimeout` é de 30 s: trabalho longo dentro da requisição seria cortado (review-gate, rodada 2) |
 

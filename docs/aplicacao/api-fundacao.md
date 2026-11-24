@@ -361,3 +361,11 @@ A quinta rodada aprovou em desempenho, qualidade e backend, e reprovou em segura
 | `persist-credentials: false` conferido por contagem (valia em outro passo ou num bloco `run`) | Precisa estar no passo do próprio checkout, reconhecido com qualquer caixa |
 | `allowAliases` aceitava valor que não é texto; `Write` com maiúscula passava | Só pares de nomes do npm em texto; a escrita é procurada sem diferenciar maiúsculas. O check-lock destaca cada apelido novo vindo da lista |
 
+A sexta rodada foi **aprovada pelos quatro revisores**, sem Crítico nem Alto. Foram corrigidos o Médio e os Baixos baratos:
+
+| Achado | Correção |
+|---|---|
+| Médio: a lista de workspaces que autoriza um link vinha do próprio lockfile; bastava acrescentar uma pasta (até fora do repositório) e apontar um link para ela | Vale a lista do `package.json` da raiz, que o npm usa; o lockfile precisa declarar a mesma, e pasta absoluta, com `..`, `\` ou `:` é recusada |
+| O aviso de apelido novo ficava sem teste e só no log | Virou a função pura `apelidosNovosDaLista`, testada, e sai também como `::warning::` na aba do PR |
+| Checkout fora de um passo da lista; `-` sozinho na linha | Recusados |
+
