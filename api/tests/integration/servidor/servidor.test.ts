@@ -95,6 +95,9 @@ describe("porta ocupada (sem CA próprio: achado do review-gate da fundação)",
 });
 
 describe("desligamento gracioso (CA1.4)", () => {
+  /** O que uma conexão nova pode receber durante o desligamento (nunca uma resposta normal). */
+  const SAIDAS_DO_DESLIGAMENTO = ["ECONNREFUSED", "ECONNRESET", "UND_ERR_SOCKET", "atendida com 503"];
+
   /** Sobe o servidor com uma rota que avisa quando chegou e só responde quando o teste libera. */
   async function servidorComRotaPresa() {
     let avisarChegada: () => void = () => undefined;
@@ -137,7 +140,7 @@ describe("desligamento gracioso (CA1.4)", () => {
     const encerrando = servidor.encerrar();
     try {
       // A conexão nova recusada mostra que o desligamento já começou; o banco segue aberto.
-      expect(await conexaoNovaRecusada(servidor.endereco)).not.toMatch(/^atendida com 2/);
+      expect(SAIDAS_DO_DESLIGAMENTO).toContain(await conexaoNovaRecusada(servidor.endereco));
       expect(servidor.banco.pools.publico.ended).toBe(false);
     } finally {
       liberar();
@@ -165,6 +168,6 @@ describe("desligamento gracioso (CA1.4)", () => {
       await encerrando;
     }
 
-    expect(resultado).not.toMatch(/^atendida com 2/);
+    expect(SAIDAS_DO_DESLIGAMENTO).toContain(resultado);
   });
 });
