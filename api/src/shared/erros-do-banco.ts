@@ -43,6 +43,12 @@ const comoObjeto = (valor: unknown): Record<string, unknown> =>
 /** A causa informada pelo adaptador do PostgreSQL, quando há. */
 const causaDoAdaptador = (meta: unknown) => comoObjeto(comoObjeto(comoObjeto(meta)["driverAdapterError"])["cause"]);
 
+/** O código do PostgreSQL (SQLSTATE, ex.: 42P01) de um erro do Prisma, quando há. Não é sensível. */
+export function codigoDoPostgres(erro: unknown): string | undefined {
+  const codigo = causaDoAdaptador(comoObjeto(erro)["meta"])["originalCode"];
+  return typeof codigo === "string" ? codigo : undefined;
+}
+
 const somenteTextos = (valor: unknown): string[] =>
   Array.isArray(valor) ? valor.filter((item): item is string => typeof item === "string") : [];
 

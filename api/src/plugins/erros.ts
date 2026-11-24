@@ -12,7 +12,7 @@ import {
   ErroNaoEncontrado,
   ErroTipoNaoSuportado,
 } from "../shared/erros.js";
-import { traduzirErroDoBanco } from "../shared/erros-do-banco.js";
+import { codigoDoPostgres, traduzirErroDoBanco } from "../shared/erros-do-banco.js";
 
 const MENSAGEM_DO_ERRO_INTERNO = "Algo deu errado do nosso lado. Tente de novo em instantes.";
 
@@ -74,12 +74,10 @@ function pilhaSemMensagem(erro: Error): { pilha: string } | { pilhaDescartada: t
 
 /** Os códigos do erro, que não são sensíveis e ajudam no diagnóstico (ex.: P2010 e 42P01). */
 function codigosDoErro(erro: FastifyError): { codigo?: string; codigoDoBanco?: string } {
-  const meta: unknown = (erro as { meta?: unknown }).meta;
-  const causa: unknown = (meta as { driverAdapterError?: { cause?: { originalCode?: unknown } } } | undefined)
-    ?.driverAdapterError?.cause?.originalCode;
+  const doBanco = codigoDoPostgres(erro);
   return {
     ...(typeof erro.code === "string" && { codigo: erro.code }),
-    ...(typeof causa === "string" && { codigoDoBanco: causa }),
+    ...(doBanco !== undefined && { codigoDoBanco: doBanco }),
   };
 }
 
