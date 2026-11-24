@@ -67,6 +67,26 @@ function apelidosConfiaveis({ base, apelidosPermitidos = {} }: Confianca): Set<s
   return apelidos;
 }
 
+/**
+ * Para quem revisa o PR: os apelidos da lista allowAliases que estão em uso no lockfile novo e que
+ * não estavam no da base ("pasta -> nome"). Só aceitos pela lista, merecem um olhar.
+ */
+export function apelidosNovosDaLista(
+  base: Lockfile | undefined,
+  novo: Lockfile,
+  lista: Record<string, string>,
+): string[] {
+  const daBase = apelidosDaBase(base);
+  return Object.entries(lista)
+    .filter(([pasta, nome]) => {
+      const emUso = Object.entries(novo.packages).some(
+        ([chave, entrada]) => chave.endsWith(`node_modules/${pasta}`) && entrada.name === nome,
+      );
+      return emUso && !daBase.has(`${pasta}\0${nome}`);
+    })
+    .map(([pasta, nome]) => `${pasta} -> ${nome}`);
+}
+
 /** Os apelidos que já estavam no lockfile da base, como "pasta\0nome". */
 export function apelidosDaBase(base: Lockfile | undefined): Set<string> {
   const apelidos = new Set<string>();

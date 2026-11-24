@@ -92,9 +92,10 @@ describe("problemasDoWorkflow", () => {
   it("recusa escape de caractere (\\u ou \\x), que esconderia um nome proibido", () => {
     const comEscape = certo.replace("  push:", '  "workflow\\u005frun":');
 
-    expect(problemasDoWorkflow("ci.yml", comEscape)).toContain(
+    expect(problemasDoWorkflow("ci.yml", comEscape)).toEqual([
       'ci.yml:2: escape de caractere proibido: "workflow\\u005frun":',
-    );
+      'ci.yml:2: barra invertida dentro de aspas: "workflow\\u005frun":',
+    ]);
   });
 
   // Rodada 4: formatos válidos de YAML que escapavam das regras linha a linha. Agora a regra é
@@ -202,6 +203,12 @@ describe("problemasDoWorkflow", () => {
       .replace("      - run: npm ci", "      - run: |\n          persist-credentials: false");
 
     expect(problemasDoWorkflow("ci.yml", noRun)).toEqual(["ci.yml:9: checkout sem persist-credentials: false"]);
+  });
+
+  it("recusa um checkout que não está dentro de um passo da lista", () => {
+    const solto = "permissions:\n  contents: read\njobs:\n  a:\n    steps:\n      uses: actions/checkout@" + SHA + "\n";
+
+    expect(problemasDoWorkflow("ci.yml", solto)).toContainEqual("ci.yml:6: checkout fora de um passo da lista");
   });
 
   it("aceita comentário que só cita a escrita ou um gatilho proibido", () => {

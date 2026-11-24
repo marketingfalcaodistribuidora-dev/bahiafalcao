@@ -9,7 +9,7 @@
 // Saída: a lista do que foi conferido e, se algo falhar, código 1 com os motivos.
 import { readFileSync } from "node:fs";
 import {
-  apelidosDaBase,
+  apelidosNovosDaLista,
   avaliarPacote,
   pacotesNovosOuAlterados,
   problemasDoLock,
@@ -49,13 +49,10 @@ if (problemas.length) {
 }
 
 // Destaque para quem revisa: apelido aceito só pela lista allowAliases, que não estava na base.
-const daBase = apelidosDaBase(base);
-for (const [pasta, nome] of Object.entries(raiz.allowAliases ?? {})) {
-  const usado = Object.entries(novo.packages).some(
-    ([chave, entrada]) => chave.endsWith(`node_modules/${pasta}`) && entrada.name === nome,
-  );
-  if (usado && !daBase.has(`${pasta}\0${nome}`))
-    console.log(`aviso    APELIDO NOVO pela lista allowAliases: ${pasta} -> ${nome}`);
+// O "::warning::" aparece na aba do PR; o texto simples fica no log do job.
+for (const apelido of apelidosNovosDaLista(base, novo, raiz.allowAliases ?? {})) {
+  console.log(`aviso    APELIDO NOVO pela lista allowAliases: ${apelido}`);
+  console.log(`::warning title=Apelido novo no check-lock::${apelido} só vale pela lista allowAliases`);
 }
 
 const pacotes = pacotesNovosOuAlterados(base, novo);

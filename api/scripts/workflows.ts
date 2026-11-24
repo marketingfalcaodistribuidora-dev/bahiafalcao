@@ -69,9 +69,13 @@ function partes(linha: string): Linha {
 const recuo = (linha: string) => linha.length - linha.trimStart().length;
 
 /** As linhas do passo (item de lista "- ...") que contém a linha `indice`: [início, fim). */
-function passoDe(linhas: string[], indice: number): [number, number] {
+function passoDe(linhas: string[], indice: number): [number, number] | null {
+  // O "-" pode estar sozinho na linha (o passo começa na linha de baixo).
+  const ehItem = (linha: string | undefined) => /^\s*-(\s|$)/.test(linha ?? "");
   let inicio = indice;
-  while (inicio > 0 && !/^\s*-\s/.test(linhas[inicio] ?? "")) inicio--;
+  while (inicio > 0 && !ehItem(linhas[inicio])) inicio--;
+  // Sem item de lista acima, o "passo" seria o arquivo inteiro: recusado pelo chamador.
+  if (!ehItem(linhas[inicio])) return null;
   const recuoDoItem = (linhas[inicio] ?? "").indexOf("-");
   let fim = inicio + 1;
   while (fim < linhas.length) {
@@ -114,7 +118,12 @@ export function problemasDoWorkflow(nome: string, conteudo: string): string[] {
   }
   // Cada checkout precisa da guarda no PRÓPRIO passo (um passo não tem uses e run ao mesmo tempo).
   for (const indice of checkouts) {
-    const [inicio, fim] = passoDe(semComentario, indice);
+    const passo = passoDe(semComentario, indice);
+    if (!passo) {
+      problemas.push(`${nome}:${String(indice + 1)}: checkout fora de um passo da lista`);
+      continue;
+    }
+    const [inicio, fim] = passo;
     if (!semComentario.slice(inicio, fim).some((linha) => SEM_CREDENCIAIS.test(linha))) {
       problemas.push(`${nome}:${String(indice + 1)}: checkout sem persist-credentials: false`);
     }

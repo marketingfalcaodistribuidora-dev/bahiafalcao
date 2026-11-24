@@ -5,6 +5,7 @@
 // registro do npm, com integridade sha512 (plano §9; achado Alto do review-gate da fundação).
 import { describe, expect, it } from "vitest";
 import {
+  apelidosNovosDaLista,
   avaliarPacote,
   pacotesNovosOuAlterados,
   problemasDoLock,
@@ -476,6 +477,33 @@ describe("pacotesNovosOuAlterados", () => {
     });
 
     expect(pacotesNovosOuAlterados(lock({}), novo)).toEqual([]);
+  });
+});
+
+describe("apelidosNovosDaLista (destaque para quem revisa o PR)", () => {
+  const apelido = {
+    name: "string-width",
+    version: "4.2.3",
+    resolved: `${REGISTRO}/string-width/-/string-width-4.2.3.tgz`,
+    integrity: INTEGRIDADE,
+  };
+  const lista = { "string-width-cjs": "string-width" };
+
+  it("aponta o apelido que está em uso e só na lista, não na base", () => {
+    const novo = lock({ "node_modules/string-width-cjs": apelido });
+
+    expect(apelidosNovosDaLista(lock({}), novo, lista)).toEqual(["string-width-cjs -> string-width"]);
+  });
+
+  it("não aponta o apelido que já estava na base", () => {
+    const novo = lock({ "node_modules/string-width-cjs": apelido });
+    const base = lock({ "node_modules/string-width-cjs": apelido });
+
+    expect(apelidosNovosDaLista(base, novo, lista)).toEqual([]);
+  });
+
+  it("não aponta o apelido da lista que nenhuma entrada usa", () => {
+    expect(apelidosNovosDaLista(lock({}), lock({}), lista)).toEqual([]);
   });
 });
 
