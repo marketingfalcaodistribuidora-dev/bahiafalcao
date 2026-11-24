@@ -43,7 +43,7 @@ frontend/src/
 
 ## Testes e especificação
 
-- Lógica e comportamento interativo (menus, formulários, helpers, cálculos) seguem **TDD** com a skill `/tdd`: teste falhando antes do código. Testes ao lado do componente (`Componente.test.tsx`), usando Testing Library pela visão do usuário.
+- Lógica e comportamento interativo (menus, formulários, helpers, cálculos) seguem **TDD** com a skill `/tdd-cycle`: teste falhando antes do código. Testes ao lado do componente (`Componente.test.tsx`), usando Testing Library pela visão do usuário.
 - Se a tarefa vier de uma spec em `specs/NNN-*/`, siga o `tasks.md` na ordem e não desvie da spec sem atualizá-la.
 
 ## Ao terminar

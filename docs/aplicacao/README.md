@@ -4,5 +4,6 @@ Cada documento explica **o que** existe, **como** funciona e **por que** foi fei
 
 | Documento | Assunto |
 |---|---|
+| [api-fundacao.md](./api-fundacao.md) | API do catálogo: projeto, ferramentas, testes e proteções da cadeia de suprimentos |
 | [medicao-google.md](./medicao-google.md) | Site público: tag do Google com consentimento de cookies (LGPD) |
 | [site-indexacao.md](./site-indexacao.md) | Site público: domínios, redirecionamentos e as URLs antigas do Joomla (410) |

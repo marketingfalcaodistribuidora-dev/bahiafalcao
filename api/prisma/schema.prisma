@@ -1,0 +1,14 @@
+// Esquema do banco da API do catálogo (spec 000, T007; skill prisma-migration).
+// Na Fase 0 não há tabelas: só as extensões e a f_unaccent (migration 20261123180000_extensoes).
+// As tabelas entram a partir da Fase 1, cada uma pela skill prisma-migration.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}

@@ -30,7 +30,7 @@ Execute cada bloco e marque ✅, ⚠️ ou ❌. Não publique nada por conta pr�
 - [ ] Prévia de compartilhamento ok (teste o link no WhatsApp ou em https://www.opengraph.xyz).
 
 ## 5. Segurança
-- [ ] Peça ao agente **security-auditor** a auditoria, sem achados Críticos ou Altos abertos.
+- [ ] Peça ao agente **security-reviewer** a auditoria, sem achados Críticos ou Altos abertos.
 - [ ] HTTPS ativo e redirecionamento de `http` e de `www`/sem `www` para a URL canônica.
 
 ## 6. Depois de publicar (orientar o usuário)

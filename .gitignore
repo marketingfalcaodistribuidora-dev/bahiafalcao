@@ -27,3 +27,6 @@ next-env.d.ts
 npm-debug.log*
 .DS_Store
 Thumbs.db
+
+# Cliente do Prisma (gerado na instalação: npm run db:gerar -w api)
+api/src/generated/

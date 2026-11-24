@@ -1,5 +1,11 @@
-# Portão de qualidade: roda em máquina limpa a cada push e pull request.
-# Na Vercel, configure "Deployment Checks" para exigir este check antes de publicar em produção.
+# Portão de qualidade e segurança: roda em máquina limpa a cada push e pull request.
+# Na Vercel, configure "Deployment Checks" para exigir estes checks antes de publicar em produção.
+#
+# - Actions fixadas pelo SHA do commit (a tag só ajuda a ler): uma tag pode passar a apontar para
+#   outro código sem ninguém ver. Para atualizar, passe a versão nova pelo protocolo (7 dias).
+# - Permissão mínima (só leitura) e checkout sem guardar credenciais.
+# - O job "seguranca" roda primeiro; os outros só rodam se ele passar, para nenhum pacote novo
+#   ainda não conferido executar código nos testes ou no build.
 name: CI
 
 on:
@@ -7,21 +13,88 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  qualidade:
-    name: Qualidade (formatação, lint, tipos, testes, build)
+  seguranca:
+    name: Segurança (cadeia de suprimentos e segredos)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v5
+      # actions/checkout v7.0.1 (20/07/2026). Histórico inteiro: o gitleaks varre todos os commits.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          node-version: 24
+          fetch-depth: 0
+          persist-credentials: false
+
+      # actions/setup-node v7.1.0 (08/10/2026). Node do .nvmrc (26.13.1, com npm 11.20.0).
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Proteções da esteira (npm, .npmrc, versões exatas, flags proibidas)
+        run: bash api/scripts/conferir-esteira.sh
+
+      # ANTES do npm ci, com o node puro (que executa TypeScript): o lockfile inteiro é conferido
+      # sem rede (registro do npm, integridade sha512, versão) e cada pacote novo ou alterado
+      # passa pelo protocolo (idade, OSV, origem e scripts). O npm ci não confere a idade.
+      - name: Dependências novas ou alteradas no lockfile (check-lock)
+        env:
+          EVENTO: ${{ github.event_name }}
+          RAMO_BASE: ${{ github.base_ref }}
+          ANTES: ${{ github.event.before }}
+        run: |
+          if [ "$EVENTO" = "pull_request" ]; then base="origin/$RAMO_BASE"; else base="$ANTES"; fi
+          if git cat-file -e "$base^{commit}" 2>/dev/null; then
+            git show "$base:package-lock.json" > "$RUNNER_TEMP/lock-base.json"
+          else
+            echo "check-lock: sem commit de base; confere o lockfile inteiro."
+            echo '{"packages":{}}' > "$RUNNER_TEMP/lock-base.json"
+          fi
+          node api/scripts/check-lock.ts "$RUNNER_TEMP/lock-base.json" package-lock.json
+
+      # O .npmrc (strict-allow-scripts) só deixa rodar os scripts de instalação liberados.
+      - name: Instalar dependências (lockfile exato)
+        run: npm ci
+
+      - name: Vulnerabilidades altas ou críticas (npm audit)
+        run: npm audit --audit-level=high
+
+      - name: Assinaturas e proveniência dos pacotes
+        run: npm audit signatures
+
+      # gitleaks 8.30.1 (21/03/2026), baixado e conferido pelo SHA-256 antes de rodar.
+      - name: Segredos no histórico (gitleaks)
+        env:
+          GITLEAKS_VERSAO: "8.30.1"
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          arquivo="gitleaks_${GITLEAKS_VERSAO}_linux_x64.tar.gz"
+          curl -fsSL -o "$RUNNER_TEMP/$arquivo" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSAO}/${arquivo}"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/$arquivo" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/$arquivo" -C "$RUNNER_TEMP" gitleaks
+          "$RUNNER_TEMP/gitleaks" git --no-banner --redact
+
+  qualidade:
+    name: Qualidade (formatação, lint, tipos, testes e build do site e da API)
+    needs: seguranca
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Instalar dependências (lockfile exato)
@@ -38,3 +111,25 @@ jobs:
           NEXT_TELEMETRY_DISABLED: 1
           NEXT_PUBLIC_VERCEL_ENV: production
           NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL: bahiafalcao.vercel.app
+
+  api:
+    name: API (testes com cobertura)
+    needs: seguranca
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependências (lockfile exato)
+        run: npm ci
+
+      # Cobertura mínima de 90% em src/modules, src/plugins e src/shared (falha abaixo disso).
+      - name: Testes com cobertura
+        run: npm run test:coverage -w api

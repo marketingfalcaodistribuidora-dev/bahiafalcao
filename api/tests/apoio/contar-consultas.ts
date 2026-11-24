@@ -1,0 +1,24 @@
+// Conta as consultas feitas ao banco (spec 000, CA8.3): base dos testes de N+1 das fases
+// seguintes ("a lista de 24 produtos faz no máximo 3 consultas"). Soma os dois clientes.
+// O banco precisa ter sido criado com registrarConsultas: true.
+import type { Banco } from "../../src/shared/banco.js";
+
+interface ClienteComEventos {
+  $on(evento: "query", ouvinte: () => void): void;
+}
+
+/** `zerar()` recomeça a contagem: prepare os dados, zere e meça só a requisição do teste. */
+export function contarConsultas(banco: Banco): { total(): number; zerar(): void } {
+  let total = 0;
+  for (const cliente of [banco.publico, banco.administracao]) {
+    (cliente as unknown as ClienteComEventos).$on("query", () => {
+      total++;
+    });
+  }
+  return {
+    total: () => total,
+    zerar: () => {
+      total = 0;
+    },
+  };
+}

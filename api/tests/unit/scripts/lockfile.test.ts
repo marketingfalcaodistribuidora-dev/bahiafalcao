@@ -1,0 +1,611 @@
+// Regras do check-lock (spec 000, CA7.1; plano §8 e §9): pacotes novos ou alterados num
+// lockfile passam pelo mesmo protocolo dos diretos: idade mínima de 7 dias, sem falha alta ou
+// crítica na OSV (moderada vira aviso), vindos do registro do npm e sem script de instalação
+// fora do allowScripts. Antes disso, o lockfile inteiro é conferido sem rede: tudo vem do
+// registro do npm, com integridade sha512 (plano §9; achado Alto do review-gate da fundação).
+import { describe, expect, it } from "vitest";
+import {
+  apelidosNovosDaLista,
+  avaliarPacote,
+  pacotesNovosOuAlterados,
+  problemasDoLock,
+  type InfoDoPacote,
+  type Lockfile,
+} from "../../../scripts/lockfile.js";
+
+const REGISTRO = "https://registry.npmjs.org";
+const AGORA = new Date("2026-11-23T12:00:00Z");
+
+const INTEGRIDADE = "sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
+const OUTRA_INTEGRIDADE =
+  "sha512-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB==";
+
+const lock = (pacotes: Lockfile["packages"]): Lockfile => ({
+  lockfileVersion: 3,
+  packages: { "": { name: "raiz", workspaces: ["api"] }, ...pacotes },
+});
+
+describe("problemasDoLock (conferência do lockfile inteiro, sem rede)", () => {
+  // Link (rodada 5): o npm segue um link do lockfile e põe o código do alvo na pasta. Só vale
+  // apontar para um workspace do repositório, com a pasta igual ao nome dele.
+  describe("links", () => {
+    const workspace = { name: "@falcao/api", version: "0.1.0" };
+    const evil = {
+      version: "2.1.3",
+      resolved: `${REGISTRO}/evil-pkg/-/evil-pkg-2.1.3.tgz`,
+      integrity: INTEGRIDADE,
+    };
+
+    it("aceita o link do workspace, com a pasta igual ao nome dele", () => {
+      const certo = lock({ api: workspace, "node_modules/@falcao/api": { resolved: "api", link: true } });
+
+      expect(problemasDoLock(certo)).toEqual([]);
+    });
+
+    // Rodada 6: a lista de workspaces do próprio lockfile também vem de fora. Vale a do
+    // package.json da raiz, que o npm de fato usa.
+    it.each([
+      ["uma pasta do repositório", "evil"],
+      ["uma pasta fora do repositório", "../fora"],
+      ["um caminho absoluto", "C:/x"],
+    ])("recusa o link para %s declarada como workspace só no lockfile", (_caso, pasta) => {
+      const forjado = {
+        lockfileVersion: 3,
+        packages: {
+          "": { name: "raiz", workspaces: ["api", pasta] },
+          api: workspace,
+          [pasta]: { name: "fastify", version: "5.0.0" },
+          "node_modules/@falcao/api": { resolved: "api", link: true },
+          "node_modules/fastify": { resolved: pasta, link: true },
+        },
+      };
+
+      const problemas = problemasDoLock(forjado, { workspacesDaRaiz: ["api"] });
+
+      expect(problemas).toContain(`${pasta}: fora de node_modules e não é um workspace declarado`);
+      expect(problemas).toContain("node_modules/fastify: link que não aponta para um workspace do repositório");
+    });
+
+    it("recusa o lockfile cuja lista de workspaces difere a do package.json da raiz", () => {
+      const diferente = lock({ api: workspace, "node_modules/@falcao/api": { resolved: "api", link: true } });
+
+      expect(problemasDoLock(diferente, { workspacesDaRaiz: ["api", "frontend"] })).toContain(
+        'o lockfile declara os workspaces ["api"], mas o package.json da raiz declara ["api","frontend"]',
+      );
+    });
+
+    it("recusa workspace com caminho absoluto ou que sai do repositório", () => {
+      const fora = {
+        lockfileVersion: 3,
+        packages: { "": { name: "raiz", workspaces: ["../fora"] }, "../fora": { name: "x", version: "1.0.0" } },
+      };
+
+      expect(problemasDoLock(fora, { workspacesDaRaiz: ["../fora"] })).toContain(
+        "../fora: pasta de workspace fora do repositório ou com caminho inválido",
+      );
+    });
+
+    it.each([
+      ["para outro pacote de node_modules", "node_modules/ms", "node_modules/evil-pkg"],
+      ["aninhado, para outro pacote", "node_modules/a/node_modules/ms", "node_modules/evil-pkg"],
+      ["para o workspace, mas noutra pasta", "node_modules/ms", "api"],
+      ["para uma pasta que não é workspace", "node_modules/ms", "outra-pasta"],
+      ["para fora do repositório", "node_modules/ms", "../fora"],
+    ])("recusa o link %s", (_caso, chave, alvo) => {
+      const trocado = lock({
+        api: workspace,
+        "node_modules/evil-pkg": evil,
+        [chave]: { resolved: alvo, link: true },
+      });
+
+      expect(problemasDoLock(trocado)).toContain(`${chave}: link que não aponta para um workspace do repositório`);
+    });
+  });
+
+  it("aceita um lockfile em que tudo vem do registro do npm com integridade sha512", () => {
+    const tudoCerto = lock({
+      api: { name: "@falcao/api", version: "0.1.0" },
+      "node_modules/@falcao/api": { resolved: "api", link: true },
+      "node_modules/zod": { version: "4.6.7", resolved: `${REGISTRO}/zod/-/zod-4.6.7.tgz`, integrity: INTEGRIDADE },
+      "node_modules/npm": {
+        version: "11.20.0",
+        resolved: `${REGISTRO}/npm/-/npm-11.20.0.tgz`,
+        integrity: INTEGRIDADE,
+        bundleDependencies: ["abbrev"],
+      },
+      "node_modules/npm/node_modules/abbrev": { version: "3.0.1", inBundle: true },
+    });
+
+    expect(problemasDoLock(tudoCerto)).toEqual([]);
+  });
+
+  it("recusa pacote que vem de fora do registro do npm, mesmo que não seja novo", () => {
+    const deFora = lock({
+      "node_modules/zod": { version: "4.6.7", resolved: "https://exemplo.com/zod-4.6.7.tgz", integrity: INTEGRIDADE },
+    });
+
+    expect(problemasDoLock(deFora)).toEqual(["node_modules/zod: não vem do registro do npm"]);
+  });
+
+  it("recusa o tarball de OUTRO pacote do próprio registro, mesmo com a integridade verdadeira dele", () => {
+    const trocado = lock({
+      "node_modules/zod": {
+        version: "4.6.7",
+        resolved: `${REGISTRO}/is-number/-/is-number-7.0.0.tgz`,
+        integrity: INTEGRIDADE,
+      },
+    });
+
+    expect(problemasDoLock(trocado)).toEqual([
+      `node_modules/zod: aponta para outro tarball (o de zod@4.6.7 é ${REGISTRO}/zod/-/zod-4.6.7.tgz)`,
+    ]);
+  });
+
+  it("recusa o tarball de outra versão do mesmo pacote (escaparia da idade mínima)", () => {
+    const outraVersao = lock({
+      "node_modules/zod": { version: "4.6.7", resolved: `${REGISTRO}/zod/-/zod-4.6.8.tgz`, integrity: INTEGRIDADE },
+    });
+
+    expect(problemasDoLock(outraVersao)).toEqual([
+      `node_modules/zod: aponta para outro tarball (o de zod@4.6.7 é ${REGISTRO}/zod/-/zod-4.6.7.tgz)`,
+    ]);
+  });
+
+  // Apelido (npm:nome@faixa): o lockfile guarda o nome verdadeiro em "name". Como o lockfile vem
+  // de fora, nem o "name" nem uma declaração npm: dentro dele provam nada; o npm instala na pasta
+  // sem conferir o nome. Só vale o par (pasta, nome) que já existia no lockfile da base (a main) ou
+  // que está na lista allowAliases do package.json da raiz, que aparece num diff pequeno e revisado.
+  describe("apelidos (name diferente da pasta)", () => {
+    const apelido = {
+      name: "string-width",
+      version: "4.2.3",
+      resolved: `${REGISTRO}/string-width/-/string-width-4.2.3.tgz`,
+      integrity: INTEGRIDADE,
+    };
+    const forjado = {
+      name: "evil-pkg",
+      version: "1.0.0",
+      resolved: `${REGISTRO}/evil-pkg/-/evil-pkg-1.0.0.tgz`,
+      integrity: INTEGRIDADE,
+    };
+    const PROBLEMA_DO_FORJADO =
+      'node_modules/ms: name "evil-pkg" diferente da pasta, e o apelido não está na base nem em allowAliases';
+
+    it("aceita o tarball de pacote com escopo", () => {
+      const comEscopo = lock({
+        "node_modules/@fastify/cors": {
+          version: "11.4.3",
+          resolved: `${REGISTRO}/@fastify/cors/-/cors-11.4.3.tgz`,
+          integrity: INTEGRIDADE,
+        },
+      });
+
+      expect(problemasDoLock(comEscopo)).toEqual([]);
+    });
+
+    it("aceita o apelido que já existia no lockfile da base", () => {
+      const base = lock({ "node_modules/string-width-cjs": apelido });
+      const novo = lock({
+        "node_modules/string-width-cjs": {
+          ...apelido,
+          version: "4.2.4",
+          resolved: `${REGISTRO}/string-width/-/string-width-4.2.4.tgz`,
+        },
+      });
+
+      expect(problemasDoLock(novo, { base })).toEqual([]);
+    });
+
+    it("aceita o apelido da lista allowAliases do package.json da raiz", () => {
+      const novo = lock({ "node_modules/string-width-cjs": apelido });
+
+      expect(problemasDoLock(novo, { apelidosPermitidos: { "string-width-cjs": "string-width" } })).toEqual([]);
+    });
+
+    it("recusa o name forjado que não está na base nem na lista", () => {
+      const novo = lock({ "node_modules/ms": forjado });
+
+      expect(problemasDoLock(novo)).toEqual([PROBLEMA_DO_FORJADO]);
+    });
+
+    it("recusa o apelido da lista com valor que não é um nome do npm em texto", () => {
+      const novo = lock({ "node_modules/ms": forjado });
+      const comLista = { ms: ["evil-pkg"] } as unknown as Record<string, string>;
+
+      expect(problemasDoLock(novo, { apelidosPermitidos: comLista })).toEqual([PROBLEMA_DO_FORJADO]);
+    });
+
+    it("recusa o apelido da lista quando ele aponta para outro nome", () => {
+      const novo = lock({ "node_modules/ms": forjado });
+
+      expect(problemasDoLock(novo, { apelidosPermitidos: { ms: "ms-oficial" } })).toEqual([PROBLEMA_DO_FORJADO]);
+    });
+
+    // Contornos da rodada 4: a declaração npm: escrita no próprio lockfile não autoriza nada.
+    it.each([
+      ["nas dependencies de um pacote sem relação", "node_modules/zod", "dependencies", "npm:evil-pkg@^1.0.0"],
+      ["nas peerDependencies", "node_modules/zod", "peerDependencies", "npm:evil-pkg@^1.0.0"],
+      ["na entrada do workspace (o npm lê o package.json do disco)", "api", "dependencies", "npm:evil-pkg@^1.0.0"],
+      ["sem versão", "node_modules/zod", "dependencies", "npm:evil-pkg"],
+    ])("recusa o name forjado mesmo com o apelido declarado %s", (_caso, onde, mapa, faixa) => {
+      const novo = lock({
+        [onde]: {
+          version: "4.6.7",
+          resolved: `${REGISTRO}/zod/-/zod-4.6.7.tgz`,
+          integrity: INTEGRIDADE,
+          [mapa]: { ms: faixa },
+        },
+        "node_modules/ms": forjado,
+      });
+
+      expect(problemasDoLock(novo)).toContain(PROBLEMA_DO_FORJADO);
+    });
+  });
+
+  it.each([
+    ["versão com +build", { version: "4.6.7+build" }, "node_modules/zod: versão fora do semver estrito: 4.6.7+build"],
+    ["name fora das regras do npm", { name: "../Zod" }, 'node_modules/zod: name fora das regras do npm: "../Zod"'],
+  ])("recusa %s", (_caso, mudanca, problema) => {
+    const entrada = {
+      version: "4.6.7",
+      resolved: `${REGISTRO}/zod/-/zod-4.6.7.tgz`,
+      integrity: INTEGRIDADE,
+      ...mudanca,
+    };
+
+    expect(problemasDoLock(lock({ "node_modules/zod": entrada }))).toContain(problema);
+  });
+
+  it("recusa pacote sem integridade ou com integridade que não é sha512", () => {
+    const fracos = lock({
+      "node_modules/zod": { version: "4.6.7", resolved: `${REGISTRO}/zod/-/zod-4.6.7.tgz` },
+      "node_modules/pg": { version: "8.23.1", resolved: `${REGISTRO}/pg/-/pg-8.23.1.tgz`, integrity: "sha1-abc=" },
+    });
+
+    expect(problemasDoLock(fracos)).toEqual([
+      "node_modules/zod: sem integridade sha512",
+      "node_modules/pg: sem integridade sha512",
+    ]);
+  });
+
+  describe("marca inBundle (pacote que vem dentro do tarball de outro)", () => {
+    const empacotador = {
+      version: "4.3.5",
+      resolved: `${REGISTRO}/empacota/-/empacota-4.3.5.tgz`,
+      integrity: INTEGRIDADE,
+      bundleDependencies: ["a"],
+    };
+
+    it("aceita a dependência empacotada e as dependências dela, sem resolved nem integridade", () => {
+      const comBundle = lock({
+        "node_modules/empacota": empacotador,
+        "node_modules/empacota/node_modules/a": { version: "1.0.0", inBundle: true, dependencies: { b: "^2.0.0" } },
+        "node_modules/empacota/node_modules/a/node_modules/b": { version: "2.0.0", inBundle: true },
+      });
+
+      expect(problemasDoLock(comBundle)).toEqual([]);
+    });
+
+    it("aceita, achatada sob quem empacota, a dependência de outra entrada do bundle", () => {
+      const achatado = lock({
+        "node_modules/empacota": empacotador,
+        "node_modules/empacota/node_modules/a": { version: "1.0.0", inBundle: true, dependencies: { c: "^3.0.0" } },
+        "node_modules/empacota/node_modules/c": { version: "3.0.0", inBundle: true },
+      });
+
+      expect(problemasDoLock(achatado)).toEqual([]);
+    });
+
+    it("recusa entrada do bundle que nem quem empacota nem o bundle declaram", () => {
+      const intrusa = lock({
+        "node_modules/empacota": empacotador,
+        "node_modules/empacota/node_modules/intrusa": { version: "1.0.0", inBundle: true },
+      });
+
+      expect(problemasDoLock(intrusa)).toEqual([
+        "node_modules/empacota/node_modules/intrusa: marcada como inBundle, mas ninguém no bundle a declara",
+      ]);
+    });
+
+    it("recusa entrada do bundle sem versão", () => {
+      const semVersao = lock({
+        "node_modules/empacota": empacotador,
+        "node_modules/empacota/node_modules/a": { inBundle: true },
+      });
+
+      expect(problemasDoLock(semVersao)).toEqual(["node_modules/empacota/node_modules/a: sem versão"]);
+    });
+
+    it("recusa bundle cujo empacotador é um workspace do repositório", () => {
+      const doWorkspace = {
+        lockfileVersion: 3,
+        packages: {
+          "": { name: "raiz", workspaces: ["api"] },
+          api: { name: "@falcao/api", version: "0.1.0", bundleDependencies: ["a"] },
+          "api/node_modules/a": { version: "1.0.0", inBundle: true },
+        },
+      };
+
+      expect(problemasDoLock(doWorkspace)).toEqual([
+        "api/node_modules/a: marcada como inBundle, mas nenhum pacote acima a empacota",
+      ]);
+    });
+
+    it("recusa bundleDependencies: true, que o npm não entende como bundle (baixaria sem integridade)", () => {
+      const comTrue = lock({
+        "node_modules/empacota": { ...empacotador, bundleDependencies: true },
+        "node_modules/empacota/node_modules/a": { version: "1.0.0", inBundle: true },
+      });
+
+      expect(problemasDoLock(comTrue)).toEqual([
+        "node_modules/empacota/node_modules/a: marcada como inBundle, mas nenhum pacote acima a empacota",
+      ]);
+    });
+
+    it("recusa entrada do bundle com name diferente da pasta", () => {
+      const comName = lock({
+        "node_modules/empacota": empacotador,
+        "node_modules/empacota/node_modules/a": { version: "1.0.0", inBundle: true, name: "evil-pkg" },
+      });
+
+      expect(problemasDoLock(comName)).toEqual([
+        'node_modules/empacota/node_modules/a: marcada como inBundle, mas com name diferente da pasta: "evil-pkg"',
+      ]);
+    });
+
+    it("recusa a marca numa entrada de primeiro nível, que nenhum pacote empacota", () => {
+      const falsa = lock({ "node_modules/zod": { version: "4.6.7", inBundle: true } });
+
+      expect(problemasDoLock(falsa)).toEqual([
+        "node_modules/zod: marcada como inBundle, mas nenhum pacote acima a empacota",
+      ]);
+    });
+
+    it("recusa a marca sob um pacote que não declara bundleDependencies", () => {
+      const semDeclarar = lock({
+        "node_modules/comum": {
+          version: "1.0.0",
+          resolved: `${REGISTRO}/comum/-/comum-1.0.0.tgz`,
+          integrity: INTEGRIDADE,
+        },
+        "node_modules/comum/node_modules/zod": { version: "4.6.7", inBundle: true },
+      });
+
+      expect(problemasDoLock(semDeclarar)).toEqual([
+        "node_modules/comum/node_modules/zod: marcada como inBundle, mas nenhum pacote acima a empacota",
+      ]);
+    });
+
+    it("recusa a marca numa entrada que traz resolved (ela seria baixada, sem conferência)", () => {
+      const baixavel = lock({
+        "node_modules/empacota": empacotador,
+        "node_modules/empacota/node_modules/a": {
+          version: "1.0.0",
+          inBundle: true,
+          resolved: `${REGISTRO}/a/-/a-1.0.0.tgz`,
+        },
+      });
+
+      expect(problemasDoLock(baixavel)).toEqual([
+        "node_modules/empacota/node_modules/a: marcada como inBundle, mas traz resolved ou integrity",
+      ]);
+    });
+  });
+
+  it("recusa chave fora de node_modules que não é a raiz nem um workspace declarado", () => {
+    const intrusa = lock({ "outro/lugar": { version: "1.0.0" } });
+
+    expect(problemasDoLock(intrusa)).toEqual(["outro/lugar: fora de node_modules e não é um workspace declarado"]);
+  });
+
+  it("recusa lockfile em outro formato que não o 3", () => {
+    const antigo = { ...lock({}), lockfileVersion: 2 };
+
+    expect(problemasDoLock(antigo)).toEqual(["lockfileVersion 2: só o formato 3 é aceito"]);
+  });
+
+  it('recusa lockfile sem "packages", com uma mensagem clara', () => {
+    const semPacotes = { lockfileVersion: 3 } as unknown as Lockfile;
+
+    expect(problemasDoLock(semPacotes)).toEqual(['lockfile sem "packages"']);
+  });
+
+  it("recusa entrada de dependência sem versão", () => {
+    const semVersao = lock({
+      "node_modules/zod": { resolved: `${REGISTRO}/zod/-/zod-4.6.7.tgz`, integrity: INTEGRIDADE },
+    });
+
+    expect(problemasDoLock(semVersao)).toEqual(["node_modules/zod: sem versão"]);
+  });
+});
+
+describe("pacotesNovosOuAlterados", () => {
+  it("devolve só o que não existia no lockfile anterior, na mesma versão", () => {
+    const base = lock({
+      "node_modules/fastify": { version: "5.12.8", resolved: `${REGISTRO}/fastify/-/fastify-5.12.8.tgz` },
+      "node_modules/zod": { version: "4.6.6", resolved: `${REGISTRO}/zod/-/zod-4.6.6.tgz` },
+    });
+    const novo = lock({
+      "node_modules/fastify": { version: "5.12.8", resolved: `${REGISTRO}/fastify/-/fastify-5.12.8.tgz` },
+      "node_modules/zod": { version: "4.6.7", resolved: `${REGISTRO}/zod/-/zod-4.6.7.tgz` },
+      "node_modules/pg": { version: "8.23.1", resolved: `${REGISTRO}/pg/-/pg-8.23.1.tgz` },
+    });
+
+    expect(pacotesNovosOuAlterados(base, novo).map((p) => `${p.nome}@${p.versao}`)).toEqual(["zod@4.6.7", "pg@8.23.1"]);
+  });
+
+  it("lê o nome de pacotes com escopo e de pacotes aninhados", () => {
+    const novo = lock({
+      "node_modules/@fastify/cors": { version: "11.4.3", resolved: `${REGISTRO}/@fastify/cors/-/cors-11.4.3.tgz` },
+      "node_modules/a/node_modules/minimatch": {
+        version: "9.0.5",
+        resolved: `${REGISTRO}/minimatch/-/minimatch-9.0.5.tgz`,
+      },
+    });
+
+    expect(pacotesNovosOuAlterados(lock({}), novo).map((p) => p.nome)).toEqual(["@fastify/cors", "minimatch"]);
+  });
+
+  it("usa o nome verdadeiro de um pacote instalado com apelido (npm:nome@versão)", () => {
+    const novo = lock({
+      "node_modules/string-width-cjs": {
+        name: "string-width",
+        version: "4.2.3",
+        resolved: `${REGISTRO}/string-width/-/string-width-4.2.3.tgz`,
+      },
+    });
+
+    expect(pacotesNovosOuAlterados(lock({}), novo).map((p) => `${p.nome}@${p.versao}`)).toEqual(["string-width@4.2.3"]);
+  });
+
+  it("trata como alterado o mesmo nome@versão vindo de outro endereço ou com outra integridade", () => {
+    const original = { version: "4.6.7", resolved: `${REGISTRO}/zod/-/zod-4.6.7.tgz`, integrity: INTEGRIDADE };
+    const base = lock({ "node_modules/zod": original });
+    const outroEndereco = lock({
+      "node_modules/zod": { ...original, resolved: `${REGISTRO}/zod-falso/-/zod-falso-4.6.7.tgz` },
+    });
+    const outraIntegridade = lock({ "node_modules/zod": { ...original, integrity: OUTRA_INTEGRIDADE } });
+
+    expect(pacotesNovosOuAlterados(base, outroEndereco).map((p) => `${p.nome}@${p.versao}`)).toEqual(["zod@4.6.7"]);
+    expect(pacotesNovosOuAlterados(base, outraIntegridade).map((p) => `${p.nome}@${p.versao}`)).toEqual(["zod@4.6.7"]);
+  });
+
+  it("ignora a raiz e os workspaces do próprio repositório", () => {
+    const novo = lock({
+      api: { name: "@falcao/api", version: "0.1.0" },
+      "node_modules/@falcao/api": { resolved: "api", link: true },
+    });
+
+    expect(pacotesNovosOuAlterados(lock({}), novo)).toEqual([]);
+  });
+});
+
+describe("apelidosNovosDaLista (destaque para quem revisa o PR)", () => {
+  const apelido = {
+    name: "string-width",
+    version: "4.2.3",
+    resolved: `${REGISTRO}/string-width/-/string-width-4.2.3.tgz`,
+    integrity: INTEGRIDADE,
+  };
+  const lista = { "string-width-cjs": "string-width" };
+
+  it("aponta o apelido que está em uso e só na lista, não na base", () => {
+    const novo = lock({ "node_modules/string-width-cjs": apelido });
+
+    expect(apelidosNovosDaLista(lock({}), novo, lista)).toEqual(["string-width-cjs -> string-width"]);
+  });
+
+  it("não aponta o apelido que já estava na base", () => {
+    const novo = lock({ "node_modules/string-width-cjs": apelido });
+    const base = lock({ "node_modules/string-width-cjs": apelido });
+
+    expect(apelidosNovosDaLista(base, novo, lista)).toEqual([]);
+  });
+
+  it("não aponta o apelido da lista que nenhuma entrada usa", () => {
+    expect(apelidosNovosDaLista(lock({}), lock({}), lista)).toEqual([]);
+  });
+});
+
+describe("avaliarPacote", () => {
+  const pacote = {
+    nome: "zod",
+    versao: "4.6.7",
+    resolved: `${REGISTRO}/zod/-/zod-4.6.7.tgz`,
+    integrity: INTEGRIDADE,
+    temScriptDeInstalacao: false,
+  };
+  const semAllowScripts = {};
+  const aprovado = { recusas: [], avisos: [] };
+
+  it("aprova pacote do registro, com 7 dias ou mais e sem falha conhecida", () => {
+    const info = { publicadoEm: new Date("2026-11-16T11:00:00Z"), vulnerabilidades: [] };
+
+    expect(avaliarPacote(pacote, info, AGORA, semAllowScripts)).toEqual(aprovado);
+  });
+
+  it("recusa versão publicada há menos de 7 dias", () => {
+    const info = { publicadoEm: new Date("2026-11-20T12:00:00Z"), vulnerabilidades: [] };
+
+    expect(avaliarPacote(pacote, info, AGORA, semAllowScripts).recusas).toEqual([
+      "publicada há 3 dia(s): o mínimo é 7",
+    ]);
+  });
+
+  it("recusa versão que o registro não conhece", () => {
+    const info = { publicadoEm: undefined, vulnerabilidades: [] };
+
+    expect(avaliarPacote(pacote, info, AGORA, semAllowScripts).recusas).toEqual([
+      "versão não encontrada no registro do npm",
+    ]);
+  });
+
+  it("recusa data de publicação inválida (falharia aberto: NaN não é menor que 7)", () => {
+    const info = { publicadoEm: new Date(Number.NaN), vulnerabilidades: [] };
+
+    expect(avaliarPacote(pacote, info, AGORA, semAllowScripts).recusas).toEqual([
+      "data de publicação inválida no registro do npm",
+    ]);
+  });
+
+  it("recusa falha alta ou crítica conhecida na OSV", () => {
+    const info: InfoDoPacote = {
+      publicadoEm: new Date("2026-10-01T00:00:00Z"),
+      vulnerabilidades: [
+        { id: "GHSA-aaaa-bbbb-cccc", gravidade: "HIGH" },
+        { id: "GHSA-dddd-eeee-ffff", gravidade: "CRITICAL" },
+      ],
+    };
+
+    expect(avaliarPacote(pacote, info, AGORA, semAllowScripts).recusas).toEqual([
+      "falha alta ou crítica na OSV: GHSA-aaaa-bbbb-cccc (HIGH), GHSA-dddd-eeee-ffff (CRITICAL)",
+    ]);
+  });
+
+  it("recusa falha de gravidade desconhecida (precisa de conferência à mão)", () => {
+    const info: InfoDoPacote = {
+      publicadoEm: new Date("2026-10-01T00:00:00Z"),
+      vulnerabilidades: [{ id: "OSV-2026-1", gravidade: "DESCONHECIDA" }],
+    };
+
+    expect(avaliarPacote(pacote, info, AGORA, semAllowScripts).recusas).toEqual([
+      "falha de gravidade desconhecida na OSV: OSV-2026-1",
+    ]);
+  });
+
+  it("só avisa de falha moderada ou baixa (o protocolo bloqueia alta e crítica)", () => {
+    const info: InfoDoPacote = {
+      publicadoEm: new Date("2026-10-01T00:00:00Z"),
+      vulnerabilidades: [{ id: "GHSA-gggg-hhhh-iiii", gravidade: "MODERATE" }],
+    };
+
+    expect(avaliarPacote(pacote, info, AGORA, semAllowScripts)).toEqual({
+      recusas: [],
+      avisos: ["falha moderada ou baixa na OSV: GHSA-gggg-hhhh-iiii (MODERATE)"],
+    });
+  });
+
+  it("recusa pacote que não vem do registro do npm (git, URL ou arquivo)", () => {
+    const deFora = { ...pacote, resolved: "git+https://github.com/alguem/zod.git#abc123" };
+    const info = { publicadoEm: new Date("2026-10-01T00:00:00Z"), vulnerabilidades: [] };
+
+    expect(avaliarPacote(deFora, info, AGORA, semAllowScripts).recusas).toEqual(["não vem do registro do npm"]);
+  });
+
+  it("recusa script de instalação fora do allowScripts", () => {
+    const comScript = { ...pacote, nome: "esbuild", versao: "0.27.0", temScriptDeInstalacao: true };
+    const info = { publicadoEm: new Date("2026-10-01T00:00:00Z"), vulnerabilidades: [] };
+
+    expect(avaliarPacote(comScript, info, AGORA, semAllowScripts).recusas).toEqual([
+      "tem script de instalação e não está no allowScripts",
+    ]);
+  });
+
+  it("aceita script de instalação quando o pacote está no allowScripts (liberado ou negado)", () => {
+    const comScript = { ...pacote, nome: "prisma", versao: "7.10.1", temScriptDeInstalacao: true };
+    const info = { publicadoEm: new Date("2026-10-15T00:00:00Z"), vulnerabilidades: [] };
+
+    expect(avaliarPacote(comScript, info, AGORA, { "prisma@7.10.1": true })).toEqual(aprovado);
+    expect(avaliarPacote({ ...comScript, nome: "esbuild" }, info, AGORA, { esbuild: false })).toEqual(aprovado);
+  });
+});

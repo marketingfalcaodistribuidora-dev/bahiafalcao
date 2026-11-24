@@ -1,29 +1,57 @@
 {
   "name": "falcao-distribuidora",
   "private": true,
-  "description": "Site institucional da Falcão Distribuidora (frontend Next.js) e futuro backend.",
+  "description": "Site institucional da Falcão Distribuidora (frontend Next.js) e API do catálogo (api/).",
   "workspaces": [
-    "frontend"
+    "frontend",
+    "api"
   ],
   "engines": {
-    "node": ">=22"
+    "node": "26.x"
   },
   "scripts": {
     "prepare": "node -e \"try{require('child_process').execSync('git config core.hooksPath .githooks',{stdio:'ignore'})}catch{}\"",
     "dev": "npm run dev -w frontend",
     "build": "npm run build -w frontend",
     "start": "npm run start -w frontend",
-    "lint": "npm run lint -w frontend",
-    "typecheck": "npm run typecheck -w frontend",
-    "test": "npm run test -w frontend",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
     "test:watch": "npm run test:watch -w frontend",
-    "test:coverage": "npm run test:coverage -w frontend",
+    "test:coverage": "npm run test:coverage --workspaces --if-present",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build"
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build && npm run build -w api"
   },
   "devDependencies": {
-    "prettier": "^3.9.10",
-    "prettier-plugin-tailwindcss": "^0.8.1"
+    "lint-staged": "17.6.1",
+    "prettier": "3.9.10",
+    "prettier-plugin-tailwindcss": "0.8.1"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "version": ">=11.20.0",
+      "onFail": "warn"
+    }
+  },
+  "allowAliases": {
+    "string-width-cjs": "string-width",
+    "strip-ansi-cjs": "strip-ansi",
+    "wrap-ansi-cjs": "wrap-ansi"
+  },
+  "allowScripts": {
+    "prisma@7.10.1": true,
+    "@prisma/engines@7.10.1": true,
+    "esbuild": false,
+    "cpu-features": false,
+    "ssh2": false,
+    "protobufjs": false,
+    "fsevents": false
+  },
+  "overrides": {
+    "@prisma/config": {
+      "effect": "3.22.4"
+    }
   }
 }

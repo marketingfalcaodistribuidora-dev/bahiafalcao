@@ -1,0 +1,81 @@
+# Ambiente local da API do catálogo (spec 000, T003; plano §4).
+# Subir: npm run db:subir -w api · Descer: npm run db:descer -w api
+#
+# - Imagens fixadas por digest (a tag só ajuda a ler). Para atualizar, passe a versão nova
+#   pelo protocolo de dependências (7 dias ou mais) e troque tag e digest juntos.
+# - Portas só em 127.0.0.1: nada fica aberto para a rede.
+# - Usuário e senha vêm do api/.env (fora do Git); copie o api/.env.example.
+# - Este banco é o da medição de performance. Os parâmetros abaixo devem espelhar o
+#   postgresql.conf da VPS de produção (revisar quando o tamanho da VPS for escolhido).
+#   Os testes automáticos usam outro banco, efêmero, pelo Testcontainers.
+# - Os containers só sobem quando alguém roda o db:subir (sem "restart" automático).
+name: falcao-api
+
+services:
+  postgres:
+    # PostgreSQL 17.11 (Alpine). A 17.12 saiu em 21/11/2026: trocar a partir de 28/11/2026.
+    image: postgres:17.11-alpine@sha256:e5d2edd28b1f8d40a0a6c0c9cdc545b19b56a0d5d88f94bc11a97d970d4700d0
+    environment:
+      POSTGRES_USER: ${POSTGRES_USUARIO:?defina POSTGRES_USUARIO no api/.env}
+      POSTGRES_PASSWORD: ${POSTGRES_SENHA:?defina POSTGRES_SENHA no api/.env}
+      POSTGRES_DB: falcao_dev
+      # Locale fixo (provedor builtin do PostgreSQL 17): lower() e ordenação iguais em
+      # qualquer máquina, sem depender do sistema (plano §4; CA6.5). Só vale num volume novo.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8 --locale-provider=builtin --builtin-locale=C.UTF-8"
+    command:
+      - postgres
+      # Fuso do banco em UTC (o mesmo dos testes); a API converte para o horário da Bahia.
+      - -c
+      - timezone=UTC
+      # Medição: tempo de cada consulta (só as do nível de cima, como em produção; "all"
+      # contaria cada chamada interna de função e distorceria a medição).
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - pg_stat_statements.track=top
+      - -c
+      - track_io_timing=on
+      # Memória: o catálogo inteiro (10 mil produtos) cabe no cache.
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - effective_cache_size=1GB
+      # Disco SSD/NVMe (o do computador e o da VPS): sem isso o planejador acha que ler
+      # índice é caro e escolhe varrer a tabela inteira.
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - effective_io_concurrency=200
+      # A compilação JIT custa dezenas de ms e estouraria a meta da busca (p95 < 300 ms).
+      - -c
+      - jit=off
+    # Memória compartilhada para consultas paralelas (o padrão do Docker é 64 MB).
+    shm_size: 256mb
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - falcao-api-pg:/var/lib/postgresql/data
+      - ./docker/postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # Pela rede (-h), e não pelo socket: o "pronto" só sai quando o servidor final já
+      # aceita conexões TCP, e não durante a inicialização do volume.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $${POSTGRES_USER} -d falcao_dev"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  mailpit:
+    # "Falso e-mail" local: recebe tudo o que a API enviar (convites, senhas) e mostra em
+    # http://127.0.0.1:8025. Nada sai para a internet. A v1.34.0 saiu em 17/11/2026:
+    # trocar a partir de 24/11/2026. Antes da Fase 1 (quando as mensagens terão links de
+    # convite e de senha), proteger a página com senha (MP_UI_AUTH_FILE).
+    image: axllent/mailpit:v1.33.1@sha256:aef2aacc11f075ec0fb6874275ee4a421e688e11a96ebb296134d1735c7761ce
+    environment:
+      # Não consulta a internet para saber se há versão nova.
+      MP_DISABLE_VERSION_CHECK: "true"
+    ports:
+      - "127.0.0.1:1025:1025" # SMTP
+      - "127.0.0.1:8025:8025" # página web
+
+volumes:
+  falcao-api-pg:

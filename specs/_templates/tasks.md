@@ -25,5 +25,5 @@
 
 ## Fase 5: Verificação
 - [ ] T008 `npm run check` verde
-- [ ] T009 Revisão pelo `code-reviewer`
+- [ ] T009 Revisão pelo `review-gate` (API) ou pelos agentes do site
 - [ ] T010 Todos os critérios de aceite da spec conferidos
