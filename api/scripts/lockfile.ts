@@ -46,6 +46,8 @@ function ehSemverEstrito(versao: string): boolean {
 export interface Confianca {
   /** O lockfile da base (a main): o que já estava lá foi revisado. */
   base?: Lockfile;
+  /** Os workspaces do package.json da raiz, que o npm usa (o do lockfile vem de fora). */
+  workspacesDaRaiz?: string[];
   /** O allowAliases do package.json da raiz: { pasta: nome-verdadeiro }, num diff pequeno e revisado. */
   apelidosPermitidos?: Record<string, string>;
 }
@@ -186,15 +188,37 @@ function tarballNoRegistro(nome: string, versao: string): string {
   return `${REGISTRO_DO_NPM}${nome}/-/${semEscopo}-${versao}.tgz`;
 }
 
+const mesmaLista = (a: string[], b: string[]) =>
+  a.length === b.length && [...a].sort().join("\0") === [...b].sort().join("\0");
+
+/** Pasta relativa dentro do repositório: nada de caminho absoluto, "..", "\" nem ":" (unidade). */
+function pastaDoRepositorio(pasta: string): boolean {
+  return pasta !== "" && !pasta.startsWith("/") && !/[\\:]/.test(pasta) && !pasta.split("/").includes("..");
+}
+
 export function problemasDoLock(lock: Lockfile, confianca: Confianca = {}): string[] {
   // O lockfile vem de fora (de um PR): os tipos não garantem a forma dele.
   const pacotes = lock.packages as Lockfile["packages"] | undefined;
   if (!pacotes) return ['lockfile sem "packages"'];
   if (lock.lockfileVersion !== 3) return [`lockfileVersion ${String(lock.lockfileVersion)}: só o formato 3 é aceito`];
-  const workspaces = new Set(pacotes[""]?.workspaces ?? []);
+  const problemas: string[] = [];
+  // A lista de workspaces do próprio lockfile também vem de fora: vale a do package.json da raiz,
+  // que o npm de fato usa, e o lockfile precisa declarar exatamente a mesma.
+  const doLock = pacotes[""]?.workspaces ?? [];
+  const workspaces = new Set(confianca.workspacesDaRaiz ?? doLock);
+  if (confianca.workspacesDaRaiz && !mesmaLista(doLock, confianca.workspacesDaRaiz)) {
+    problemas.push(
+      `o lockfile declara os workspaces ${JSON.stringify(doLock)}, mas o package.json da raiz declara ${JSON.stringify(confianca.workspacesDaRaiz)}`,
+    );
+  }
+  for (const pasta of workspaces) {
+    if (!pastaDoRepositorio(pasta)) {
+      problemas.push(`${pasta}: pasta de workspace fora do repositório ou com caminho inválido`);
+      workspaces.delete(pasta);
+    }
+  }
   const apelidos = apelidosConfiaveis(confianca);
 
-  const problemas: string[] = [];
   for (const [chave, entrada] of Object.entries(pacotes)) {
     if (!nomeDaChave(chave)) {
       // Fora de node_modules/, só a raiz e os workspaces declarados nela (pastas exatas).

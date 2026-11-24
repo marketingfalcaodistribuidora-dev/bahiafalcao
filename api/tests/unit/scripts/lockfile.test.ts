@@ -41,6 +41,49 @@ describe("problemasDoLock (conferência do lockfile inteiro, sem rede)", () => {
       expect(problemasDoLock(certo)).toEqual([]);
     });
 
+    // Rodada 6: a lista de workspaces do próprio lockfile também vem de fora. Vale a do
+    // package.json da raiz, que o npm de fato usa.
+    it.each([
+      ["uma pasta do repositório", "evil"],
+      ["uma pasta fora do repositório", "../fora"],
+      ["um caminho absoluto", "C:/x"],
+    ])("recusa o link para %s declarada como workspace só no lockfile", (_caso, pasta) => {
+      const forjado = {
+        lockfileVersion: 3,
+        packages: {
+          "": { name: "raiz", workspaces: ["api", pasta] },
+          api: workspace,
+          [pasta]: { name: "fastify", version: "5.0.0" },
+          "node_modules/@falcao/api": { resolved: "api", link: true },
+          "node_modules/fastify": { resolved: pasta, link: true },
+        },
+      };
+
+      const problemas = problemasDoLock(forjado, { workspacesDaRaiz: ["api"] });
+
+      expect(problemas).toContain(`${pasta}: fora de node_modules e não é um workspace declarado`);
+      expect(problemas).toContain("node_modules/fastify: link que não aponta para um workspace do repositório");
+    });
+
+    it("recusa o lockfile cuja lista de workspaces difere a do package.json da raiz", () => {
+      const diferente = lock({ api: workspace, "node_modules/@falcao/api": { resolved: "api", link: true } });
+
+      expect(problemasDoLock(diferente, { workspacesDaRaiz: ["api", "frontend"] })).toContain(
+        'o lockfile declara os workspaces ["api"], mas o package.json da raiz declara ["api","frontend"]',
+      );
+    });
+
+    it("recusa workspace com caminho absoluto ou que sai do repositório", () => {
+      const fora = {
+        lockfileVersion: 3,
+        packages: { "": { name: "raiz", workspaces: ["../fora"] }, "../fora": { name: "x", version: "1.0.0" } },
+      };
+
+      expect(problemasDoLock(fora, { workspacesDaRaiz: ["../fora"] })).toContain(
+        "../fora: pasta de workspace fora do repositório ou com caminho inválido",
+      );
+    });
+
     it.each([
       ["para outro pacote de node_modules", "node_modules/ms", "node_modules/evil-pkg"],
       ["aninhado, para outro pacote", "node_modules/a/node_modules/ms", "node_modules/evil-pkg"],

@@ -31,11 +31,17 @@ const novo = lerJson(caminhoNovo) as Lockfile;
 const raiz = lerJson("package.json") as {
   allowScripts?: Record<string, boolean>;
   allowAliases?: Record<string, string>;
+  workspaces?: string[];
 };
 const allowScripts = raiz.allowScripts ?? {};
 
-// Apelidos (npm:nome@faixa) só valem se já estavam na base ou na lista allowAliases revisada.
-const problemas = problemasDoLock(novo, { base, apelidosPermitidos: raiz.allowAliases ?? {} });
+// Apelidos (npm:nome@faixa) só valem se já estavam na base ou na lista allowAliases revisada, e os
+// workspaces valem os do package.json da raiz (o do lockfile vem de fora, de um PR).
+const problemas = problemasDoLock(novo, {
+  base,
+  apelidosPermitidos: raiz.allowAliases ?? {},
+  workspacesDaRaiz: raiz.workspaces ?? [],
+});
 if (problemas.length) {
   for (const problema of problemas) console.log(`RECUSADO ${problema}`);
   console.log(`check-lock: ${String(problemas.length)} problema(s) no lockfile; nada foi instalado.`);
