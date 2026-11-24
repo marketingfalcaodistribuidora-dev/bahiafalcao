@@ -255,7 +255,7 @@ CREATE FUNCTION public.f_unaccent(text) RETURNS text
 | CA5.2, CA5.5, CA5.6 | `acesso.test.ts`: rota sem `acesso` ou sem schema → boot falha; rota `editor` → 401; matriz (5 papéis × rotas); campo fora do schema não sai | integração |
 | CA6.1, CA6.2, CA6.4 | `normalizar.test.ts`, `paginacao.test.ts` | unitário |
 | CA6.3, CA6.5 | `extensoes.test.ts`: `f_unaccent` com `search_path = pg_catalog`, `provolatile = 'i'`, `CREATE INDEX … gin (public.f_unaccent(lower(x)) gin_trgm_ops)` numa tabela temporária; `SHOW lc_ctype`; tabela de caracteres comparando o código (NFKD, para º e ª virarem letra) e o banco | integração |
-| CA7.1–CA7.6 | passos do CI (conferência de `npm config`, `grep` dos flags proibidos, `^`/`~` nos três `package.json`, SHA das actions) + conferência manual registrada no `tasks.md` | CI + manual |
+| CA7.1–CA7.6 | passos do CI (conferência de `npm config`, `grep` dos flags proibidos, `^`/`~` nos três `package.json`) + `api/tests/unit/scripts/lockfile.test.ts` (check-lock) e `api/tests/unit/scripts/workflows.test.ts` (CA7.6), com as provas manuais registradas no `tasks.md` | CI + unitários |
 | CA8.1, CA8.2 | `perf/saude.perf.ts` pelo medidor | perf |
 | CA8.3 | `contar-queries.test.ts` | integração |
 

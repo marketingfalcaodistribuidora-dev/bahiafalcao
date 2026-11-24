@@ -95,6 +95,65 @@ describe("problemasDoWorkflow", () => {
     ]);
   });
 
+  // Rodada 4: formatos válidos de YAML que escapavam das regras linha a linha. Agora a regra é
+  // fechada: a palavra write não aparece em lugar nenhum, e os recursos que permitem escrever
+  // a mesma coisa de outro jeito (âncora, tag, chave complexa, valor na linha de baixo) são recusados.
+  it.each([
+    ["com a chave entre aspas", "  contents: read\n", '  contents: read\n  "id-token": write\n'],
+    ["com o valor na linha de baixo", "  contents: read\n", "  contents: read\n  id-token:\n    write\n"],
+    [
+      "em chaves quebradas em duas linhas",
+      "    runs-on:",
+      "    permissions: {contents: read,\n      id-token: write}\n    runs-on:",
+    ],
+    ["com tag do YAML", "  contents: read\n", "  contents: read\n  id-token: !!str write\n"],
+  ])("recusa a escrita %s", (_caso, antes, depois) => {
+    const disfarcada = certo.replace(antes, depois);
+
+    expect(problemasDoWorkflow("ci.yml", disfarcada)).toContainEqual(expect.stringMatching(/: permissão de escrita/));
+  });
+
+  it.each([
+    ["âncora ou apelido do YAML", "  contents: read\n", "  contents: &leitura read\n  id-token: *leitura\n"],
+    ["tag do YAML", "      - run: npm ci", "      - run: !!str npm ci"],
+    ["chave complexa do YAML", "  contents: read\n", "  contents: read\n  ? id-token\n  : read\n"],
+  ])("recusa %s, que escreveria o mesmo valor de outro jeito", (recurso, antes, depois) => {
+    const comRecurso = certo.replace(antes, depois);
+
+    expect(problemasDoWorkflow("ci.yml", comRecurso)).toContainEqual(expect.stringContaining(`: ${recurso}`));
+  });
+
+  it("recusa uses com a chave entre aspas e sem SHA", () => {
+    const entreAspas = certo.replace(`      - uses: actions/checkout@${SHA}`, '      - "uses": actions/checkout@v4');
+
+    expect(problemasDoWorkflow("ci.yml", entreAspas)).toContainEqual("ci.yml:9: action sem SHA: actions/checkout@v4");
+  });
+
+  it("recusa uses sem valor na mesma linha", () => {
+    const quebrado = certo.replace(
+      `      - uses: actions/checkout@${SHA}`,
+      `      - uses:\n          actions/checkout@v4`,
+    );
+
+    expect(problemasDoWorkflow("ci.yml", quebrado)).toContainEqual("ci.yml:9: uses sem valor na mesma linha");
+  });
+
+  it("recusa action local que sai da pasta do repositório", () => {
+    const paraFora = certo.replace("      - run: npm ci", "      - uses: ./../outro-repo");
+
+    expect(problemasDoWorkflow("ci.yml", paraFora)).toContainEqual(
+      "ci.yml:12: action local fora do repositório: ./../outro-repo",
+    );
+  });
+
+  it("um persist-credentials: false dentro de um texto não conta para o checkout", () => {
+    const noTexto = certo
+      .replace("        with:\n          persist-credentials: false\n", "")
+      .replace("      - run: npm ci", '      - run: echo "persist-credentials: false"');
+
+    expect(problemasDoWorkflow("ci.yml", noTexto)).toContainEqual("ci.yml: checkout sem persist-credentials: false");
+  });
+
   it("aceita comentário que só cita a escrita ou um gatilho proibido", () => {
     const comComentario = `# Nunca usar pull_request_target nem permissions: write-all aqui.\n${certo}`;
 
