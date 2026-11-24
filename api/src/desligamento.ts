@@ -5,7 +5,7 @@
 // Separado do server.ts, com a saída do processo injetada, para ser testado.
 
 // Abaixo dos 10 s que o Docker (docker stop) espera antes do SIGKILL: a saída forçada e o log
-// dela acontecem antes. Se o gerenciador der menos tempo, ajuste aqui e no stop_grace_period.
+// dela acontecem antes. Se o gerenciador de processos da VPS (Fase 7) der menos tempo, ajuste aqui.
 const LIMITE_PADRAO_MS = 8_000;
 
 export interface OpcoesDoDesligamento {

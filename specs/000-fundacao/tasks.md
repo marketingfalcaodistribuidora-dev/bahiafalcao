@@ -170,13 +170,17 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
       - 32 testes novos escritos antes e vistos vermelhos (401 com as proteções 3, erros do banco 5, check-lock 5, desligamento 7, porta ocupada 1, resposta 2xx 1, `TRUST_PROXY` 4, molde da rota 1, banco 4, mensagem de várias linhas 1);
       - passaram de primeira, de propósito, os casos de aceitação que servem de controle (rotas com 201, 204 e 2xx; faixas no limite, `/8` e `/32`);
       - passou de primeira **um teste de caracterização**: "recusa conexão nova enquanto desliga". O comportamento já existia e só não tinha teste;
-      - essas correções saíram num commit só (`e5c4ca9`), que mistura assuntos. A partir da rodada 2, um commit por achado;
+      - essas correções saíram num commit só (`e5c4ca9`), que misturava assuntos. Em 24/11/2026, a pedido do responsável, ele foi dividido em 14 commits, um por assunto, cada um com tipos e testes unitários verdes (`fe23857` a `2077e56`). O conteúdo final ficou idêntico, conferido com `git diff`. A partir da rodada 2, um commit por achado;
     - **rodada 2 do review-gate:** desempenho, qualidade e backend APROVADO; segurança REPROVADO (1 Alto e 1 Médio no check-lock). Corrigidos o Alto, o Médio e os Baixos baratos de todos os revisores, um commit por achado:
       - vistos vermelhos antes: tarball de outro pacote ou de outra versão 2, marca `inBundle` 3, forma do lockfile 3, novos 503 do banco 14 unitários e 1 de integração (conexão derrubada, `57P01`), IPv4 mapeado no `TRUST_PROXY` 3, log com os códigos e sem a mensagem disfarçada 2, desligamento em 8 s 1;
       - passaram de primeira, como caracterização no banco real de formatos já tratados: consulta cortada pelo limite de 2 s e banco inalcançável. Também os controles de aceitação (escopo e apelido no check-lock, IPv4 mapeado estreito);
       - a conferência CA7.6 (`conferir-esteira.sh`) não tinha teste automatizado e deixava passar escrita entre aspas e em chaves (Médio da rodada 3, qualidade). Na rodada 3, as regras viraram o módulo testado `api/scripts/workflows.ts`;
     - 241 testes da API; linhas, comandos e funções em 100%, ramos em 96%;
-    - falta: a rodada 3 do review-gate e a proteção da `main` (D19), que depende do responsável.
+    - **rodada 3 do review-gate:** desempenho, qualidade e backend APROVADO; segurança REPROVADO (1 Alto: `name` forjado no lockfile). Corrigidos o Alto, o Médio de qualidade (CA7.6 sem teste e com frestas) e os Baixos, um commit por achado:
+      - vistos vermelhos antes: CA7.6 17 casos (o módulo não existia; depois, 4 para as frestas novas), `name` forjado e formato de nome e versão 4, regra do bundle 3, data de publicação inválida 1, pilha que não começa pela mensagem 1;
+      - os testes de integração ficaram mais rígidos (57P01 conferido no erro cru, espera com prazo, `finally`, qualquer saída menos 2xx). `codigoDoPostgres` virou função única (refatoração, sem mudança de comportamento);
+    - 268 testes da API; linhas, comandos e funções em 100%, ramos em 96%;
+    - falta: a rodada 4 do review-gate e a proteção da `main` (D19).
 
 ## Adiado para a fase que usa
 

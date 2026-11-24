@@ -328,3 +328,17 @@ A segunda rodada aprovou em desempenho, qualidade e backend, e reprovou em segur
 
 - **Prova por mutação:** cada ramo do `request-id` e do cache da prontidão foi quebrado de propósito, e algum teste ficou vermelho em todos. Uma mutação sobreviveu por ser equivalente (a guarda `versao !== 0` era redundante e saiu). Outra mostrou que nenhum teste conferia o limite de 1 s da prontidão, e o teste ganhou relógio controlado.
 - **Cobertura:** passou a incluir `src/app.ts`, `src/servidor.ts` e `src/desligamento.ts`. Linhas, comandos e funções estão em 100%, e ramos em 96%. Os ramos restantes são valores de reserva que o TypeScript estrito exige e que não acontecem na prática (ex.: erro sem `stack`).
+
+A terceira rodada aprovou em desempenho, qualidade e backend, e reprovou em segurança: o revisor forjou o campo `name` de uma entrada do lockfile. Correções, um commit por achado:
+
+| Achado | Correção |
+|---|---|
+| Alto: o `name` da entrada vem do próprio lockfile; com ele forjado, o tarball de outro pacote voltava a passar | Um `name` diferente da pasta só vale quando algum pacote declara `"pasta": "npm:name@faixa"`. Também: `name` pelas regras do npm e versão em semver estrito |
+| A conferência CA7.6 não tinha teste e deixava passar `write` entre aspas e em chaves | Regras num módulo testado (`api/scripts/workflows.ts`), com 17 casos |
+| Regra do bundle mais frouxa que a do npm | Exige versão, nome declarado por quem empacota (ou por outra entrada do bundle) e empacotador instalado, nunca raiz nem workspace |
+| Data de publicação inválida passava pela idade mínima | Recusada; a data só vem da chave própria do registro e em texto |
+| Pilha que não começa por `Nome: mensagem` voltava ao filtro antigo | Fica fora do log, marcada `pilhaDescartada` (falha fechada) |
+| Testes de integração que podiam passar pelo caminho errado ou ficar pendurados | 57P01 conferido no erro cru; espera com prazo; limpeza em `finally`; qualquer saída menos 2xx |
+
+O commit grande da primeira rodada (`e5c4ca9`) foi dividido em 14 commits, um por assunto, com o conteúdo final idêntico.
+
