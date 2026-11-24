@@ -9,6 +9,7 @@
 // Saída: a lista do que foi conferido e, se algo falhar, código 1 com os motivos.
 import { readFileSync } from "node:fs";
 import {
+  apelidosDaBase,
   avaliarPacote,
   pacotesNovosOuAlterados,
   problemasDoLock,
@@ -39,6 +40,16 @@ if (problemas.length) {
   for (const problema of problemas) console.log(`RECUSADO ${problema}`);
   console.log(`check-lock: ${String(problemas.length)} problema(s) no lockfile; nada foi instalado.`);
   process.exit(1);
+}
+
+// Destaque para quem revisa: apelido aceito só pela lista allowAliases, que não estava na base.
+const daBase = apelidosDaBase(base);
+for (const [pasta, nome] of Object.entries(raiz.allowAliases ?? {})) {
+  const usado = Object.entries(novo.packages).some(
+    ([chave, entrada]) => chave.endsWith(`node_modules/${pasta}`) && entrada.name === nome,
+  );
+  if (usado && !daBase.has(`${pasta}\0${nome}`))
+    console.log(`aviso    APELIDO NOVO pela lista allowAliases: ${pasta} -> ${nome}`);
 }
 
 const pacotes = pacotesNovosOuAlterados(base, novo);

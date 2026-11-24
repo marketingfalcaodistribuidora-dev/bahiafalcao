@@ -164,6 +164,13 @@ describe("problemasDoLock (conferência do lockfile inteiro, sem rede)", () => {
       expect(problemasDoLock(novo)).toEqual([PROBLEMA_DO_FORJADO]);
     });
 
+    it("recusa o apelido da lista com valor que não é um nome do npm em texto", () => {
+      const novo = lock({ "node_modules/ms": forjado });
+      const comLista = { ms: ["evil-pkg"] } as unknown as Record<string, string>;
+
+      expect(problemasDoLock(novo, { apelidosPermitidos: comLista })).toEqual([PROBLEMA_DO_FORJADO]);
+    });
+
     it("recusa o apelido da lista quando ele aponta para outro nome", () => {
       const novo = lock({ "node_modules/ms": forjado });
 

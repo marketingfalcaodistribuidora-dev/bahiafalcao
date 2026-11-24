@@ -56,7 +56,18 @@ export interface Confianca {
  * npm instala na pasta sem conferir se o tarball é do pacote que a pasta diz ser.
  */
 function apelidosConfiaveis({ base, apelidosPermitidos = {} }: Confianca): Set<string> {
-  const apelidos = new Set(Object.entries(apelidosPermitidos).map(([pasta, nome]) => `${pasta}\0${nome}`));
+  // A lista vem do package.json: só pares de nomes do npm em texto (um valor ["x"] não vira "x").
+  const daLista = Object.entries(apelidosPermitidos as Record<string, unknown>).filter(
+    (par): par is [string, string] => typeof par[1] === "string" && ehNomeDoNpm(par[0]) && ehNomeDoNpm(par[1]),
+  );
+  const apelidos = new Set(daLista.map(([pasta, nome]) => `${pasta}\0${nome}`));
+  for (const apelido of apelidosDaBase(base)) apelidos.add(apelido);
+  return apelidos;
+}
+
+/** Os apelidos que já estavam no lockfile da base, como "pasta\0nome". */
+export function apelidosDaBase(base: Lockfile | undefined): Set<string> {
+  const apelidos = new Set<string>();
   for (const [chave, entrada] of Object.entries(base?.packages ?? {})) {
     const pasta = nomeDaChave(chave);
     if (pasta && entrada.name && entrada.name !== pasta) apelidos.add(`${pasta}\0${entrada.name}`);
