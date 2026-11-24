@@ -1,7 +1,7 @@
 # Tarefas 000: Fundação da API do catálogo
 
 - **Plano:** [plan.md](./plan.md)
-- **Progresso:** 11 de 12
+- **Progresso:** 12 de 12 (fundação concluída em 24/11/2026, falta só o merge, que é do responsável)
 
 Regras:
 - o teste vem sempre antes do código, com a falha mostrada;
@@ -160,7 +160,7 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
     - `build`, `start` e `dev` conferidos à mão: a versão compilada recusa configuração inválida (código 1) e responde pela rede com os cabeçalhos de segurança;
     - **prova por mutação (review-gate, T012):** 6 mutações no cache da prontidão (sem cache, sem chamada única, sem nova conferência, borda dos 2 s, limite de 1 s, limite padrão). O limite de 1 s sobreviveu, porque o teste usava 20 ms reais e não conferia o tempo. O teste passou a usar relógio controlado e a conferir 999 ms e 1000 ms; agora as 6 deixam testes vermelhos;
     - 169 testes da API, 100% das linhas e 95,7% dos ramos.
-- [ ] T012 Fechamento da fundação:
+- [x] T012 Fechamento da fundação:
   - `api/README.md` (comandos, pool, as duas opções de domínio com CORS, cookie e `TRUST_PROXY`, D1), `CHANGELOG.md` e `docs/aplicacao/api-fundacao.md`;
   - passo a passo da proteção da `main` (D19), conferido com `gh api …/branches/main/protection`;
   - **`review-gate` da fundação inteira**, com os quatro revisores, e correção de todo Crítico e Alto.
@@ -191,7 +191,12 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
     - **rodada 6 do review-gate: os quatro revisores APROVARAM, sem Crítico nem Alto.** Corrigidos o Médio e os Baixos baratos, um commit por achado:
       - vistos vermelhos antes: workspaces vindos do `package.json` da raiz 5 (o lockfile declarava uma pasta qualquer, inclusive fora do repositório), aviso de apelido novo 3, escape com a lista exata 1, checkout fora de um passo 1;
       - o CI rodou pela primeira vez no pull request #1 (rascunho) e os três jobs passaram (segurança, qualidade e API);
-    - falta: a proteção da `main` (D19). A proteção precisa do responsável: o `gh` não está instalado, e o uso da credencial guardada pelo Git foi bloqueado pelas permissões do Claude Code.
+    - **proteção da `main` (D19), feita em 24/11/2026 com o `gh` (login do responsável pelo navegador) e conferida lendo de volta com `gh api repos/<dono>/<repo>/branches/main/protection`:**
+      - os três jobs do CI obrigatórios (segurança, qualidade e API), com a branch atualizada antes do merge;
+      - sem push forçado, sem apagar a `main`, e conversas do PR resolvidas antes do merge;
+      - `enforce_admins: false`, de propósito: o responsável continua podendo publicar o site direto na `main`, como faz hoje;
+      - o token do Actions já era só de leitura por padrão;
+      - a revisão obrigatória e o CODEOWNERS ficaram de fora (um só desenvolvedor); estão registrados em "Adiado para a fase que usa". A proteção precisa do responsável: o `gh` não está instalado, e o uso da credencial guardada pelo Git foi bloqueado pelas permissões do Claude Code.
 
 ## Adiado para a fase que usa
 
@@ -215,7 +220,7 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
 
 - [x] Cobertura ≥ 90% em `src/modules/**`, `src/plugins/**` e `src/shared/**` (e também em `src/config/**`, `src/app.ts`, `src/servidor.ts` e `src/desligamento.ts`).
 - [x] Matriz de autorização verde.
-- [ ] `review-gate` da fundação aprovado (sem Crítico nem Alto).
+- [x] `review-gate` da fundação aprovado (sem Crítico nem Alto): os quatro revisores aprovaram na rodada 6.
 - [x] `README`, `.env.example`, `docs/` e `CHANGELOG.md` atualizados.
 
 ## Desvios registrados
