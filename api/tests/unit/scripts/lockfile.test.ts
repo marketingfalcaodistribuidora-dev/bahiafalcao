@@ -247,6 +247,28 @@ describe("problemasDoLock (conferência do lockfile inteiro, sem rede)", () => {
       ]);
     });
 
+    it("recusa bundleDependencies: true, que o npm não entende como bundle (baixaria sem integridade)", () => {
+      const comTrue = lock({
+        "node_modules/empacota": { ...empacotador, bundleDependencies: true },
+        "node_modules/empacota/node_modules/a": { version: "1.0.0", inBundle: true },
+      });
+
+      expect(problemasDoLock(comTrue)).toEqual([
+        "node_modules/empacota/node_modules/a: marcada como inBundle, mas nenhum pacote acima a empacota",
+      ]);
+    });
+
+    it("recusa entrada do bundle com name diferente da pasta", () => {
+      const comName = lock({
+        "node_modules/empacota": empacotador,
+        "node_modules/empacota/node_modules/a": { version: "1.0.0", inBundle: true, name: "evil-pkg" },
+      });
+
+      expect(problemasDoLock(comName)).toEqual([
+        'node_modules/empacota/node_modules/a: marcada como inBundle, mas com name diferente da pasta: "evil-pkg"',
+      ]);
+    });
+
     it("recusa a marca numa entrada de primeiro nível, que nenhum pacote empacota", () => {
       const falsa = lock({ "node_modules/zod": { version: "4.6.7", inBundle: true } });
 

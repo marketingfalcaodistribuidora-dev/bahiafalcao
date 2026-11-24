@@ -127,17 +127,21 @@ function chaveDoPai(chave: string): string | null {
 function problemaDoBundle(lock: Lockfile, chave: string, entrada: EntradaDoLock): string | null {
   if (entrada.resolved || entrada.integrity) return `${chave}: marcada como inBundle, mas traz resolved ou integrity`;
   if (!entrada.version) return `${chave}: sem versão`;
+  const nome = nomeDaChave(chave) ?? "";
+  if (entrada.name !== undefined && entrada.name !== nome) {
+    return `${chave}: marcada como inBundle, mas com name diferente da pasta: ${JSON.stringify(entrada.name)}`;
+  }
   let pai = chaveDoPai(chave);
   while (pai && lock.packages[pai]?.inBundle) pai = chaveDoPai(pai);
-  // Quem empacota é um pacote instalado (em node_modules/), nunca a raiz nem um workspace.
+  // Quem empacota é um pacote instalado (em node_modules/), nunca a raiz nem um workspace. Só lista
+  // vale: com "true", o npm não trata a entrada como bundle e a baixaria sem integridade.
   const empacota = pai?.startsWith("node_modules/") ? lock.packages[pai]?.bundleDependencies : undefined;
-  if (empacota !== true && !(Array.isArray(empacota) && empacota.length > 0)) {
+  if (!Array.isArray(empacota) || empacota.length === 0) {
     return `${chave}: marcada como inBundle, mas nenhum pacote acima a empacota`;
   }
   // O nome está na lista de quem empacota, ou é dependência declarada de outra entrada do bundle
   // (o npm achata essas dependências sob quem empacota).
-  const nome = nomeDaChave(chave) ?? "";
-  if (empacota === true || empacota.includes(nome)) return null;
+  if (empacota.includes(nome)) return null;
   const doBundle = `${pai ?? ""}/node_modules/`;
   const declarada = Object.entries(lock.packages).some(
     ([outra, dados]) => outra.startsWith(doBundle) && dados.inBundle && Object.hasOwn(dados.dependencies ?? {}, nome),
