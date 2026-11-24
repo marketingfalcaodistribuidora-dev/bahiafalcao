@@ -128,11 +128,23 @@ function chaveDoPai(chave: string): string | null {
  */
 function problemaDoBundle(lock: Lockfile, chave: string, entrada: EntradaDoLock): string | null {
   if (entrada.resolved || entrada.integrity) return `${chave}: marcada como inBundle, mas traz resolved ou integrity`;
+  if (!entrada.version) return `${chave}: sem versão`;
   let pai = chaveDoPai(chave);
   while (pai && lock.packages[pai]?.inBundle) pai = chaveDoPai(pai);
-  const empacota = pai ? lock.packages[pai]?.bundleDependencies : undefined;
-  const declara = empacota === true || (Array.isArray(empacota) && empacota.length > 0);
-  return declara ? null : `${chave}: marcada como inBundle, mas nenhum pacote acima a empacota`;
+  // Quem empacota é um pacote instalado (em node_modules/), nunca a raiz nem um workspace.
+  const empacota = pai?.startsWith("node_modules/") ? lock.packages[pai]?.bundleDependencies : undefined;
+  if (empacota !== true && !(Array.isArray(empacota) && empacota.length > 0)) {
+    return `${chave}: marcada como inBundle, mas nenhum pacote acima a empacota`;
+  }
+  // O nome está na lista de quem empacota, ou é dependência declarada de outra entrada do bundle
+  // (o npm achata essas dependências sob quem empacota).
+  const nome = nomeDaChave(chave) ?? "";
+  if (empacota === true || empacota.includes(nome)) return null;
+  const doBundle = `${pai ?? ""}/node_modules/`;
+  const declarada = Object.entries(lock.packages).some(
+    ([outra, dados]) => outra.startsWith(doBundle) && dados.inBundle && Object.hasOwn(dados.dependencies ?? {}, nome),
+  );
+  return declarada ? null : `${chave}: marcada como inBundle, mas ninguém no bundle a declara`;
 }
 
 /** "@fastify/cors", "11.4.3" → "https://registry.npmjs.org/@fastify/cors/-/cors-11.4.3.tgz" */

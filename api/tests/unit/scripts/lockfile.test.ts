@@ -171,11 +171,56 @@ describe("problemasDoLock (conferência do lockfile inteiro, sem rede)", () => {
     it("aceita a dependência empacotada e as dependências dela, sem resolved nem integridade", () => {
       const comBundle = lock({
         "node_modules/empacota": empacotador,
-        "node_modules/empacota/node_modules/a": { version: "1.0.0", inBundle: true },
+        "node_modules/empacota/node_modules/a": { version: "1.0.0", inBundle: true, dependencies: { b: "^2.0.0" } },
         "node_modules/empacota/node_modules/a/node_modules/b": { version: "2.0.0", inBundle: true },
       });
 
       expect(problemasDoLock(comBundle)).toEqual([]);
+    });
+
+    it("aceita, achatada sob quem empacota, a dependência de outra entrada do bundle", () => {
+      const achatado = lock({
+        "node_modules/empacota": empacotador,
+        "node_modules/empacota/node_modules/a": { version: "1.0.0", inBundle: true, dependencies: { c: "^3.0.0" } },
+        "node_modules/empacota/node_modules/c": { version: "3.0.0", inBundle: true },
+      });
+
+      expect(problemasDoLock(achatado)).toEqual([]);
+    });
+
+    it("recusa entrada do bundle que nem quem empacota nem o bundle declaram", () => {
+      const intrusa = lock({
+        "node_modules/empacota": empacotador,
+        "node_modules/empacota/node_modules/intrusa": { version: "1.0.0", inBundle: true },
+      });
+
+      expect(problemasDoLock(intrusa)).toEqual([
+        "node_modules/empacota/node_modules/intrusa: marcada como inBundle, mas ninguém no bundle a declara",
+      ]);
+    });
+
+    it("recusa entrada do bundle sem versão", () => {
+      const semVersao = lock({
+        "node_modules/empacota": empacotador,
+        "node_modules/empacota/node_modules/a": { inBundle: true },
+      });
+
+      expect(problemasDoLock(semVersao)).toEqual(["node_modules/empacota/node_modules/a: sem versão"]);
+    });
+
+    it("recusa bundle cujo empacotador é um workspace do repositório", () => {
+      const doWorkspace = {
+        lockfileVersion: 3,
+        packages: {
+          "": { name: "raiz", workspaces: ["api"] },
+          api: { name: "@falcao/api", version: "0.1.0", bundleDependencies: ["a"] },
+          "api/node_modules/a": { version: "1.0.0", inBundle: true },
+        },
+      };
+
+      expect(problemasDoLock(doWorkspace)).toEqual([
+        "api/node_modules/a: marcada como inBundle, mas nenhum pacote acima a empacota",
+      ]);
     });
 
     it("recusa a marca numa entrada de primeiro nível, que nenhum pacote empacota", () => {
