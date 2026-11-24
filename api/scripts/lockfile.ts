@@ -18,6 +18,52 @@ export interface EntradaDoLock {
   hasInstallScript?: boolean;
   /** Só na raiz (""): as pastas dos workspaces. */
   workspaces?: string[];
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  optionalDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+}
+
+const PARTE_DO_NOME = /^[a-z0-9][a-z0-9._~-]*$/;
+
+/** Nome de pacote do npm: minúsculas, com escopo opcional (@escopo/nome). */
+function ehNomeDoNpm(nome: string): boolean {
+  const [primeira = "", segunda, ...resto] = nome.split("/");
+  if (resto.length) return false;
+  if (segunda === undefined) return PARTE_DO_NOME.test(primeira);
+  return primeira.startsWith("@") && PARTE_DO_NOME.test(primeira.slice(1)) && PARTE_DO_NOME.test(segunda);
+}
+
+/** Versão semver estrita, com pré-lançamento opcional e sem metadados de build (+build). */
+function ehSemverEstrito(versao: string): boolean {
+  const hifen = versao.indexOf("-");
+  const nucleo = hifen === -1 ? versao : versao.slice(0, hifen);
+  const preLancamento = hifen === -1 ? null : versao.slice(hifen + 1);
+  return /^\d+\.\d+\.\d+$/.test(nucleo) && (preLancamento === null || /^[0-9A-Za-z.-]+$/.test(preLancamento));
+}
+
+/**
+ * Os apelidos que algum pacote do lockfile declara ("pasta": "npm:nome-verdadeiro@faixa"), como
+ * "pasta\0nome". Só eles autorizam um `name` diferente da pasta: o `name` vem do próprio lockfile,
+ * e o npm instala na pasta sem conferir se o tarball é do pacote que a pasta diz ser.
+ */
+function apelidosDeclarados(pacotes: Lockfile["packages"]): Set<string> {
+  const apelidos = new Set<string>();
+  for (const entrada of Object.values(pacotes)) {
+    const mapas = [
+      entrada.dependencies,
+      entrada.devDependencies,
+      entrada.optionalDependencies,
+      entrada.peerDependencies,
+    ];
+    for (const [pasta, faixa] of mapas.flatMap((mapa) => Object.entries(mapa ?? {}))) {
+      if (typeof faixa !== "string" || !faixa.startsWith("npm:")) continue;
+      const alvo = faixa.slice("npm:".length);
+      const arroba = alvo.lastIndexOf("@");
+      apelidos.add(`${pasta}\0${arroba > 0 ? alvo.slice(0, arroba) : alvo}`);
+    }
+  }
+  return apelidos;
 }
 
 export interface Lockfile {
@@ -101,6 +147,7 @@ export function problemasDoLock(lock: Lockfile): string[] {
   if (!pacotes) return ['lockfile sem "packages"'];
   if (lock.lockfileVersion !== 3) return [`lockfileVersion ${String(lock.lockfileVersion)}: só o formato 3 é aceito`];
   const workspaces = new Set(pacotes[""]?.workspaces ?? []);
+  const apelidos = apelidosDeclarados(pacotes);
 
   const problemas: string[] = [];
   for (const [chave, entrada] of Object.entries(pacotes)) {
@@ -118,7 +165,15 @@ export function problemasDoLock(lock: Lockfile): string[] {
       continue;
     }
     if (!entrada.version) problemas.push(`${chave}: sem versão`);
-    const nome = entrada.name ?? nomeDaChave(chave) ?? "";
+    else if (!ehSemverEstrito(entrada.version)) {
+      problemas.push(`${chave}: versão fora do semver estrito: ${entrada.version}`);
+    }
+    const pasta = nomeDaChave(chave) ?? "";
+    const nome = entrada.name ?? pasta;
+    if (!ehNomeDoNpm(nome)) problemas.push(`${chave}: name fora das regras do npm: ${JSON.stringify(nome)}`);
+    else if (nome !== pasta && !apelidos.has(`${pasta}\0${nome}`)) {
+      problemas.push(`${chave}: name "${nome}" diferente da pasta, e nenhum pacote declara npm:${nome}@`);
+    }
     const esperado = tarballNoRegistro(nome, entrada.version ?? "");
     if (!entrada.resolved?.startsWith(REGISTRO_DO_NPM)) problemas.push(`${chave}: não vem do registro do npm`);
     else if (entrada.version && entrada.resolved !== esperado) {

@@ -74,12 +74,18 @@ describe("problemasDoLock (conferência do lockfile inteiro, sem rede)", () => {
     ]);
   });
 
-  it("aceita o tarball de pacote com escopo e de pacote instalado com apelido (npm:nome@versão)", () => {
+  it("aceita o tarball de pacote com escopo e de apelido declarado por quem depende (npm:nome@faixa)", () => {
     const certos = lock({
       "node_modules/@fastify/cors": {
         version: "11.4.3",
         resolved: `${REGISTRO}/@fastify/cors/-/cors-11.4.3.tgz`,
         integrity: INTEGRIDADE,
+      },
+      "node_modules/@isaacs/cliui": {
+        version: "8.0.2",
+        resolved: `${REGISTRO}/@isaacs/cliui/-/cliui-8.0.2.tgz`,
+        integrity: INTEGRIDADE,
+        dependencies: { "string-width-cjs": "npm:string-width@^4.2.0" },
       },
       "node_modules/string-width-cjs": {
         name: "string-width",
@@ -90,6 +96,56 @@ describe("problemasDoLock (conferência do lockfile inteiro, sem rede)", () => {
     });
 
     expect(problemasDoLock(certos)).toEqual([]);
+  });
+
+  it("recusa name diferente da pasta que nenhum pacote declara como apelido (name forjado)", () => {
+    const forjado = lock({
+      "node_modules/atomic-sleep": {
+        name: "left-pad",
+        version: "1.0.0",
+        resolved: `${REGISTRO}/left-pad/-/left-pad-1.0.0.tgz`,
+        integrity: INTEGRIDADE,
+      },
+    });
+
+    expect(problemasDoLock(forjado)).toEqual([
+      'node_modules/atomic-sleep: name "left-pad" diferente da pasta, e nenhum pacote declara npm:left-pad@',
+    ]);
+  });
+
+  it("recusa apelido declarado para OUTRO pacote", () => {
+    const outroAlvo = lock({
+      "node_modules/quem-depende": {
+        version: "1.0.0",
+        resolved: `${REGISTRO}/quem-depende/-/quem-depende-1.0.0.tgz`,
+        integrity: INTEGRIDADE,
+        dependencies: { "atomic-sleep": "npm:atomic-sleep-oficial@^1.0.0" },
+      },
+      "node_modules/atomic-sleep": {
+        name: "left-pad",
+        version: "1.0.0",
+        resolved: `${REGISTRO}/left-pad/-/left-pad-1.0.0.tgz`,
+        integrity: INTEGRIDADE,
+      },
+    });
+
+    expect(problemasDoLock(outroAlvo)).toEqual([
+      'node_modules/atomic-sleep: name "left-pad" diferente da pasta, e nenhum pacote declara npm:left-pad@',
+    ]);
+  });
+
+  it.each([
+    ["versão com +build", { version: "4.6.7+build" }, "node_modules/zod: versão fora do semver estrito: 4.6.7+build"],
+    ["name fora das regras do npm", { name: "../Zod" }, 'node_modules/zod: name fora das regras do npm: "../Zod"'],
+  ])("recusa %s", (_caso, mudanca, problema) => {
+    const entrada = {
+      version: "4.6.7",
+      resolved: `${REGISTRO}/zod/-/zod-4.6.7.tgz`,
+      integrity: INTEGRIDADE,
+      ...mudanca,
+    };
+
+    expect(problemasDoLock(lock({ "node_modules/zod": entrada }))).toContain(problema);
   });
 
   it("recusa pacote sem integridade ou com integridade que não é sha512", () => {
