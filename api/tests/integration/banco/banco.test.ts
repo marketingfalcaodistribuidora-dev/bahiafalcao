@@ -4,7 +4,7 @@ import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { criarBanco, type Banco } from "../../../src/shared/banco.js";
 import { ErroDeConflito, ErroIndisponivel } from "../../../src/shared/erros.js";
-import { traduzirErroDoBanco } from "../../../src/shared/erros-do-banco.js";
+import { codigoDoPostgres, traduzirErroDoBanco } from "../../../src/shared/erros-do-banco.js";
 import { criarBancoDoArquivo, type BancoDoArquivo } from "../../apoio/banco.js";
 import { contarConsultas } from "../../apoio/contar-consultas.js";
 
@@ -31,14 +31,19 @@ interface Linha {
 
 const valor = async (sql: string): Promise<unknown> => (await cliente.query<{ valor: unknown }>(sql)).rows[0]?.valor;
 
+const PRAZO_PARA_A_CONSULTA_APARECER_MS = 3_000;
+
 /** Espera a consulta aparecer como ativa no banco (sem sleep: pergunta até ela aparecer). */
 async function esperarConsultaNoBanco(sql: string): Promise<void> {
-  for (;;) {
+  const inicio = performance.now();
+  while (performance.now() - inicio < PRAZO_PARA_A_CONSULTA_APARECER_MS) {
     const { rowCount } = await cliente.query("SELECT 1 FROM pg_stat_activity WHERE query = $1 AND state = 'active'", [
       sql,
     ]);
     if (rowCount) return;
+    await new Promise((pronto) => setTimeout(pronto, 10));
   }
+  throw new Error(`a consulta "${sql}" não apareceu no pg_stat_activity em 3 s`);
 }
 
 /** O erro que a promessa rejeitou, já traduzido para erro de domínio. */
@@ -128,21 +133,31 @@ describe("tradução dos erros do banco", () => {
   it("banco inalcançável vira ErroIndisponivel", async () => {
     const semBanco = criarBanco({ url: "postgresql://ninguem:x@127.0.0.1:1/nada" });
 
-    const erro = await erroTraduzido(semBanco.publico.$queryRaw`SELECT 1`);
+    let erro: unknown;
+    try {
+      erro = await erroTraduzido(semBanco.publico.$queryRaw`SELECT 1`);
+    } finally {
+      await semBanco.fechar();
+    }
 
-    await semBanco.fechar();
     expect(erro).toBeInstanceOf(ErroIndisponivel);
   });
 
   it("conexão derrubada no meio da consulta (banco reiniciando) vira ErroIndisponivel", async () => {
-    const consulta = erroTraduzido(banco.administracao.$queryRaw`SELECT pg_sleep(4.5)`);
+    const consulta = banco.administracao.$queryRaw`SELECT pg_sleep(4.5)`.then(
+      () => null,
+      (erro: unknown) => erro,
+    );
     await esperarConsultaNoBanco("SELECT pg_sleep(4.5)");
 
     await cliente.query(
       "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE query = 'SELECT pg_sleep(4.5)' AND pid <> pg_backend_pid()",
     );
+    const erro = await consulta;
 
-    expect(await consulta).toBeInstanceOf(ErroIndisponivel);
+    // 57P01, e não o corte por tempo (57014), que também viraria 503 e esconderia o caso.
+    expect(codigoDoPostgres(erro)).toBe("57P01");
+    expect(traduzirErroDoBanco(erro)).toBeInstanceOf(ErroIndisponivel);
   });
 
   it("pool sem conexão livre por 2 s vira ErroIndisponivel, sem esperar além disso (CA1.5)", async () => {

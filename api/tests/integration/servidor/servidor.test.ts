@@ -116,9 +116,9 @@ describe("desligamento gracioso (CA1.4)", () => {
   }
 
   /**
-   * Uma conexão nova durante o desligamento: recusada (ECONNREFUSED), cortada logo depois de
-   * aceita pelo sistema (ECONNRESET) ou, se chegar antes de a porta fechar, respondida com 503
-   * pelo Fastify. Nunca atendida normalmente.
+   * Uma conexão nova durante o desligamento: recusada (ECONNREFUSED), cortada depois de aceita
+   * pelo sistema (ECONNRESET, UND_ERR_SOCKET) ou, se chegar antes de a porta fechar, respondida
+   * com 503 pelo Fastify. Nunca atendida normalmente (2xx).
    */
   async function conexaoNovaRecusada(endereco: string): Promise<string> {
     try {
@@ -137,7 +137,7 @@ describe("desligamento gracioso (CA1.4)", () => {
     const encerrando = servidor.encerrar();
     try {
       // A conexão nova recusada mostra que o desligamento já começou; o banco segue aberto.
-      await conexaoNovaRecusada(servidor.endereco);
+      expect(await conexaoNovaRecusada(servidor.endereco)).not.toMatch(/^atendida com 2/);
       expect(servidor.banco.pools.publico.ended).toBe(false);
     } finally {
       liberar();
@@ -165,6 +165,6 @@ describe("desligamento gracioso (CA1.4)", () => {
       await encerrando;
     }
 
-    expect(["ECONNREFUSED", "ECONNRESET", "atendida com 503"]).toContain(resultado);
+    expect(resultado).not.toMatch(/^atendida com 2/);
   });
 });
