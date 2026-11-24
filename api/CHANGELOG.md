@@ -25,5 +25,5 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). A
 - Banco fora do ar, reiniciando, cheio, com a conexão caída ou com a consulta cortada por tempo responde 503, e não 500.
 - O log de erro inesperado leva os códigos do erro e não leva a mensagem, nem quando ela tem várias linhas ou imita a pilha. O log registra o molde da rota, e não os valores do caminho.
 - Rota sem resposta 2xx declarada e `TRUST_PROXY` com faixa larga demais (inclusive no IPv4 mapeado) impedem a API de subir.
-- A conferência dos workflows (CA7.6) ignora comentários, recusa permissão de escrita em qualquer nível e os gatilhos `pull_request_target` e `workflow_run`.
+- A conferência dos workflows (CA7.6) virou um módulo testado: ignora comentários só fora de aspas, recusa permissão de escrita em qualquer formato, action sem SHA em qualquer lugar da linha, escapes `\u`/`\x` e os gatilhos `pull_request_target` e `workflow_run`.
 - Conexões com o banco: sessão parada numa transação por 10 s é encerrada; erro numa conexão ociosa vai para o log em vez de derrubar o processo; porta ocupada fecha o banco.

@@ -64,47 +64,11 @@ if [ -d api/src ]; then
     falha "SQL montado com texto ou lint desligado em api/src (acima)."
 fi
 
-# 6) Workflows do GitHub (CA7.6): toda action fixada por SHA de 40 caracteres (uma tag pode ser
-#    movida para outro código), "permissions: contents: read" no topo, nenhuma permissão de
-#    escrita em nível nenhum (nem write-all), todo checkout sem guardar credenciais e nenhum
-#    gatilho que rode com os segredos do repositório código vindo de fora (pull_request_target,
-#    workflow_run). Os comentários são descartados antes, para não enganar a conferência.
-#    Sem parser de YAML (seria um pacote novo): as regras olham linha a linha, do jeito mais
-#    rígido. PASTA_DOS_WORKFLOWS troca a pasta (para conferir esta própria regra).
-node -e '
-  const fs = require("node:fs");
-  const path = require("node:path");
-  const pasta = process.argv[1];
-  const ruins = [];
-  // Comentário do YAML: "#" no começo da linha ou depois de um espaço, até o fim da linha.
-  const semComentario = (linha) => linha.replace(/(^|\s)#.*$/, "");
-  for (const nome of fs.readdirSync(pasta).filter((arquivo) => /\.ya?ml$/.test(arquivo))) {
-    const linhas = fs.readFileSync(path.join(pasta, nome), "utf8").split(/\r?\n/).map(semComentario);
-    const texto = linhas.join("\n");
-    linhas.forEach((linha, i) => {
-      const onde = `${nome}:${i + 1}`;
-      const uso = linha.match(/^\s*(?:-\s*)?uses:\s*(\S+)/);
-      if (uso && !uso[1].startsWith("./") && !/@[0-9a-f]{40}$/.test(uso[1])) {
-        ruins.push(`${onde}: action sem SHA: ${uso[1]}`);
-      }
-      if (/\bwrite-all\b/.test(linha) || /^\s*[\w-]+:\s*write\s*$/.test(linha)) {
-        ruins.push(`${onde}: permissão de escrita: ${linha.trim()}`);
-      }
-      if (/\b(pull_request_target|workflow_run)\b/.test(linha)) {
-        ruins.push(`${onde}: gatilho proibido: ${linha.trim()}`);
-      }
-    });
-    if (!/^permissions:[ \t]*\n[ \t]+contents:[ \t]*read\b/m.test(texto)) {
-      ruins.push(`${nome}: sem "permissions: contents: read" no topo`);
-    }
-    const checkouts = (texto.match(/uses:\s*actions\/checkout@/g) ?? []).length;
-    const semCredenciais = (texto.match(/persist-credentials:\s*false/g) ?? []).length;
-    if (checkouts !== semCredenciais) ruins.push(`${nome}: checkout sem persist-credentials: false`);
-  }
-  if (ruins.length) {
-    console.error(ruins.join("\n"));
-    process.exit(1);
-  }
-' "${PASTA_DOS_WORKFLOWS:-.github/workflows}" || falha "workflow fora da regra (acima)."
+# 6) Workflows do GitHub (CA7.6): as regras ficam em api/scripts/workflows.ts, testadas
+#    (actions por SHA, "permissions: contents: read" no topo, nenhuma permissão de escrita,
+#    checkout sem credenciais, sem gatilhos perigosos nem escapes). PASTA_DOS_WORKFLOWS troca a
+#    pasta conferida.
+node api/scripts/conferir-workflows.ts "${PASTA_DOS_WORKFLOWS:-.github/workflows}" ||
+  falha "workflow fora da regra (acima)."
 
 echo "conferir-esteira: tudo certo (npm $versao_npm, .npmrc ativo, versões exatas, sem flags proibidas, workflows fixados)."
