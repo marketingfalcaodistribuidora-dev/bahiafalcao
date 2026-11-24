@@ -97,7 +97,7 @@ Os containers só sobem com o `db:subir`. Eles não voltam sozinhos quando o Doc
 | `.githooks/pre-push` | Antes de cada envio: o portão completo (`npm run check`). |
 | `api/scripts/conferir-esteira.sh` | No CI: npm ≥ 11.20, `.npmrc` ativo, nenhum `^`/`~`, nenhuma flag que desligue a proteção de scripts, nenhum SQL montado com texto nem `eslint-disable` em `api/src`, e os workflows (CA7.6) pelas regras de `api/scripts/workflows.ts`. |
 | `api/scripts/workflows.ts` e `conferir-workflows.ts` | Regras dos workflows (CA7.6), testadas (`tests/unit/scripts/workflows.test.ts`). Sem parser de YAML, elas falham fechado: recusam a palavra `write` em qualquer lugar fora de comentário; âncoras, tags, chaves complexas, `uses` sem valor na linha e escapes `\u`/`\x`; action sem SHA (com ou sem aspas na chave) e action local que sai do repositório; `pull_request_target` e `workflow_run`. Exigem `permissions: contents: read` no topo e `persist-credentials: false` em cada checkout. É uma heurística rígida, não uma garantia: o controle de verdade é a proteção da `main` (D19). |
-| `api/scripts/check-lock.ts` | No CI, **antes do `npm ci`** e com o node puro (que executa TypeScript; por isso o import termina em `.ts` e o `tsconfig.json` liga `allowImportingTsExtensions`). Primeiro confere o lockfile inteiro, sem rede: toda dependência tem versão, vem do registro do npm e traz integridade sha512. Depois, cada pacote novo ou alterado (inclusive os indiretos; o mesmo `nome@versão` com outro endereço ou integridade conta como alterado) passa pelo protocolo. Recusa versão com menos de 7 dias, falha alta, crítica ou de gravidade desconhecida, origem fora do registro do npm e script de instalação fora do `allowScripts`. Falha moderada ou baixa vira aviso. |
+| `api/scripts/check-lock.ts` | No CI, **antes do `npm ci`** e com o node puro (que executa TypeScript; por isso o import termina em `.ts` e o `tsconfig.json` liga `allowImportingTsExtensions`). Primeiro confere o lockfile inteiro, sem rede: toda dependência tem versão, vem do registro do npm e traz integridade sha512. Depois, cada pacote novo ou alterado (inclusive os indiretos; o mesmo `nome@versão` com outro endereço ou integridade conta como alterado) passa pelo protocolo. Recusa versão com menos de 7 dias, falha alta, crítica ou de gravidade desconhecida, origem fora do registro do npm e script de instalação fora do `allowScripts`. Falha moderada ou baixa vira aviso. Um pacote com `name` diferente da pasta (apelido `npm:`) só é aceito se o par já estava no lockfile da base ou está no `allowAliases` do `package.json` da raiz. |
 | `.github/workflows/ci.yml` | Três jobs: **segurança** (conferência, check-lock, `npm audit --audit-level=high`, `npm audit signatures` e gitleaks no histórico inteiro); depois **qualidade** (`npm run check` e o build da Vercel) e **API** (testes com cobertura). |
 | `.github/dependabot.yml` | Atualizações semanais com espera de 7 dias, agrupadas. |
 
@@ -341,4 +341,14 @@ A terceira rodada aprovou em desempenho, qualidade e backend, e reprovou em segu
 | Testes de integração que podiam passar pelo caminho errado ou ficar pendurados | 57P01 conferido no erro cru; espera com prazo; limpeza em `finally`; qualquer saída menos 2xx |
 
 O commit grande da primeira rodada (`e5c4ca9`) foi dividido em 14 commits, um por assunto, com o conteúdo final idêntico.
+
+A quarta rodada aprovou em desempenho, qualidade e backend, e reprovou em segurança: a declaração `npm:` exigida na rodada 3 também vinha do lockfile, que o atacante controla. Correções, um commit por achado:
+
+| Achado | Correção |
+|---|---|
+| Alto: bastava declarar o apelido em qualquer entrada do lockfile (ou na de um workspace, que o npm nem lê) | Um par (pasta, `name`) diferente só vale se já existia no lockfile da base (a `main`) ou se está no `allowAliases` do `package.json` da raiz, revisado num diff pequeno. A lista começa com os três `*-cjs` de hoje |
+| A CA7.6 ainda deixava passar chave entre aspas, valor na linha de baixo, âncora, tag e chave complexa | A regra falha fechado: recusa a palavra `write` em qualquer lugar fora de comentário e os recursos do YAML que escreveriam o mesmo de outro jeito. É uma heurística rígida; o controle de verdade é a proteção da `main` (D19) |
+| Uma mensagem encurtada depois de lida a pilha ainda deixava passar uma linha que imita a pilha | Só entram quadros reais, terminados em `arquivo:linha:coluna` |
+| `bundleDependencies: true` aceito, mas o npm só entende lista | `true` conta como "não empacota"; entrada em bundle com `name` trocado é recusada |
+| Teste de desligamento que aceitava qualquer saída menos 2xx | Lista exata: `ECONNREFUSED`, `ECONNRESET`, `UND_ERR_SOCKET` ou 503 |
 

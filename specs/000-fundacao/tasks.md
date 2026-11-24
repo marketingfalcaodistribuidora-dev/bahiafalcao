@@ -180,7 +180,12 @@ Cada tarefa abaixo junta o teste e o código (o teste continua sempre antes, com
       - vistos vermelhos antes: CA7.6 17 casos (o módulo não existia; depois, 4 para as frestas novas), `name` forjado e formato de nome e versão 4, regra do bundle 3, data de publicação inválida 1, pilha que não começa pela mensagem 1;
       - os testes de integração ficaram mais rígidos (57P01 conferido no erro cru, espera com prazo, `finally`, qualquer saída menos 2xx). `codigoDoPostgres` virou função única (refatoração, sem mudança de comportamento);
     - 268 testes da API; linhas, comandos e funções em 100%, ramos em 96%;
-    - falta: a rodada 4 do review-gate e a proteção da `main` (D19).
+    - **rodada 4 do review-gate:** desempenho, qualidade e backend APROVADO; segurança REPROVADO (1 Alto: o apelido `npm:` também vinha do lockfile, e bastava declará-lo em qualquer entrada). Corrigidos o Alto, o Médio de qualidade (CA7.6 ainda com formatos que escapavam) e os Baixos, um commit por achado:
+      - vistos vermelhos antes: apelido só pela base ou pelo `allowAliases` 8, CA7.6 falhando fechado 11, quadros reais da pilha 1, `bundleDependencies: true` e `name` no bundle 2;
+      - passaram de primeira os dois testes positivos da pilha (caso comum e erro sem mensagem), que caracterizam um comportamento existente sem teste;
+      - o teste da conexão nova no desligamento voltou à lista exata de saídas;
+    - a branch foi enviada ao GitHub em 24/11/2026 (o CI roda no pull request);
+    - falta: a rodada 5 do review-gate e a proteção da `main` (D19). A proteção precisa do responsável: o `gh` não está instalado, e o uso da credencial guardada pelo Git foi bloqueado pelas permissões do Claude Code.
 
 ## Adiado para a fase que usa
 
