@@ -54,6 +54,9 @@ function comoErroDeDominio(erro: FastifyError): ErroDeDominio | null {
   return null;
 }
 
+/** Um quadro real da pilha termina na posição no código: arquivo:linha:coluna. */
+const QUADRO_DA_PILHA = /^\s+at .+:\d+:\d+\)?$/;
+
 /**
  * Da pilha, só as linhas de localização no código. A mensagem pode ter várias linhas com dados
  * (as do Prisma listam os argumentos, como e-mails), e uma delas pode até imitar uma linha da
@@ -68,7 +71,8 @@ function pilhaSemMensagem(erro: Error): { pilha: string } | { pilhaDescartada: t
   const quadros = pilha
     .slice(cabecalho.length)
     .split("\n")
-    .filter((linha) => /^\s+at /.test(linha));
+    // Só quadros reais: terminam na posição no código (arquivo:linha:coluna).
+    .filter((linha) => QUADRO_DA_PILHA.test(linha));
   return { pilha: quadros.join("\n") };
 }
 

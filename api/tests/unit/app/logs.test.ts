@@ -184,6 +184,50 @@ describe("logs sem dados sensíveis (CA3.2)", () => {
     expect(log).not.toContain("ana@exemplo.com");
   });
 
+  it("no caso comum, a pilha (as linhas at) vai para o log, para o diagnóstico", async () => {
+    const teste = await appDeTeste();
+    app = teste.app;
+    app.get("/teste/quebra-comum", ROTA_PUBLICA_DE_TESTE, () => {
+      throw new TypeError("x");
+    });
+
+    await app.inject({ method: "GET", url: "/teste/quebra-comum" });
+
+    const log = teste.log();
+    expect(log).toMatch(/"pilha":"\s+at /);
+    expect(log).not.toContain("pilhaDescartada");
+  });
+
+  it("um erro sem mensagem também vai para o log com a pilha", async () => {
+    const teste = await appDeTeste();
+    app = teste.app;
+    app.get("/teste/quebra-sem-mensagem", ROTA_PUBLICA_DE_TESTE, () => {
+      throw new Error();
+    });
+
+    await app.inject({ method: "GET", url: "/teste/quebra-sem-mensagem" });
+
+    const log = teste.log();
+    expect(log).toMatch(/"pilha":"\s+at /);
+    expect(log).not.toContain("pilhaDescartada");
+  });
+
+  it("uma linha que imita a pilha sem posição no código (:linha:coluna) não vai para o log", async () => {
+    const teste = await appDeTeste();
+    app = teste.app;
+    app.get("/teste/quebra-encurtada", ROTA_PUBLICA_DE_TESTE, () => {
+      const erro = new Error("segredo" + String.fromCharCode(10) + "    at falso (fulano@exemplo.com)");
+      // A pilha é montada na primeira leitura; depois, a mensagem encurtada ainda casa o cabeçalho.
+      String(erro.stack);
+      erro.message = "segredo";
+      throw erro;
+    });
+
+    await app.inject({ method: "GET", url: "/teste/quebra-encurtada" });
+
+    expect(teste.log()).not.toContain("fulano@exemplo.com");
+  });
+
   it("um erro do banco não traduzido vai para o log com os códigos (não sensíveis), sem a mensagem", async () => {
     const teste = await appDeTeste();
     app = teste.app;
