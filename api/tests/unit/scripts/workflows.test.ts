@@ -61,13 +61,15 @@ describe("problemasDoWorkflow", () => {
   it("recusa checkout que guarda credenciais", () => {
     const comCredenciais = certo.replace("        with:\n          persist-credentials: false\n", "");
 
-    expect(problemasDoWorkflow("ci.yml", comCredenciais)).toEqual(["ci.yml: checkout sem persist-credentials: false"]);
+    expect(problemasDoWorkflow("ci.yml", comCredenciais)).toEqual([
+      "ci.yml:9: checkout sem persist-credentials: false",
+    ]);
   });
 
   it("não se deixa enganar por comentário (um persist-credentials: false comentado não conta)", () => {
     const comentado = certo.replace("          persist-credentials: false", "          # persist-credentials: false");
 
-    expect(problemasDoWorkflow("ci.yml", comentado)).toEqual(["ci.yml: checkout sem persist-credentials: false"]);
+    expect(problemasDoWorkflow("ci.yml", comentado)).toEqual(["ci.yml:9: checkout sem persist-credentials: false"]);
   });
 
   it.each([
@@ -90,9 +92,9 @@ describe("problemasDoWorkflow", () => {
   it("recusa escape de caractere (\\u ou \\x), que esconderia um nome proibido", () => {
     const comEscape = certo.replace("  push:", '  "workflow\\u005frun":');
 
-    expect(problemasDoWorkflow("ci.yml", comEscape)).toEqual([
+    expect(problemasDoWorkflow("ci.yml", comEscape)).toContain(
       'ci.yml:2: escape de caractere proibido: "workflow\\u005frun":',
-    ]);
+    );
   });
 
   // Rodada 4: formatos válidos de YAML que escapavam das regras linha a linha. Agora a regra é
@@ -151,7 +153,55 @@ describe("problemasDoWorkflow", () => {
       .replace("        with:\n          persist-credentials: false\n", "")
       .replace("      - run: npm ci", '      - run: echo "persist-credentials: false"');
 
-    expect(problemasDoWorkflow("ci.yml", noTexto)).toContainEqual("ci.yml: checkout sem persist-credentials: false");
+    expect(problemasDoWorkflow("ci.yml", noTexto)).toContainEqual("ci.yml:9: checkout sem persist-credentials: false");
+  });
+
+  // Rodada 5: dentro de aspas duplas, uma barra invertida no fim da linha junta as duas linhas
+  // ("wri\" + "te" vira write). Barra invertida em aspas duplas e texto entre aspas que continua na
+  // linha de baixo são recusados.
+  it.each([
+    ["escrita", "  contents: read\n", '  contents: read\n  id-token: "wri\\\n    te"\n'],
+    ["gatilho", "  push:", '  ["pull_request_\\\n    target"]:'],
+    ["action local", "      - run: npm ci", '      - uses: "./\\\n          ../evil"'],
+  ])("recusa %s escondida por uma quebra de linha dentro de aspas", (_caso, antes, depois) => {
+    const quebrado = certo.replace(antes, depois);
+
+    expect(problemasDoWorkflow("ci.yml", quebrado)).toContainEqual(
+      expect.stringMatching(/: (barra invertida dentro de aspas|texto entre aspas em várias linhas)/),
+    );
+  });
+
+  it("recusa a escrita com maiúscula (Write)", () => {
+    const maiuscula = certo.replace("  contents: read\n", "  contents: read\n  id-token: Write\n");
+
+    expect(problemasDoWorkflow("ci.yml", maiuscula)).toContainEqual(expect.stringMatching(/: permissão de escrita/));
+  });
+
+  it("confere o checkout escrito com maiúscula (Actions/checkout)", () => {
+    const maiuscula = certo
+      .replace("actions/checkout@", "Actions/checkout@")
+      .replace("        with:\n          persist-credentials: false\n", "");
+
+    expect(problemasDoWorkflow("ci.yml", maiuscula)).toEqual(["ci.yml:9: checkout sem persist-credentials: false"]);
+  });
+
+  it("o persist-credentials precisa estar no passo do próprio checkout, e não em outro passo", () => {
+    const noOutroPasso = certo
+      .replace("        with:\n          persist-credentials: false\n", "")
+      .replace(
+        "      - run: npm ci",
+        `      - uses: actions/setup-node@${SHA}\n        with:\n          persist-credentials: false`,
+      );
+
+    expect(problemasDoWorkflow("ci.yml", noOutroPasso)).toEqual(["ci.yml:9: checkout sem persist-credentials: false"]);
+  });
+
+  it("o persist-credentials dentro de um bloco run de outro passo não conta", () => {
+    const noRun = certo
+      .replace("        with:\n          persist-credentials: false\n", "")
+      .replace("      - run: npm ci", "      - run: |\n          persist-credentials: false");
+
+    expect(problemasDoWorkflow("ci.yml", noRun)).toEqual(["ci.yml:9: checkout sem persist-credentials: false"]);
   });
 
   it("aceita comentário que só cita a escrita ou um gatilho proibido", () => {
