@@ -383,6 +383,14 @@ describe("avaliarPacote", () => {
     ]);
   });
 
+  it("recusa data de publicação inválida (falharia aberto: NaN não é menor que 7)", () => {
+    const info = { publicadoEm: new Date(Number.NaN), vulnerabilidades: [] };
+
+    expect(avaliarPacote(pacote, info, AGORA, semAllowScripts).recusas).toEqual([
+      "data de publicação inválida no registro do npm",
+    ]);
+  });
+
   it("recusa falha alta ou crítica conhecida na OSV", () => {
     const info: InfoDoPacote = {
       publicadoEm: new Date("2026-10-01T00:00:00Z"),

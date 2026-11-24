@@ -248,6 +248,8 @@ export function avaliarPacote(
   const avisos: string[] = [];
   if (!info.publicadoEm) {
     recusas.push("versão não encontrada no registro do npm");
+  } else if (Number.isNaN(info.publicadoEm.getTime())) {
+    recusas.push("data de publicação inválida no registro do npm");
   } else {
     const dias = Math.floor((agora.getTime() - info.publicadoEm.getTime()) / UM_DIA_MS);
     if (dias < IDADE_MINIMA_DIAS) {

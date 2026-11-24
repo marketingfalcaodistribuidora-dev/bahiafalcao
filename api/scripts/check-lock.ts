@@ -79,9 +79,11 @@ async function buscar(url: string, opcoes?: RequestInit): Promise<Response> {
 async function publicadoEm(pacote: PacoteDoLock): Promise<Date | undefined> {
   const resposta = await buscar(`https://registry.npmjs.org/${pacote.nome.replace("/", "%2f")}`);
   if (!resposta.ok) return undefined;
-  const documento = (await resposta.json()) as { time?: Record<string, string> };
-  const data = documento.time?.[pacote.versao];
-  return data ? new Date(data) : undefined;
+  const documento = (await resposta.json()) as { time?: Record<string, unknown> };
+  // Só a chave própria e em texto: uma versão como "constructor" não pode achar uma função.
+  const tempos = documento.time ?? {};
+  const data = Object.hasOwn(tempos, pacote.versao) ? tempos[pacote.versao] : undefined;
+  return typeof data === "string" ? new Date(data) : undefined;
 }
 
 const GRAVIDADES: readonly string[] = ["CRITICAL", "HIGH", "MODERATE", "LOW"];
