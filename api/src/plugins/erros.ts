@@ -58,15 +58,18 @@ function comoErroDeDominio(erro: FastifyError): ErroDeDominio | null {
  * Da pilha, só as linhas de localização no código. A mensagem pode ter várias linhas com dados
  * (as do Prisma listam os argumentos, como e-mails), e uma delas pode até imitar uma linha da
  * pilha: o cabeçalho "Nome: mensagem" é descartado inteiro antes de filtrar os "at ...".
+ * Se a pilha não começa por esse cabeçalho (nome ou mensagem trocados depois de criado o erro),
+ * não há como separar a mensagem com segurança: a pilha fica de fora (falha fechada).
  */
-function pilhaSemMensagem(erro: Error): string {
+function pilhaSemMensagem(erro: Error): { pilha: string } | { pilhaDescartada: true } {
   const pilha = erro.stack ?? "";
-  const cabecalho = `${erro.name}: ${erro.message}`;
-  const quadros = pilha.startsWith(cabecalho) ? pilha.slice(cabecalho.length) : pilha;
-  return quadros
+  const cabecalho = erro.message ? `${erro.name}: ${erro.message}` : erro.name;
+  if (!pilha.startsWith(cabecalho)) return { pilhaDescartada: true };
+  const quadros = pilha
+    .slice(cabecalho.length)
     .split("\n")
-    .filter((linha) => /^\s+at /.test(linha))
-    .join("\n");
+    .filter((linha) => /^\s+at /.test(linha));
+  return { pilha: quadros.join("\n") };
 }
 
 /** Os códigos do erro, que não são sensíveis e ajudam no diagnóstico (ex.: P2010 e 42P01). */
@@ -90,7 +93,7 @@ export function registrarErros(app: FastifyInstance): void {
     const deDominio = comoErroDeDominio(erro);
     if (deDominio) return responder(resposta, deDominio);
 
-    pedido.log.error({ tipo: erro.name, ...codigosDoErro(erro), pilha: pilhaSemMensagem(erro) }, "erro inesperado");
+    pedido.log.error({ tipo: erro.name, ...codigosDoErro(erro), ...pilhaSemMensagem(erro) }, "erro inesperado");
     return resposta
       .code(500)
       .type("application/json; charset=utf-8")

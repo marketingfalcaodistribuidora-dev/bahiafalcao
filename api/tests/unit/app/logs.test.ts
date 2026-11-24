@@ -165,6 +165,25 @@ describe("logs sem dados sensíveis (CA3.2)", () => {
     expect(teste.log()).not.toContain("ana@exemplo.com");
   });
 
+  it("se o cabeçalho da pilha não bate com o erro (nome trocado depois), a pilha não vai para o log", async () => {
+    const teste = await appDeTeste();
+    app = teste.app;
+    app.get("/teste/quebra-renomeada", ROTA_PUBLICA_DE_TESTE, () => {
+      const erro = new Error("falhou para:" + String.fromCharCode(10) + "    at ana@exemplo.com (dados.ts:1:1)");
+      // A pilha é montada na primeira leitura; depois disso, o nome trocado não entra nela.
+      String(erro.stack);
+      erro.name = "ErroRenomeado";
+      throw erro;
+    });
+
+    await app.inject({ method: "GET", url: "/teste/quebra-renomeada" });
+
+    const log = teste.log();
+    expect(log).toContain('"tipo":"ErroRenomeado"');
+    expect(log).toContain('"pilhaDescartada":true');
+    expect(log).not.toContain("ana@exemplo.com");
+  });
+
   it("um erro do banco não traduzido vai para o log com os códigos (não sensíveis), sem a mensagem", async () => {
     const teste = await appDeTeste();
     app = teste.app;
